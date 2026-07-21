@@ -12,14 +12,14 @@ SugiKent の個人開発用 Claude Code plugin 集（公開版）。
 claude plugin marketplace add SugiKent/sugiken-dev-plugins-public
 
 # 必要な plugin を install (user scope = 全プロジェクト共通)
-claude plugin install mvp-workflow@sugiken-dev
-claude plugin install architect@sugiken-dev
+claude plugin install mvp-workflow@sugiken-dev-public
+claude plugin install architect@sugiken-dev-public
 
 # プロジェクト単位で入れたい場合
-claude plugin install mobile-release@sugiken-dev --scope project
+claude plugin install mobile-release@sugiken-dev-public --scope project
 ```
 
-または対話 UI: `/plugin` → sugiken-dev から選択。
+または対話 UI: `/plugin` → sugiken-dev-public から選択。
 
 plugin 化された skill の呼び出しは namespace 付きになる: `/mvp-workflow:01-write-mvp` など。
 description による自動呼び出しは従来どおり機能する。
@@ -46,7 +46,7 @@ description による自動呼び出しは従来どおり機能する。
 
 - skill の編集はこの repo で行い、commit → push する
 - `plugin.json` に `version` を書いていないため、**commit ごとに新バージョン扱い** (git SHA) になる
-- 各マシンでは `claude plugin update <plugin>@sugiken-dev` か marketplace の自動更新で反映される
+- 各マシンでは `claude plugin update <plugin>@sugiken-dev-public` か marketplace の自動更新で反映される
 
 ## 運用ルール
 
