@@ -1,5 +1,5 @@
 {
-  "name": "sugiken-dev",
+  "name": "sugiken-dev-public",
   "description": "SugiKent の個人開発用 Claude Code plugin 集",
   "owner": { "name": "SugiKent" },
   "plugins": [
