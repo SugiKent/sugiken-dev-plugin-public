@@ -1,0 +1,85 @@
+{
+  "name": "sugiken-dev",
+  "description": "SugiKent の個人開発用 Claude Code plugin 集",
+  "owner": { "name": "SugiKent" },
+  "plugins": [
+    {
+      "name": "mvp-workflow",
+      "source": "./plugins/mvp-workflow",
+      "description": "個人開発 MVP の構想〜OpenSpec 化までのワークフロー (skill はフェーズ番号順)",
+      "category": "workflow"
+    },
+    {
+      "name": "openspec",
+      "source": "./plugins/openspec",
+      "description": "OpenSpec の change ワークフロー (explore / propose / apply / sync-specs / archive) の日本語化スキル集",
+      "category": "workflow"
+    },
+    {
+      "name": "orchestration",
+      "source": "./plugins/orchestration",
+      "description": "openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式)",
+      "category": "workflow"
+    },
+    {
+      "name": "architect",
+      "source": "./plugins/architect",
+      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / DB 設計 / 疑い駆動開発 / セキュリティの設計・レビュー系スキル",
+      "category": "quality"
+    },
+    {
+      "name": "dev-utils",
+      "source": "./plugins/dev-utils",
+      "description": "ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン)",
+      "category": "utility"
+    },
+    {
+      "name": "e2e",
+      "source": "./plugins/e2e",
+      "description": "網羅的 E2E の 4 フェーズ分解 (環境セットアップ / propose 段階のケース列挙 / 実装 / 実行と結果報告)。Web=Playwright, モバイル=Maestro",
+      "category": "quality"
+    },
+    {
+      "name": "dev-tool-bootstrap",
+      "source": "./plugins/dev-tool-bootstrap",
+      "description": "運用ツールのスキャフォールド (mini-sentry / READ-only admin ダッシュボード)",
+      "category": "utility"
+    },
+    {
+      "name": "analytics-tools",
+      "source": "./plugins/analytics-tools",
+      "description": "プロダクト分析ツール導入 (Amplitude: Web / モバイル / サーバ)",
+      "category": "infra"
+    },
+    {
+      "name": "fastify",
+      "source": "./plugins/fastify",
+      "description": "Fastify + pino の dev エラーログ基盤",
+      "category": "infra"
+    },
+    {
+      "name": "railway",
+      "source": "./plugins/railway",
+      "description": "Railway のデプロイ・運用ガイドとログからのエラー調査",
+      "category": "infra"
+    },
+    {
+      "name": "basic",
+      "source": "./plugins/basic",
+      "description": "表現思考 / retro / スケジュール抑制の汎用スキル",
+      "category": "utility"
+    },
+    {
+      "name": "design",
+      "source": "./plugins/design",
+      "description": "UI/UX 設計・ユーザビリティ評価系スキル (Krug の法則 / Nielsen の 10 ヒューリスティック / 重大度評価 / ダークパターン / アクセシビリティ)",
+      "category": "quality"
+    },
+    {
+      "name": "llm-eval",
+      "source": "./plugins/llm-eval",
+      "description": "LLM-as-a-Judge 評価基盤のセットアップ (BINEVAL 手法準拠: 二値質問の自動生成 / 評価器 / スコアリング / プロンプト最適化ループ)",
+      "category": "quality"
+    }
+  ]
+}

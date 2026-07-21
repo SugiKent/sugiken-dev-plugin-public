@@ -1,0 +1,5 @@
+{
+  "name": "orchestration",
+  "description": "openspec/changes 全実装のオーケストレーション。単一セッションの多段 SubAgent 方式 (110) と、Orca を使った propose / apply / archive の並列実行 (orca-11x) の両方を含む",
+  "author": { "name": "SugiKent" }
+}

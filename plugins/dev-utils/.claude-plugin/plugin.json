@@ -1,0 +1,5 @@
+{
+  "name": "dev-utils",
+  "description": "ローカル開発・検証を支える汎用ユーティリティ集: 環境変数 (.env/.env.example) 運用 / ローカル port ランダム割当 / Feature Flag 機構 / 動作確認 CLI / 開発用簡易ログイン",
+  "author": { "name": "SugiKent" }
+}

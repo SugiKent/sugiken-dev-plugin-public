@@ -1,0 +1,5 @@
+{
+  "name": "fastify",
+  "description": "Fastify + pino サーバ向けスキル: dev 環境で 4xx / 5xx の原因を 1 行ログで追えるようにする基盤とルート側規約",
+  "author": { "name": "SugiKent" }
+}

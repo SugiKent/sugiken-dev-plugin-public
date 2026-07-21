@@ -1,0 +1,5 @@
+{
+  "name": "mvp-workflow",
+  "description": "個人開発 MVP の構想から仕様確定までのワークフロー。skill の数字接頭辞はフェーズ順: 00 準備 → 01 構想 → 10 仕様確定 → 30 実 MVP 計画 → 80 実装順序 → 100 OpenSpec 化。実装フェーズは orchestration / test plugin に続く",
+  "author": { "name": "SugiKent" }
+}

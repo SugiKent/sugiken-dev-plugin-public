@@ -1,0 +1,5 @@
+{
+  "name": "llm-eval",
+  "description": "LLM エージェント/生成機能の eval 基盤を、手法非依存の基盤（ディレクトリ構造・冪等刻印 / gold 構築 / モデル・プロンプト注入 seam）と、拡張可能な評価/最適化手法（code-based 照合 / LLM-judge BINEVAL / GEPA プロンプト最適化）に分けて敷設するスキル群。手法が増えても同じ evals/ 構造・run report スキーマ・CLI 契約を共有して破綻しない設計。",
+  "author": { "name": "SugiKent" }
+}

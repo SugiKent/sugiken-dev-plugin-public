@@ -1,0 +1,5 @@
+{
+  "name": "railway",
+  "description": "Railway へのデプロイ・運用スキル: セットアップの落とし穴 (GitHub 接続 / railway.json / Railpack / region / monorepo) と、稼働 service のログからのエラー調査・レポート作成",
+  "author": { "name": "SugiKent" }
+}

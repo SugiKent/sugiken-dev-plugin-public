@@ -1,0 +1,5 @@
+{
+  "name": "architect",
+  "description": "設計・レビュー系スキル: 設計原則 (SOLID/KISS/YAGNI/DRY) / 多軸コードレビュー / DB 設計 / 疑い駆動開発 (敵対的レビュー) / セキュリティハードニング",
+  "author": { "name": "SugiKent" }
+}

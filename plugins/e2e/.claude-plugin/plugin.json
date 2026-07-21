@@ -1,0 +1,5 @@
+{
+  "name": "e2e",
+  "description": "網羅的 E2E テストの 4 フェーズ分解 skill 集: 環境セットアップ / OpenSpec propose 段階のケース列挙 / 実装 / ヘッドレス実行と結果報告。Web は Playwright、モバイル (Expo + RN) は Maestro。",
+  "author": { "name": "SugiKent" }
+}

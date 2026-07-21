@@ -1,0 +1,5 @@
+{
+  "name": "dev-tool-bootstrap",
+  "description": "運用ツールを一撃でスキャフォールドする初期化スキル集: 自前エラートラッカー (mini-sentry) 導入 / READ-only admin ダッシュボード導入",
+  "author": { "name": "SugiKent" }
+}
