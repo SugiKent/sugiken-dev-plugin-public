@@ -1,0 +1,5 @@
+{
+  "name": "aws",
+  "description": "AWS 構築の汎用スキル集: private subnet の RDS に Prisma migration を流すためのマイグレーション用 Lambda 構築 (同一イメージ CMD 差し替え / LWA pass-through invoke / CI からの成否判定)",
+  "author": { "name": "SugiKent" }
+}
