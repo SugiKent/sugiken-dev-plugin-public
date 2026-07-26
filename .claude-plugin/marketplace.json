@@ -52,6 +52,12 @@
       "category": "infra"
     },
     {
+      "name": "analytics",
+      "source": "./plugins/analytics",
+      "description": "分析業務",
+      "category": "utility"
+    },
+    {
       "name": "fastify",
       "source": "./plugins/fastify",
       "description": "Fastify + pino の dev エラーログ基盤",
