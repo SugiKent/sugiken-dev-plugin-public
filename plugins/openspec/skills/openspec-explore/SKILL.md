@@ -117,8 +117,8 @@ openspec list --json
 
     | 洞察のタイプ               | 記録先                          |
     |----------------------------|--------------------------------|
-    | 新しい要件を発見           | `specs/<capability>/spec.md` |
-    | 要件が変わった             | `specs/<capability>/spec.md` |
+    | 新しい要件を発見           | 対応するメイン仕様 |
+    | 要件が変わった             | 対応するメイン仕様 |
     | 設計上の決定がなされた     | `design.md`                  |
     | スコープが変わった         | `proposal.md`                |
     | 新しい作業を特定           | `tasks.md`                   |
@@ -202,7 +202,7 @@ You: [コードベースを読む]
 
 **ユーザーが実装の途中で行き詰まっている:**
 ```
-User: /opsx:explore add-auth-system
+User: openspec-explore add-auth-system
       OAuth 連携が思ったより複雑なんだ
 
 You: [change の成果物を読む]

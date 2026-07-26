@@ -5,7 +5,7 @@ Web アプリケーションセキュリティのクイックリファレンス�
 ## 目次
 
 - [脅威モデリング（まずここから）](#脅威モデリングまずここから)
-- [コミット前チェック](#コミット前チェック)
+- [変更内容の確認](#変更内容の確認)
 - [認証（Authentication）](#認証authentication)
 - [認可（Authorization）](#認可authorization)
 - [入力検証（Input Validation）](#入力検証input-validation)
@@ -27,7 +27,7 @@ Web アプリケーションセキュリティのクイックリファレンス�
 - [ ] 各境界に STRIDE を当てた（Spoofing、Tampering、Repudiation、Info disclosure、DoS、Elevation）
 - [ ] ユースケースの隣に悪用ケースを書いた（「これをどう悪用するか?」）
 
-## コミット前チェック
+## 変更内容の確認
 
 - [ ] コードにシークレットがない（`git diff --cached | grep -i "password\|secret\|api_key\|token"`）
 - [ ] `.gitignore` が次をカバーしている: `.env`、`.env.local`、`*.pem`、`*.key`
@@ -116,7 +116,7 @@ npx npm-check-updates
 ```
 
 **サプライチェーン衛生**（`npm audit` は悪意あるパッケージは捉えない）:
-- [ ] ロックファイルをコミット、CI は `npm ci`（`npm install` ではなく）でインストール
+- [ ] 採用したパッケージ管理方式で、依存関係の解決結果が再現可能
 - [ ] 新しい依存をレビュー（メンテナンス、ダウンロード数、`postinstall` スクリプト）
 - [ ] タイポスクワットがない（`cross-env` と `crossenv`、`react-dom` と `reactdom`）
 

@@ -217,7 +217,7 @@ await fetch(await assertSafeUrl(req.body.webhookUrl), { redirect: 'error' });
 
 `range() !== 'unicast'` のチェックは、ループバック、リンクローカル `169.254.169.254`（クラウドメタデータ、SSRF の最頻ターゲット）、プライベート、ユニークローカルの各レンジを IPv4 / IPv6 横断でカバーする。
 
-**注意 — これでも TOCTOU のギャップが残る。** `fetch` はチェックの後に再び DNS を解決するため、短い TTL のレコードを使う攻撃者は、検証と接続の間に内部 IP へ rebind できる。リスクの高い面では、一度だけ解決して固定（pin）した IP に接続するか、フィルタリングエージェント（`request-filtering-agent` / `ssrf-req-filter`）を前段に置く。
+**注意 — これでも TOCTOU のギャップが残る。** `fetch` はチェックの後に再び DNS を解決するため、短い TTL のレコードを使う攻撃者は、検証と接続の間に内部 IP へ rebind できる。リスクの高い面では、一度だけ解決して固定（pin）した IP に接続する、または接続先をネットワーク境界で許可リストに制限する。
 
 ## 入力検証パターン
 
@@ -300,7 +300,7 @@ npm audit が脆弱性を報告した
 
 `npm audit` は既知の CVE は捉えるが、悪意あるパッケージやタイポスクワット（typosquat）は捉えない。加えて:
 
-- **ロックファイルをコミットし、CI では `npm ci`（`npm install` ではなく）でインストールする** — 再現可能なビルド、サイレントなバージョンドリフトの防止。
+- **依存関係の解決結果を再現可能にする** — ロックファイルなど、採用したパッケージ管理方式の再現性を担保する仕組みを確認する。サイレントなバージョンドリフトを防ぐ。
 - **新しい依存を追加する前にレビューする** — メンテナンス状況、ダウンロード数、本当にそこにある価値があるか。依存はすべて攻撃面である（OWASP **A06: Vulnerable Components**、**LLM03: Supply Chain**）。
 - **見慣れないパッケージの `postinstall` スクリプトに警戒する** — インストール時に任意コードを実行する。
 - **タイポスクワットに注意する** — `cross-env` と `crossenv`、`react-dom` と `reactdom`。
@@ -341,7 +341,7 @@ app.use('/api/auth/', rateLimit({
   *.key
 ```
 
-**コミット前に必ずチェックする:**
+**変更内容を確認するときの例:**
 ```bash
 # 誤ってステージされたシークレットがないかチェックする
 git diff --cached | grep -i "password\|secret\|api_key\|token"
@@ -409,7 +409,7 @@ container.textContent = await llm.reply(userMessage);
 - [ ] エラーメッセージが内部を露出しない
 
 ### サプライチェーン（Supply Chain）
-- [ ] ロックファイルをコミット済み、CI は `npm ci` でインストール
+- [ ] 採用したパッケージ管理方式で、依存関係の解決結果が再現可能
 - [ ] 新しい依存をレビュー済み（メンテナンス、ダウンロード数、postinstall スクリプト）
 
 ### AI / LLM（使用している場合）
@@ -420,7 +420,7 @@ container.textContent = await llm.reply(userMessage);
 
 ## 関連項目（See Also）
 
-詳細なセキュリティチェックリストとコミット前の検証手順については `references/security-checklist.md` を参照。
+詳細なセキュリティ評価項目は `references/security-checklist.md` を参照。
 
 信頼境界の設計（関心の分離・DIP による外部依存の隔離・契約による入力検証）の判断基準は `35-architect-principle` を参照。堅牢な境界は、まず健全な設計構造の上に成り立つ。
 
@@ -451,7 +451,7 @@ container.textContent = await llm.reply(userMessage);
 
 ## 検証（Verification）
 
-セキュリティ関連のコードを実装した後:
+セキュリティ関連の設計・実装を評価するとき:
 
 - [ ] `npm audit` で critical / high の脆弱性がない
 - [ ] ソースコードや git 履歴にシークレットがない

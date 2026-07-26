@@ -58,14 +58,14 @@ metadata:
    status JSON の `artifactPaths.specs.existingOutputPaths` を使ってデルタ仕様を確認する。存在しなければ、同期の確認なしで続行する。
 
    **デルタ仕様が存在する場合:**
-   - 各デルタ仕様を、対応するメイン仕様 `openspec/specs/<capability>/spec.md` と比較する
+   - 各デルタ仕様を、ストアまたはローカルの planning context が解決する対応メイン仕様と比較する
    - 適用される変更（追加・変更・削除・リネーム）を判定する
    - 同期前のログとして、まとめた要約を表示する
 
-   **同期方針（このプロジェクトのカスタマイズ）:**
-   - **デルタ仕様が存在する場合は、確認を挟まず固定で今すぐ同期する。** `AskUserQuestion` による同期可否の確認は行わない。
-   - 同期は Task ツール（subagent_type: "general-purpose"、prompt: 「Skill ツールで change '<name>' に対し openspec-sync-specs を起動する。デルタ仕様の分析: <分析したデルタ仕様の要約を含める>」）で `openspec-sync-specs` を起動して行い、同期後にアーカイブへ進む。
-   - デルタ仕様が存在しない場合は、これまで通り同期なしで続行する。
+   **同期方針:**
+   - デルタ仕様が存在する場合は、同期内容の要約を示し、同期するかをユーザーに確認する。
+   - 同期する場合は、`openspec-sync-specs` スキルの手順でメイン仕様へ適用してから archive を進める。
+   - デルタ仕様が存在しない場合は、同期なしで続行する。
 
 5. **archive を実行する**
 
@@ -112,5 +112,5 @@ All artifacts complete. All tasks complete.
 - 警告で archive をブロックしない - 通知して確認するだけ
 - archive へ移動するとき .openspec.yaml を保持する（ディレクトリと一緒に移動する）
 - 何が起きたかの明確な要約を表示する
-- 同期が必要な場合は openspec-sync-specs の方式（エージェント駆動）を使う
+- 同期が必要な場合は `openspec-sync-specs` の手順を使う
 - デルタ仕様が存在する場合は、必ず同期の評価を行い、まとめた要約を（プロンプトの前に）表示する

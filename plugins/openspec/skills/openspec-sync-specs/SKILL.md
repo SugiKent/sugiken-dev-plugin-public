@@ -52,7 +52,7 @@ change のデルタ仕様をメイン仕様へ同期する。
 
    a. **デルタ仕様を読み**、意図された変更を理解する
 
-   b. **メイン仕様を読む**（`openspec/specs/<capability>/spec.md`。まだ存在しないこともある）
+   b. **メイン仕様を読む**（status と store/local context が解決する capability の仕様。まだ存在しないこともある）
 
    c. **賢く変更を適用する**:
 
@@ -75,7 +75,7 @@ change のデルタ仕様をメイン仕様へ同期する。
       - FROM の要件を見つけ、TO へリネームする
 
    d. **capability がまだ存在しなければ、新しいメイン仕様を作成する**:
-      - `openspec/specs/<capability>/spec.md` を作成する
+      - 解決された specs root に capability のメイン仕様を作成する
       - Purpose セクションを追加する（簡潔でよい、TBD と記してよい）
       - ADDED の要件を含む Requirements セクションを追加する
 
