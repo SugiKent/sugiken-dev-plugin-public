@@ -41,6 +41,7 @@ description による自動呼び出しは従来どおり機能する。
 | `analytics-tools` | infra | プロダクト分析ツール導入 (Amplitude: Web / モバイル / サーバ) |
 | `fastify` | infra | Fastify + pino の dev エラーログ基盤 |
 | `railway` | infra | Railway のデプロイ・運用ガイドとログからのエラー調査 |
+| `workshop` | utility | 勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成まで |
 
 ## 更新の反映
 

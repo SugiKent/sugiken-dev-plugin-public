@@ -92,6 +92,12 @@
       "source": "./plugins/aws",
       "description": "AWS 構築スキル集: private subnet の RDS に Prisma migration を流すマイグレーション用 Lambda 構築",
       "category": "infra"
+    },
+    {
+      "name": "workshop",
+      "source": "./plugins/workshop",
+      "description": "勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成までを支援",
+      "category": "utility"
     }
   ]
 }
