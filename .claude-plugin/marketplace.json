@@ -12,7 +12,7 @@
     {
       "name": "openspec",
       "source": "./plugins/openspec",
-      "description": "OpenSpec の change ワークフロー (explore / propose / apply / sync-specs / archive) の日本語化スキル集",
+      "description": "OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集",
       "category": "workflow"
     },
     {
@@ -72,7 +72,7 @@
     {
       "name": "basic",
       "source": "./plugins/basic",
-      "description": "表現思考 / retro / スケジュール抑制の汎用スキル",
+      "description": "徹底質問 (grill-me) / 表現思考 / retro / スケジュール抑制の汎用スキル",
       "category": "utility"
     },
     {
