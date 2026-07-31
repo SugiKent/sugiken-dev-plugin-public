@@ -5,7 +5,6 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 model: sonnet
 context: fork
 ---
-
 # E2E 実行・結果報告スキル
 
 **目的**: E2E を正しくヘッドレス実行し、結果と原因の見立てを回収して返す。**修正はしない**（直すのは呼び出し側の実装フェーズ = [[30-implement-e2e]] の仕事）。
@@ -15,7 +14,7 @@ context: fork
 ## 厳守事項
 
 - **修正禁止**: テスト失敗を見つけても、実装ファイル・E2E テストファイル・設定を書き換えない。事実と見立てだけを返す。
-- **ハートビート遵守**: E2E 実行の直前に `E2E_HERTBEAT.md` へ実行中である旨を書き込み、完了後に必ず消す。**他に記述があるときは実行しない**（並列実行で壊れるため待つか報告する）。中途半端な記述を残さない。
+- **ハートビート遵守**: E2E 実行の直前に `E2E_HEARTBEAT.md` へ実行中である旨を書き込み、完了後に必ず消す。**他に記述があるときは実行しない**（並列実行で壊れるため待つか報告する）。中途半端な記述を残さない。
 - **CLI を E2E に流用しない**: 動作確認用 CLI を E2E の検証手段に使わない。
 - **実行系は自分で担う**: Playwright / ブラウザ・Maestro / シミュレータ起動を伴う実行は他に委譲できない（ポート制限）。fork 内で自分でヘッドレス実行する。
 
@@ -23,8 +22,8 @@ context: fork
 
 1. 起動プロンプトの実行対象（対象ドメイン、例 `C-01x` / 全ケース）と前提（DB reset 要否）を確認する。
 2. ハートビートを立ててからヘッドレス実行する：
-   - Web: `npx playwright test`（特定: `npx playwright test e2e/tests/auth/`、失敗のみ: `--last-failed`）
-   - モバイル: `maestro test .maestro/flows/`（tags: `maestro test --include-tags smoke`）
+  - Web: `npx playwright test`（特定: `npx playwright test e2e/tests/auth/`、失敗のみ: `--last-failed`）
+  - モバイル: `maestro test .maestro/flows/`（tags: `maestro test --include-tags smoke`）
 3. 結果を回収し、ハートビートを消す。
 4. 失敗ケースごとに、エラー内容・再現条件・**原因の見立て（実装側の不具合 / E2E 側の記述 / データ前提）**を添える。**ただし修正はしない**。trace（Web: `test-results/<name>/trace.zip`）は読んで見立てに反映してよい。
 
@@ -39,3 +38,4 @@ context: fork
 ### 所感
 - 全体緑か、どこを直せば緑になりそうか（修正は呼び出し側に委ねる）
 ```
+
