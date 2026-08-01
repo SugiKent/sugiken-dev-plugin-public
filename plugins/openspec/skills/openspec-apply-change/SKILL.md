@@ -59,7 +59,20 @@ OpenSpec の change の tasks を実装する。
    - **spec-driven**: proposal、specs、design、tasks
    - 他のスキーマ: CLI 出力の contextFiles に従う
 
-5. **現在の進捗を表示する**
+5. **実装前に他の change との整合性を確認する**
+
+   実装に着手する前に、対象 change 以外の `openspec/changes` を確認する。`openspec list --json` で未完了の change を列挙し、各 change の成果物（少なくとも proposal、specs、design、tasks）を読んで、対象 change との関係を整理する。
+
+   次の観点を確認する:
+   - 前提となる change が未完了で、実装順序の依存関係がないか
+   - 同じコードファイル、API、route、service、UI領域を変更する change がないか
+   - 同じ DB テーブル、model、enum、index、制約、migration を追加・変更する change がないか
+   - 片方の change の設計や migration をもう片方でも重複して定義していないか
+   - 並行実装した場合に、tasks の完了順や成果物の統合でコンフリクトしないか
+
+   確認結果を「依存なし」「依存あり」「競合・重複あり」に分類して表示する。未完了の前提 change がある場合、またはコード/API/DB設計の競合・重複を解消できない場合は実装を開始せず、対象 change と相手 change、競合箇所、推奨する実装順を報告して指示を待つ。問題がない場合のみ次へ進む。
+
+6. **現在の進捗を表示する**
 
    次を表示する:
    - 使われているスキーマ
@@ -67,7 +80,7 @@ OpenSpec の change の tasks を実装する。
    - 残りの tasks の概要
    - CLI からの動的な指示
 
-6. **tasks を実装する（完了かブロックまでループ）**
+7. **tasks を実装する（完了かブロックまでループ）**
 
    保留中の各 task について:
    - どの task に取り組んでいるかを表示する
@@ -82,7 +95,7 @@ OpenSpec の change の tasks を実装する。
    - エラーやブロッカーに遭遇 → 報告して指示を待つ
    - ユーザーが割り込む
 
-7. **完了または一時停止時に status を表示する**
+8. **完了または一時停止時に status を表示する**
 
    次を表示する:
    - このセッションで完了した tasks

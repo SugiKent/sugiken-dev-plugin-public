@@ -58,6 +58,12 @@
       "category": "utility"
     },
     {
+      "name": "auto-analysis",
+      "source": "./plugins/auto-analysis",
+      "description": "SQLite の分析グラフで問い・仮説・根拠・発見をつなぎ、分析を継続する",
+      "category": "workflow"
+    },
+    {
       "name": "fastify",
       "source": "./plugins/fastify",
       "description": "Fastify + pino の dev エラーログ基盤",

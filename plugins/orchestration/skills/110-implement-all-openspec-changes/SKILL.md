@@ -1,6 +1,6 @@
 ---
 name: 110-implement-all-openspec-changes
-description: "単一の Claude Code セッションで、openspec/changes 配下のすべての承認済み OpenSpec change を最後まで実装しきるためのオーケストレーションスキル。apply のたびに change 専属の apply SubAgent を 1 つ起動し、その SubAgent がさらに専門サブエージェント（apply-frontend / apply-backend で実装、apply-review で多段レビュー）を従える。E2E 基盤があるプロジェクトでは、開始時に全 change を読ませた専属 SubAgent が docs/e2e_case.md を先行作成し、各 change 内では E2E を作成・実行せず、全 change 完了後にケース実装・全件実行・失敗修正をオールグリーンまで再帰的に繰り返す。change 完了後は apply-archive / apply-commit の専用サブエージェントで archive・commit する。「openspec を全部実装」「changes を実装しきる」「MVP 全実装」「apply を回しきる」「全 change archive まで」等のリクエスト時に使用。"
+description: "単一の Claude Code セッションで、openspec/changes 配下のすべての承認済み OpenSpec change を、依存順に最後まで実装・archive するためのオーケストレーションスキル。大きく独立した実装トラックだけを SubAgent へ委譲し、各 change を機械的に多重委譲・多重レビューしない。E2E 基盤があるプロジェクトでは、開始時に全 change を読ませた専属 SubAgent が docs/e2e_case.md を先行作成し、各 change 内では E2E を作成・実行せず、全 change 完了後にケース実装・全件実行・必要な修正を行う。change 完了後は archive・commit する。「openspec を全部実装」「changes を実装しきる」「MVP 全実装」「apply を回しきる」「全 change archive まで」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestion, mcp__codex__codex, mcp__codex__codex-reply
 ---
 
@@ -10,25 +10,25 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestio
 
 `openspec/changes/` 配下に並んでいる **change をすべて、単一の Claude Code セッションで実装しきる** ためのスキル。
 
-あなたは最上位の **オーケストレーター** に徹する。手は動かさない。**apply のたびに change 専属の apply SubAgent を 1 つ起動** し、実装・レビュー・archive・commit はすべて下位の専門サブエージェントに委ねる。E2E は change ごとに扱わず、開始時のケース設計と全 change 完了後の実装・実行ループに分離する。あなた自身のコンテキストは常にクリーンに保つ。
+あなたは最上位の **オーケストレーター** として、依存関係、作業範囲、完了条件を管理する。自分で数回のツール呼び出しで済む確認や修正は自分で行い、SubAgent は大きく独立して並行できる実装トラックにだけ使う。E2E は change ごとに扱わず、開始時のケース設計と全 change 完了後の実装・実行に分離する。
 
 ## 専門サブエージェント（このスキルの実行部隊）
 
-実装から commit までを、役割ごとに分けた専門サブエージェント（`orchestration` plugin の `agents/`、および `architect` plugin の `agents/`）へ委譲する。各サブエージェントは対応するスキルを読み込んで動くため、方針の重複記述はしない。
+大きな独立トラックでは、必要な専門性に応じて次のサブエージェントを使える。1 change ごとに全役割を起動したり、レビューのためだけに別 agent を増やしたりしない。共有スキーマ・認証・共通 UI のような競合しやすい領域は直列に扱う。
 
 | サブエージェント | model | 役割 | 参照スキル |
 |-----------------|-------|------|-----------|
 | `apply-frontend` | sonnet | フロント実装（画面 / コンポーネント / クライアント状態） | `frontend-implementation` |
 | `apply-backend` | opus | バックエンド実装（API / Service / Repository / スキーマ / migration） | `backend-implementation` |
-| `apply-review` | opus | **多段レビュー統括**（配下で `35-architect-*` を pop して集約） | architect 各スキル |
+| `apply-review` | opus | 高リスクまたは横断的変更のレビュー | architect 各スキル |
 | `apply-archive` | sonnet | change の archive と `openspec validate --strict` | `.claude/commands/openspec/archive.md` |
 | `apply-commit` | sonnet | 意味のある単位での外科的コミット | `20-commit-meaningful-diffs`（basic plugin） |
 
-> **E2E の実行・報告は、全 change 完了後にだけ skill を直接 invoke**。`40-run-and-report-e2e` skill（e2e plugin, `model: sonnet` + `context: fork`）を invoke すると、skill 自身が subagent へ fork してヘッドレス実行・報告する。専用の実行 agent は挟まない（二重 fork を避けるため）。一方、開始時のケース設計は `20-enumerate-e2e-cases`、最終段階の E2E テスト実装・改善は `30-implement-e2e` を、それぞれ書き込み責務を分離した専属 SubAgent として invoke する。
+> **E2E の実行・報告は、全 change 完了後にだけ skill を直接 invoke**。`40-run-and-report-e2e` skill（e2e plugin, `model: sonnet` + `context: fork`）を invoke すると、skill 自身が subagent へ fork してヘッドレス実行・報告する。専用の実行 agent は挟まない。一方、開始時のケース設計は `20-enumerate-e2e-cases`、最終段階の E2E テスト実装・改善は `30-implement-e2e` を、それぞれ書き込み責務を分離した専属 SubAgent として invoke する。
 
 ## 最終ゴール（最上位の成功条件）
 
-**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンで、最終的に結合レビューで **OK が出る** こと。既存の E2E 基盤がある場合は、`docs/e2e_case.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。
+**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンであること。既存の E2E 基盤がある場合は、`docs/e2e_case.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。高リスクまたは横断的な変更では、必要な結合レビューの指摘も解消する。
 ---
 
 # 全体フロー
@@ -38,8 +38,8 @@ Phase 0  全 change の把握（Codex の利用可否確認を含む）
 Phase 1  E2E 基盤の検出と E2E ケース設計の先行開始
 Phase 2  実装順序の確定（依存グラフ / Wave 分割）
 Phase 3  change に取り組む（可能なら並行作業、change 単位の E2E は行わない）
-Phase 4  全 change 完了後の E2E 実装・実行・修正ループ
-Phase 5  結合レビュー（再帰・OK が出るまで）
+Phase 4  全 change 完了後の E2E 実装・実行・修正
+Phase 5  必要な結合レビュー
 Phase 6  報告
 ```
 
@@ -61,13 +61,50 @@ E2E 基盤がない場合は、E2E 基盤そのものを暗黙に新設せず、
 ## 並列作業の原則
 
 - **土台は逐次が安全**: 共有依存（モノレポ基盤・Prisma スキーマ・org スコープ機構・認証認可・共通 UI・E2E ハーネス）を持つ change は 1 つずつ直列に実装する。前段が緑になるまで次へ進まない。
-- **Wave 内は並列可、可能なら同時起動する**: write スコープ（ファイル / モジュール）が重ならず、前後依存もない change は、同一 Wave 内で複数の apply SubAgent を同時に立てて並列実装する。依存関係上安全な change 群はまとめて起動する。
+- **Wave 内は並列可**: write スコープ（ファイル / モジュール）が重ならず、前後依存もない、十分に大きい change だけを同時に委譲する。軽微な確認・修正や、数回のツール呼び出しで終わる作業には SubAgent を起動しない。1 agent で完結するトラックは、さらに agent を増やさない。
 
 ## change 単位では E2E を行わない
 
-各 change の apply SubAgent には、E2E テストの作成、`40-run-and-report-e2e` の invoke、E2E 成功の完了条件化を指示しない。change 単位では実装、必要な unit / integration test、多段レビュー、archive、commit までを担当させる。
+各 change の担当者には、E2E テストの作成、`40-run-and-report-e2e` の invoke、E2E 成功の完了条件化を指示しない。change 単位では実装、必要な unit / integration test、必要な場合だけのレビュー、archive、commit までを担当させる。
 
 `apply-archive` には、このスキルが **E2E を全 change 完了後へ集約する延期ポリシー**を採用していることを明示する。これにより、個別 change の E2E 未実行だけを理由に archive を止めず、最終ゴールとしての E2E オールグリーンは Phase 4 で担保する。
+
+## レビュー修正の完了条件
+
+レビュー指摘を実装側へ返すときは、修正対象のコードだけでなく、そのコードの前提・手順・契約を記している OpenSpec 文書を特定する。通常は `design.md`、`tasks.md`、proposal、spec delta が対象になる。
+
+- 実装が仕様どおりで文書だけが古い場合は、**同じ修正作業で根拠文書も更新する**。実行すると失敗する手順や、現実と異なる設計判断を残さない。
+- 文書が正で実装が逸脱している場合は、文書を実装に合わせて書き換えず、実装を文書へ戻す。仕様変更が必要なら、変更理由と影響を明示して change の文書を更新する。
+- `tasks.md` の完了チェックは、コードと根拠文書の両方が整合した後に付ける。修正後の再レビューでは、この整合性も確認対象に含める。
+
+修正委譲には、少なくとも次の形式を使う。
+
+```text
+<CHANGE_ID> のレビュー指摘を修正してください。
+- 指摘: <重大度・問題・期待する振る舞い>
+- 実装範囲: <ファイル / モジュール>
+- 根拠文書: <design.md / tasks.md / proposal / spec delta の該当箇所>
+- 文書との扱い: 文書が古ければコードと同時に更新し、文書が正なら実装を合わせる。コードだけを直して根拠文書を置き去りにしない。
+- 検証: <本番契約を通るテスト / 実行コマンド>
+- 完了報告: コード・更新した文書・検証結果・残課題を列挙する。
+```
+
+テストが緑でも、次のように本番の失敗を隠していないかを確認する。
+
+- 本番経路で起きない入力や状態だけを使ったテストで、実際の入力契約・分岐を通っていない。
+- 置き換えた旧実装を、根拠のないフォールバック・export・互換経路として残している。
+- 画面で使われないフィールドや中間状態だけを検証し、実際に描画される値・状態のずれを見逃している。
+
+これらは個別の実装パターンではなく、「テストは利用者に届く本番契約を検証し、不要な互換経路を残さず、仕様と実装の根拠を一緒に保守する」という確認観点として適用する。
+
+## サブエージェントの通信と待機の運用
+
+委譲は、起動しただけでは成立しない。開始時に対象・完了条件・書き込み範囲・必要な仕様文書を含む自己完結した指示を渡し、受領内容を短く要約して返すよう求める。
+
+- エージェントから「指示が届いていない」「断片しか見えない」と報告された場合は、待機状態と扱わない。**SendMessage で自己完結した全文の指示を再送**し、受領確認を得てから進める。
+- レビュー統括を起動する際は、各レビュー・各修正ラウンドについて結果を一度だけ親へ返して終了すること、待機コマンドによるポーリングや同じ完了通知の反復をしないことを明示する。
+- 専門レビュアーが無応答なら、同じ待機を繰り返して全体を止めない。該当観点を未回収として記録し、時間を区切って打ち切る。必要なら、その観点だけを独立した新しいレビュアーへ再委譲し、再委譲先の結果をレビュー統括へ渡して最終判定させる。
+- 未回収の必須観点を「承認」と読み替えない。再委譲もできない場合は、対象 change を変更要求または判断待ちとして扱い、archive へ進めない。
 
 # 全 change 完了後の E2E と結合レビュー
 
@@ -77,5 +114,11 @@ E2E 基盤がない場合は、E2E 基盤そのものを暗黙に新設せず、
 - `30-implement-e2e` skill を E2E 実装専属 SubAgent として invoke する。標準の `e2e/cases/*_cases.md` ではなく **`docs/e2e_case.md` を正とする**ことを起動プロンプトで明示し、未実装ケースのテストファイルを追加し、既存ケースも必要に応じて改善させる。
 - 全 E2E ケースのヘッドレス実行は **`40-run-and-report-e2e` skill を直接 invoke**する（実行と報告のみ）。E2E ハートビートを遵守する。
 - 失敗を「E2E テストの不備」「プロダクト実装の不備」「環境・データ準備の不備」に分類し、それぞれ E2E 実装 SubAgent、該当領域の実装 SubAgent、環境を担当できる SubAgent に修正させる。
-- 修正後は `docs/e2e_case.md` を正として、**E2E テストの作成・改善 → 全件実行 → 失敗分類 → テストまたは実装の修正**を再帰的に繰り返す。未実装ケースがなく、全ケースがグリーンになるまで終了しない。
-- 35-architect-* 系のスキルを適宜用いてレビューをする。レビュー修正でプロダクト実装または E2E に変更が入った場合は Phase 4 へ戻り、全件グリーンを再確認する。
+- 修正後は `docs/e2e_case.md` を正として、未実装ケースがなく全ケースがグリーンになるまで、失敗した本番契約に必要な範囲でテストまたは実装を直し、全件を再実行する。
+- 結合レビューは、高リスク変更、複数 change の境界、または E2E が示した不整合がある場合に行う。レビュー修正でプロダクト実装または E2E に変更が入った場合は、影響するケースに加えて全 E2E を再確認する。
+
+## 進捗更新と最終報告
+
+最初のツール呼び出し前に、これから確認する範囲を一文で伝える。作業中の更新は、依存関係の発見、失敗の分類、方針変更など、利用者の判断に影響する出来事があったときだけ短く行う。
+
+最終報告は結果から始め、実装・archive 済みの change、実行した検証、残課題だけを簡潔に記す。ケース文書や報告書は、必要な根拠を残しつつ、定型的な要約や重複した節で水増ししない。
