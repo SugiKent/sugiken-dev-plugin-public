@@ -8,7 +8,6 @@ metadata:
   version: "1.0"
   generatedBy: "1.5.0"
 ---
-
 新しい change を提案し、選択された OpenSpec スキーマが要求する成果物を生成する。
 
 成果物の種類・順序・完了条件はスキーマから取得する。`proposal.md`、`design.md`、`tasks.md` を固定で仮定しない。
@@ -25,37 +24,34 @@ metadata:
 
 1. **明確な入力がなければ、何を作りたいか尋ねる**
 
-   **AskUserQuestion ツール**（自由記述、選択肢なし）で次のように尋ねる:
-   > 「どの change に取り組みたいですか？作りたいもの・直したいものを説明してください。」
+  **AskUserQuestion ツール**（自由記述、選択肢なし）で次のように尋ねる:
+  > 「どの change に取り組みたいですか？作りたいもの・直したいものを説明してください。」
 
    その説明から kebab-case の名前を導く（例: 「add user authentication」→ `add-user-auth`）。
 
    **重要**: ユーザーが何を作りたいかを理解せずに先へ進んではならない。
-
 2. **change ディレクトリを作成する**
-   ```bash
+  ```bash
    openspec new change "<name>"
-   ```
+  ```
+
    これは CLI が解決する planning home に、`.openspec.yaml` 付きの雛形 change を作成する。
-
 3. **成果物のビルド順序を取得する**
-   ```bash
+  ```bash
    openspec status --change "<name>" --json
-   ```
-   JSON をパースして次を得る:
-   - `applyRequires`: 実装前に必要な成果物 ID の配列（例: `["tasks"]`）
-   - `artifacts`: すべての成果物とその状態・依存関係のリスト
-   - `planningHome`、`changeRoot`、`artifactPaths`、`actionContext`: パスとスコープのコンテキスト。リポジトリローカルのパスを仮定せず、これらを使う。
+  ```
 
+   JSON をパースして次を得る:
+  - `applyRequires`: 実装前に必要な成果物 ID の配列（例: `["tasks"]`）
+  - `artifacts`: すべての成果物とその状態・依存関係のリスト
+  - `planningHome`、`changeRoot`、`artifactPaths`、`actionContext`: パスとスコープのコンテキスト。リポジトリローカルのパスを仮定せず、これらを使う。
 4. **apply 可能になるまで成果物を順に作成する**
 
-   依存順に成果物をループする（未解決の依存を持たない成果物から先に）:
+  依存順に成果物をループする（未解決の依存を持たない成果物から先に）:
 
-   a. **`ready`（依存が満たされた）成果物ごとに**:
+   a. `**ready`（依存が満たされた）成果物ごとに**:
       - 指示を取得する:
-        ```bash
-        openspec instructions <artifact-id> --change "<name>" --json
-        ```
+        `bash       openspec instructions <artifact-id> --change "<name>" --json`       
       - 指示の JSON には次が含まれる:
         - `context`: プロジェクトの背景（あなたへの制約 - 出力に含めない）
         - `rules`: 成果物固有のルール（あなたへの制約 - 出力に含めない）
@@ -68,7 +64,7 @@ metadata:
       - `context` と `rules` は制約として適用する - ただしファイルにコピーしない
       - 短い進捗を表示する: 「Created <artifact-id>」
 
-   b. **`applyRequires` の全成果物が完了するまで続ける**
+   b. `**applyRequires` の全成果物が完了するまで続ける**
       - 各成果物を作成した後、`openspec status --change "<name>" --json` を再実行する
       - `applyRequires` の各成果物 ID が artifacts 配列で `status: "done"` になっているか確認する
       - `applyRequires` の全成果物が done になったら止める
@@ -76,15 +72,15 @@ metadata:
    c. **成果物にユーザー入力が必要な場合**（コンテキストが不明瞭）:
       - **AskUserQuestion ツール**で明確にする
       - その後、作成を続ける
-
 5. **最終状態を表示する**
-   ```bash
+  ```bash
    openspec status --change "<name>"
-   ```
+  ```
 
 **出力**
 
 全成果物を完成させた後、次を要約する:
+
 - change 名と場所
 - 作成した成果物のリストと簡単な説明
 - 準備状況: 「全成果物を作成しました！実装の準備ができています。」
@@ -101,11 +97,13 @@ metadata:
   - これらはあなたが書く内容を導くが、出力に現れてはならない
 
 **ガードレール**
+
 - 実装に必要な全成果物を作成する（スキーマの `apply.requires` が定義する通り）
 - 新しい成果物を作る前に、必ず依存する成果物を読む
 - コンテキストが決定的に不明瞭なら、ユーザーに尋ねる
 - その名前の change が既に存在するなら、継続するか新規作成するかをユーザーに尋ねる
 - 各成果物ファイルを書いた後、次へ進む前にファイルの存在を確認する
+- [tasks.md](http://tasks.md) のタスク量は30を最大とし、それを超える場合は change の分割を検討する
 
 ---
 
@@ -140,7 +138,6 @@ proposal を書き上げる過程で、少しでも曖昧さ・解釈の余地�
 - 「たぶんこうだろう」「一般的にはこう」で勝手に確定させない。仕様・命名・データ構造・境界条件・エラーハンドリング・他 spec との関係など、判断が分岐し得るポイントはすべて `AskUserQuestion` で確認する。
 - 一度の質問で済まないことが多いため、ユーザーの回答を踏まえて再度 proposal をレビューし、新たに浮上した不明点があれば追加で質問する、というループを続ける。
 - 「もう質問することがない」と判断できる状態になるまで、proposal を確定させない（草案として残すのは可、確定は禁止）。
-
 
 # レビュー
 
