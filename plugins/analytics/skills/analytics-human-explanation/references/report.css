@@ -1,0 +1,150 @@
+/* 分析レポートを HTML で出すときの共通スタイル。
+   出典: https://github.com/Ted0321/kotetsu-work-ai-skills/tree/main/skills/html-report-design
+   使い方: <style> にそのまま貼る。変更してよいのは --accent の 1 色だけ。
+   新しい色・枠・影・角丸を足さない（analytics-human-explanation の禁止事項）。 */
+
+:root{
+  --ink:#1a1a1a;         /* 本文 */
+  --ink-2:#555555;       /* 補足 */
+  --ink-3:#8e8e8e;       /* キャプション・出所 */
+  --accent:#173f66;      /* アクセント（濃紺）。クライアントカラーがあれば1色だけ差し替え */
+  --accent-tint:#eef3f8; /* アクセント淡色。合計行など最小限に */
+  --hairline:#d9d9d9;    /* 罫線 */
+  --fill-gray:#e7e9ec;   /* 図解の脇役の面（矢羽根・ロードマップのバー） */
+  --paper:#ffffff;
+}
+html{color-scheme:light}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic",Meiryo,sans-serif;
+  font-size:15px;line-height:1.9;
+  border-top:6px solid var(--accent);
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:760px;margin:0 auto;padding:56px clamp(24px,6vw,48px) 96px}
+
+/* 表紙ブロック */
+.doc-header{padding-bottom:28px;border-bottom:1px solid var(--ink)}
+.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase;margin:0 0 20px}
+h1{font-size:27px;line-height:1.5;letter-spacing:.02em;margin:0 0 12px;font-feature-settings:"palt" 1}
+.lead{font-size:14px;color:var(--ink-2);margin:0 0 24px;max-width:38em}
+.doc-meta{font-size:12px;color:var(--ink-3);display:flex;gap:24px;flex-wrap:wrap}
+
+/* セクション */
+.page>section{border-top:1px solid var(--hairline);padding-top:44px;margin-top:64px}
+.page>section:first-of-type{border-top:0;padding-top:0;margin-top:56px}
+h2{font-size:19px;letter-spacing:.03em;margin:0;font-feature-settings:"palt" 1}
+h2 .no{color:var(--accent);margin-right:14px;font-variant-numeric:tabular-nums}
+.msg{font-size:16px;font-weight:600;line-height:1.8;margin:18px 0 24px;max-width:36em}
+h3{font-size:15px;margin:36px 0 8px}
+p{margin:0 0 16px;max-width:42em}
+
+/* リスト */
+ul,ol{margin:0 0 16px;padding-left:1.4em;max-width:41em}
+li{margin-bottom:6px}
+ul{list-style:none;padding-left:1.2em}
+ul li::before{content:"–";float:left;margin-left:-1.2em;color:var(--ink-3)}
+
+/* サマリー（結論の番号付き列挙） */
+.summary{list-style:none;margin:24px 0 0;padding:0;counter-reset:s;max-width:44em}
+.summary li{counter-increment:s;position:relative;padding-left:2.4em;margin-bottom:14px}
+.summary li::before{
+  content:counter(s,decimal-leading-zero);position:absolute;left:0;top:.4em;
+  font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;
+}
+
+/* KPI（数字は箱に入れず、余白と縦罫で並べる） */
+.kpis{display:flex;flex-wrap:wrap;row-gap:24px;margin:32px 0 8px}
+.kpi{padding:2px 32px}
+.kpi:first-child{padding-left:0}
+.kpi+.kpi{border-left:1px solid var(--hairline)}
+.kpi .v{font-size:30px;font-weight:700;color:var(--accent);line-height:1.3;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.kpi .v small{font-size:14px;font-weight:600;margin-left:2px}
+.kpi .l{font-size:11.5px;color:var(--ink-3);letter-spacing:.06em;margin-top:6px}
+
+/* 表（縦線なし・横の細罫のみ。数字は右揃え） */
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:28px 0 8px;font-size:13px;line-height:1.6}
+caption{text-align:left;font-size:12.5px;font-weight:600;margin-bottom:10px}
+th{font-size:12px;font-weight:600;text-align:left;padding:10px 12px;
+  border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);vertical-align:bottom}
+td{padding:10px 12px;border-bottom:1px solid var(--hairline);vertical-align:top}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.total td{border-top:1px solid var(--ink);border-bottom:2px solid var(--ink);
+  font-weight:600;background:var(--accent-tint)}
+
+/* 図表・出所・注記 */
+figure{margin:32px 0 8px}
+figcaption{font-size:12.5px;font-weight:600;margin-bottom:14px}
+figure svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit}
+.fig-scroll{overflow-x:auto}
+.src{font-size:11.5px;color:var(--ink-3);margin:6px 0 0}
+.note{font-size:12.5px;color:var(--ink-2);border-left:2px solid var(--hairline);
+  padding:2px 0 2px 14px;margin:24px 0 16px;max-width:40em}
+
+/* 矢羽根（プロセス・バリューチェーン。主役フェーズだけ濃紺） */
+.chevrons{display:flex;margin:28px 0 8px;min-width:520px}
+.chev{flex:1;padding:9px 10px 9px 22px;font-size:12px;font-weight:600;line-height:1.5;
+  text-align:center;background:var(--fill-gray);margin-left:4px;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%)}
+.chev:first-child{margin-left:0;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%)}
+.chev.on{background:var(--accent);color:#fff}
+.chev small{display:block;font-size:10.5px;font-weight:500;opacity:.75}
+
+/* ロードマップ（列=時間、行=ワークストリーム。縦のグリッド線は引かない） */
+.roadmap{min-width:560px;margin:28px 0 8px}
+.rm-row{display:grid;grid-template-columns:120px repeat(6,1fr);align-items:center}
+.rm-row.rm-head{border-bottom:1px solid var(--ink)}
+.rm-h{font-size:11px;font-weight:600;color:var(--ink-3);text-align:center;
+  padding:0 0 8px;letter-spacing:.04em}
+.rm-row:not(.rm-head){border-bottom:1px solid var(--hairline);padding:12px 0}
+.rm-lane{font-size:12px;font-weight:600;padding-right:12px;line-height:1.5}
+.rm-bar{font-size:11px;font-weight:600;line-height:1.4;padding:4px 10px;
+  background:var(--fill-gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm-bar.on{background:var(--accent);color:#fff}
+.rm-ms{font-size:11.5px;font-weight:700;color:var(--accent);white-space:nowrap}
+
+/* フレームワーク表（左=濃色ラベル。中身は枠で囲まず、余白で整列させる） */
+.matrix{display:grid;grid-template-columns:var(--mx-label,140px) repeat(var(--mx-cols,2),1fr);
+  gap:18px 20px;margin:28px 0 8px;min-width:560px}
+.mx-h{font-size:11.5px;font-weight:600;color:var(--ink-2);text-align:center;
+  align-self:end;padding-bottom:8px;border-bottom:1px solid var(--ink)}
+.mx-label{background:var(--accent);color:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;gap:2px;
+  font-size:12px;font-weight:700;line-height:1.5;padding:12px 10px}
+.mx-label small{font-size:10px;font-weight:600;opacity:.7;letter-spacing:.08em}
+.mx-label.alt{background:var(--fill-gray);color:var(--ink)}
+.mx-cell{font-size:12px;line-height:1.75}
+.mx-cell ul{margin:0}
+.mx-cell li{margin-bottom:5px}
+/* ステージ型の列見出し（矢羽根ヘッダー。目標ステージだけ濃紺） */
+.mx-h.stage{border-bottom:0;background:var(--fill-gray);color:var(--ink);
+  padding:7px 8px;line-height:1.4;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%)}
+.mx-h.stage.first{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%)}
+.mx-h.stage.on{background:var(--accent);color:#fff}
+.mx-h.stage small{display:block;font-size:9.5px;font-weight:600;opacity:.7;letter-spacing:.06em}
+
+/* 強調（色の強調はアクセント1色・重要な数字だけ） */
+b,strong{font-weight:700}
+.em{color:var(--accent);font-weight:700}
+a{color:inherit;text-decoration:underline;text-decoration-color:var(--hairline);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--accent)}
+
+/* フッター */
+.doc-footer{margin-top:88px;padding-top:20px;border-top:1px solid var(--hairline);
+  font-size:11.5px;color:var(--ink-3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* 印刷（A4で配れる） */
+@media print{
+  @page{size:A4;margin:16mm}
+  body{border-top-width:4px}
+  .page{max-width:none;padding:0}
+  .page>section{margin-top:48px;padding-top:32px}
+  table,figure,.kpis,.chevrons,.roadmap,.matrix{break-inside:avoid}
+  a{text-decoration:none}
+}
