@@ -72,7 +72,7 @@
     {
       "name": "basic",
       "source": "./plugins/basic",
-      "description": "徹底質問 (grill-me) / 表現思考 / retro / スケジュール抑制の汎用スキル",
+      "description": "徹底質問 (grill-me) / 15歳向け図解説明 (eli5) / 表現思考 / retro / スケジュール抑制の汎用スキル",
       "category": "utility"
     },
     {
