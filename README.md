@@ -53,3 +53,7 @@ description による自動呼び出しは従来どおり機能する。
 
 - skill の数字接頭辞は MVP 開発のフェーズ順を表す (00 準備 → 01 構想 → … → 110 全実装)
 - skill を追加するときは、どの plugin (カテゴリ) に属するかを決めて `plugins/<name>/skills/` に置く
+
+## Third-party notices
+
+`openspec` plugin には、OpenSpec 由来の翻訳・改変済み instruction files が含まれる。対象ファイル、上流リポジトリ、ライセンスは [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照。
