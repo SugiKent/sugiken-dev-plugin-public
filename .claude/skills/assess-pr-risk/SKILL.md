@@ -1,88 +1,81 @@
 ---
 name: assess-pr-risk
-description: 作成された PR を変更量・複雑度・動作確認推奨度で評価し、人間レビューの要否を PR にコメントする。人間レビューが不要で安全ゲートも通る場合は merge する。「PR のリスク評価」「この PR は人間レビューが必要か判断」「PR を評価して merge」「PR リスク」等の依頼で使用する。PR 番号や PR URL が対象として渡された場合も使用する。
+description: この Claude Code plugin marketplace の PR を、変更量・配布物への影響・検証の十分さで評価し、人間レビューの要否を PR にコメントする。人間レビューが不要で安全ゲートも通る場合は merge する。「PR のリスク評価」「この PR は人間レビューが必要か判断」「PR を評価して merge」「PR リスク」等の依頼で使用する。アプリケーションコードがない、またはドキュメント中心の PR でも、plugin の配布・発動・メタデータ整合性を評価する。
 ---
 
 # PR リスク評価
 
-対象 PR のリスクを3軸で評価し、結果を PR にコメントする。人間レビューが不要で、merge の安全条件も満たす場合だけ merge する。評価は PR の実際の差分、検証結果、リポジトリの保護設定を根拠にし、変更行数だけで安全と判断しない。
+対象 PR の差分を、次の3軸で評価し、結果を PR に1回コメントする。このリポジトリの主な成果物はアプリケーションではなく plugin marketplace の配布物なので、コード行数だけでなく「インストール後に意図した skill が呼び出せるか」「marketplace の索引や plugin 構成を壊さないか」を重視する。人間レビュー不要と判定しても、安全ゲートを通るまで merge しない。
 
 ## 対象を確定する
 
-PR 番号または URL から repository と PR を一意に特定する。番号だけが渡された場合は現在の repository を使う。対象が一意でない場合は merge せず確認を求める。
+PR 番号または URL から repository と PR を一意に特定する。番号だけなら現在の repository を使う。一意に特定できない場合は merge せず確認を求める。
 
-評価前に最新の次の情報を取得する。
+評価前に最新の次を取得する。
 
-- title、body、author、draft 状態、base / head branch
-- additions、deletions、changed files
-- ファイル一覧と diff
+- title、body、author、draft 状態、base / head branch、head SHA
+- additions、deletions、changed files、ファイル一覧と diff
 - commits、checks、required status checks
-- review 状態と未解決 review threads
-- mergeability と branch protection
+- review 状態、未解決 review threads、mergeability、branch protection
 
-生成物、lockfile、snapshot の大量更新は変更量に含める。ただし複雑度の根拠は実質的なソース差分を中心に判断し、数字だけで安全とみなさない。差分が大きくても、単純な機械生成変更であることを明確に確認できる場合は、その事実を根拠に記録する。
+差分の意図が不明な生成物、lockfile、snapshot、大量の機械的変更は、内容と生成元を確認するまで安全とみなさない。
 
-## 先に確認する一般的な注意領域
+## 先に確認する注意領域
 
-次のいずれかを含む PR は、3軸の評価を行ったうえで、人間レビューが必要になる可能性が高い。特例で自動的に最低リスクとは扱わない。
+次の変更を含む PR は、3軸の評価結果にかかわらず人間レビューが必要になる可能性が高い。
 
-- 認証、認可、secret、個人情報、課金、外部公開設定に関する変更
-- DB schema、migration、data migration、削除や変換を伴う運用スクリプト
-- public API、イベント形式、永続化形式、後方互換性に影響する変更
-- CI/CD、production 設定、infra、依存パッケージ、lockfile の変更
-- 自動生成ファイルや snapshot が大量に変わり、元となる変更を差分から確認できないもの
-- 重要な変更に対する test、typecheck、lint、build、実環境確認が不足しているもの
+- `.claude-plugin/marketplace.json` の plugin 登録、source、category、description
+- plugin の追加・削除、skill / agent / hooks の発動条件や権限に関わる変更
+- `SKILL.md` の指示が、secret の取り扱い、外部への投稿、破壊的操作、認証・権限変更を促すものになる変更
+- hooks、スクリプト、実行可能ファイル、依存関係、CI/CD、外部公開設定の変更
+- README、NOTICE、第三者由来の instruction やライセンス表記の変更
+- 参照リンク切れ、重複した skill 名、frontmatter / JSON の破損、plugin パス不整合の疑い
 
 ## 3軸の評価
 
-各軸は PR 全体について最も高い該当リスクを採用する。
-
 ### 変更量
 
-`additions + deletions` の合計を使う。
+`additions + deletions` の合計を記録する。
 
 - 500行以下: 最低
 - 501〜1500行: 中程度
 - 1501行以上: 高い
 
-フロントエンドだけの変更であることをファイル一覧から確認できる場合は、2500行以下を最低とする。frontend と backend、DB、infra、認証、CI、migration 等が混在する場合はこの例外を使わない。2501行以上は高い。
+ドキュメントや `SKILL.md` 中心の小規模な差分は、行数が少なくても他の2軸を別に評価する。大量の生成物・参照資料・テンプレート更新は、機械的に見えても変更量に含める。
 
-ドキュメントのみ、または機械生成物のみの差分であっても、変更量の数値は記録する。リスクを下げる場合は、内容が機械的で意味のあるロジック変更を含まないことを複雑度の根拠にする。
+### 配布物への影響と複雑度
 
-### 複雑度
+- README、NOTICE、説明文、単純な skill 文言の修正で、plugin 構成を変えない: 最低
+- 1つの skill / agent の指示修正で、参照リンク・frontmatter・責務が確認できる: 最低〜中程度
+- 複数 plugin、marketplace 索引、hooks、実行スクリプト、依存関係をまたぐ変更: 中程度
+- plugin の追加・削除、skill の発動条件や権限を大きく変える変更: 高い
+- secret、認証・認可、外部投稿、破壊的操作、production 設定を促す変更: 高い
 
-- ドキュメント、コメント、単純な style、またはロジックを変えない小さな表示変更だけ: 最低
-- ロジックが関連 test で十分にカバーされ、diff と test の対応を確認できる: 最低
-- 簡単なロジックや domain の修正: 中程度
-- DB schema や migration の変更: 中程度
-- data migration、不可逆な処理、広い権限変更: 高い
-- 後方互換性を壊す API / schema / behavior: 高い
-- 認証・認可、secret、課金、個人情報、production infra の変更: 高い
+「SKILL.md だから安全」とは扱わない。自然言語の指示が Claude の実行方針を変えるため、外部状態の変更範囲、曖昧な発動条件、既存スキルとの重複、ロールバック可能性を diff から確認する。
 
-「test ファイルがある」だけでは最低にしない。変更した分岐、境界条件、失敗経路を test が実際に検証しているか diff で確認する。
+### 検証推奨度
 
-### 動作確認推奨度
+- JSON 構文、frontmatter、参照先、plugin パス、skill 名の重複、差分内容を確認でき、必要な marketplace 検証が成功している: 最低
+- plugin のインストール、skill の読み込み・発動、hooks、スクリプト、外部サービスなど実環境依存の確認が必要: 高い
+- 検証コマンドが失敗・未完了、または変更した発動条件や配布経路を確認できない: 高い
 
-- 自動 test、typecheck、lint、build 等で変更の主要な振る舞いを担保でき、required checks が成功している: 最低
-- 外部サービス、実機、実ブラウザ、production 相当環境での確認が重要、または主要動作を自動検証できていない: 高い
-
-外部サービスとの連携を含む場合は、mock test があっても高いとする。UI、認証、決済、通知、データ移行など、実環境依存の強い変更は、ローカルの test が成功していても追加確認が必要か検討する。
+アプリケーションの test、typecheck、lint、build がこのリポジトリに存在しない場合、それらがないことだけで減点しない。代わりに marketplace と plugin の静的整合性、および必要に応じたインストール・読み込み確認を根拠にする。
 
 ## 人間レビューの要否
 
-次のいずれかに該当すれば人間レビューが必要。
+次のいずれかに該当すれば、人間レビューが必要と判定する。
 
 - いずれかの軸が「高い」
-- 認証・認可、secret、課金、個人情報、production infra、data migration を含む
-- required checks が未完了、失敗、取消しのいずれかである
-- 主要な変更に対する test や動作確認の根拠が不足している
-- 差分の意図、影響範囲、ロールバック方法を確認できない
+- hooks、実行スクリプト、依存関係、secret、認証・権限、外部投稿、破壊的操作に関係する
+- marketplace 登録、plugin の追加・削除、skill の発動条件に影響するが、実環境での確認根拠が不足している
+- required checks が未完了、失敗、取消しのいずれか
+- 差分の意図、影響範囲、参照先、ロールバック方法を確認できない
 
-それ以外で、全軸が「最低」または「中程度」なら人間レビューは不要と判定する。ただし、判定の根拠を具体的にコメントする。
+それ以外で、全軸が最低または中程度なら人間レビュー不要と判定する。ただし、具体的なファイルと検証結果を根拠にコメントする。
 
-## コメントする
+## コメント形式
 
-評価結果を、必ず次の形式で対象 PR に1回コメントする。同じ commit SHA に対する同内容の評価コメントが既にあれば重複投稿せず、既存コメントを更新できる場合は更新する。
+同じ head SHA に同内容の評価コメントが既にあれば重複投稿しない。コメントは必ず次の形式にする。
 
 ```markdown
 ## PR リスク評価
@@ -92,33 +85,29 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 | 軸 | リスク | 根拠 |
 | --- | --- | --- |
 | 変更量 | <最低/中程度/高い> | <+XXX / -YYY 行、合計 ZZZ 行> |
-| 複雑度 | <最低/中程度/高い> | <判断根拠> |
-| 動作確認推奨度 | <最低/高い> | <判断根拠> |
+| 配布物への影響・複雑度 | <最低/中程度/高い> | <marketplace / plugin / skill / hooks への影響> |
+| 検証推奨度 | <最低/高い> | <静的検証・読み込み確認・未確認事項> |
 
 **判定: 人間によるレビューが<必要 / 不要>**
 
-<不要なら「安全ゲート通過後に自動 merge します」/ 必要なら理由 / merge を見送った場合は安全ゲートの理由>
+<不要なら「安全ゲート通過後に自動 merge します」/ 必要なら具体的な理由 / merge を見送った場合はゲートの理由>
 ```
 
-コメント時点では merge 結果がまだ確定していない。人間レビュー不要と判定した場合は、まず「安全ゲート通過後に自動 merge します」としてコメントし、merge 後に末尾を「自動 merge しました」へ更新する。コメント更新ができない環境では、評価コメントを投稿してから merge し、merge 成功を短い追記コメントで報告する。
-
-評価後に head SHA が変わった場合は、古い評価を新しい commit に適用しない。再評価して新しいコメントを作成または更新する。
+人間レビュー不要なら、まず「安全ゲート通過後に自動 merge します」とコメントする。merge 後にコメントを更新できない環境では、merge 成功を短い追記コメントで報告する。評価時から head SHA が変わったら、古い評価を流用せず再評価する。
 
 ## 自動 merge の安全ゲート
 
-人間レビュー不要の判定だけでは merge しない。次をすべて確認する。
+次をすべて確認できた場合だけ、repository が許可する merge method で merge する。
 
 - PR が open かつ draft ではない
-- head SHA が評価時から変わっていない
+- 評価時から head SHA が変わっていない
 - mergeable で conflict がない
 - required checks がすべて成功し、pending / failed / cancelled がない
-- branch protection が要求する approval を満たす
+- branch protection が要求する approval を満たしている
 - changes requested と未解決 review thread がない
 - repository が auto-merge または通常 merge を許可している
 
-すべて満たす場合だけ repository の許可する merge method で merge する。満たさない場合は merge せず、評価コメントに具体的なゲート理由を記載する。権限不足や一時的エラーを branch protection の迂回で解決しない。
-
-merge 直前に PR の状態と head SHA を再取得する。再取得結果が評価時と異なる場合は merge を中止し、必要なら再評価する。
+merge 直前に PR の状態と head SHA を再取得する。変化があれば merge を中止し、必要なら再評価する。権限不足や一時的なエラーを、branch protection の迂回で解決しない。
 
 ## 完了報告
 
