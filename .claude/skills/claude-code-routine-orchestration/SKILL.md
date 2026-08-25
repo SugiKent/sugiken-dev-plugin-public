@@ -1,126 +1,110 @@
 ---
 name: claude-code-routine-orchestration
-description: Claude Code Web の Routines から、GitHub Issues・PR・OpenSpec change の状態を確認し、propose / apply / archive / フォールバックのうち今進めるべき作業を1つだけ実行する。定期実行で開発を継続するときや、「Routine で開発を進めて」「次にできる開発を1つ進めて」等の依頼で使用する。
+description: Claude Code Web の Routine から、GitHub Issues・PR・作業ツリーの状態を確認し、今進めるべき開発作業を1つだけ実行する。Issue を選んで実装し PR を作成する、既存 PR の修正を続ける、または安全な保守作業を行うときに使用する。「Routine で開発を進めて」「次にできる開発を1つ進めて」などの依頼でも必ず使用する。
 ---
 
 # Claude Code Routine Orchestration
 
-Claude Code Web の Routine 1回につき、状況を収集して、開発を前へ進める作業を1つだけ完了させる。
+Claude Code Web の Routine 1回につき、リポジトリの状態を確認し、開発を前へ進める作業を1つだけ完了させる。作業は GitHub Issue と通常の Git ブランチ・PR を正本として管理する。
 
 ## 不変条件
 
-- 1セッションで実行するのは `propose`、`apply`、`archive`、フォールバックのいずれか1つだけとする。PR の merge を検知しても、同じセッションで次のフェーズへ進まない。
-- 実装は、merge 済みの OpenSpec change proposal が存在するときだけ開始する。
-- `in-progress` ラベル付き、または他者にアサイン済みの issue は作業対象にしない。
-- Open な PR、active change、対象ファイルが重なる作業を確認し、重複や複雑な依存がある仕事を新たに始めない。
-- 基本リズムで実行可能な仕事がなければ、何もせず終了せず、フォールバックを1つだけ実行する。
-- 外部状態を変更する直前に、対象 repository、issue、PR、branch を再確認する。
+- 1回の Routine で完了させるのは、実装、既存 PR の修正、保守作業、または後処理のいずれか1つだけにする。
+- 1つの作業を終えたら、その結果を PR、Issue、または作業報告に記録してセッションを終了する。次の作業を続けない。
+- `in-progress` ラベル付き、または他者にアサイン済みの Issue は対象にしない。
+- Open PR、既存 branch、作業ツリーの変更、対象ファイルの重複を確認し、同じ目的の作業を新たに始めない。
+- Issue の要件、受け入れ条件、関連コメントを読まずに実装を始めない。
+- 外部状態を変更する直前に、対象 repository、Issue、PR、branch の状態を再取得する。
+- 認証不足、要件不足、競合、破壊的変更の懸念がある場合は、推測で進めず、安全な別候補かフォールバックを選ぶ。
 
 ## 状況収集
 
-無駄な全件調査を避けるため、次の順で確認する。
+全件を無制限に調べず、次の順で必要な情報を集める。GitHub の操作には `gh` CLI、ローカルの確認には `git` を使う。
 
-1. repository と現在の branch、作業ツリー、認証状態を確認する。
-2. Open な PR を一覧し、propose / apply / archive の進行中作業と重複候補を把握する。
-3. `openspec list --json` と必要な `openspec show <change> --json` を使い、active change、task 完了状態、change 間の依存・競合を確認する。
-4. GitHub Issues の `todo`、`in-progress`、assignee を確認する。active change と関連する closed issue も、ラベル状態の確認対象に含める。
-5. 次の優先順位で、このセッションの作業を1つ選ぶ。
+1. repository、現在の branch、作業ツリー、認証状態を確認する。
+2. Open PR を一覧し、作業中の Issue、担当者、変更ファイル、CI 状態、レビュー待ち状態を把握する。
+3. GitHub Issues の `todo`、`in-progress`、assignee、優先度、更新日時を確認する。関連する closed Issue と merged PR の後処理が残っていないかも見る。
+4. 必要な範囲だけ Issue 本文、受け入れ条件、コメント、関連 PR の差分を読む。
+5. 次の優先順位で、この Routine の作業を1つ選ぶ。
 
-   1. 全 task が完了し、安全に archive できる change
-   2. proposal PR が merge 済みで、未完了 task がある apply 可能な change
-   3. change や重複 PR がまだない `todo` issue の propose
-   4. フォールバック
+   1. 自分が担当する Open PR のレビュー指摘、CI 失敗、マージコンフリクトを解消する
+   2. 実装が完了している自分の PR の後処理を行う
+   3. 他の作業と重複せず、要件が明確な `todo` Issue を1件実装して PR を作る
+   4. Issue に紐づかない、安全な保守作業を1件だけ行う
 
-関連 issue が `in-progress`、または他者にアサイン済みなら、その change の未完了 task が見えても選ばない。依存・競合が複雑で安全な順序を確定できない場合も新規 change を増やさず、別の候補へ進む。
-
-PR が merge または未mergeのまま close されたことの後処理だけを行うセッションでは、issue 状態を下記ルールに合わせたら終了し、次フェーズを開始しない。
+既存 PR の対応だけで終わる場合は、同じ Routine で別 Issue の実装を始めない。複数の候補が同程度なら、優先度、依存関係、変更範囲の小ささ、最終更新日時の順に判断する。
 
 ## Issue をロックする
 
-issue を作業対象に決めたら、branch 作成やファイル編集より前に次を行う。
+Issue を実装対象に決めたら、branch 作成やファイル編集より前に次を行う。
 
-1. 直前の状態を再取得し、`in-progress` でなく、他者にアサインされていないことを確認する。
+1. Issue とラベルを再取得し、まだ `in-progress` でなく、他者にアサインされていないことを確認する。
 2. `in-progress` ラベルを付け、`todo` ラベルを外す。
-3. 自分自身を assignee にする。
-4. branch は `issue-<番号>-<短いkebab-case名>` とする。
+3. 自分自身を assignee にする。権限や設定上できない場合は、Issue コメントに担当開始を記録できるときだけ進める。
+4. `issue-<番号>-<短いkebab-case名>` 形式で branch を作成する。
 
-ロックに失敗した場合は競合相手の作業を奪わず、状態を再収集して別の候補を選ぶ。
+ロックに失敗した場合は作業を奪わず、状態を再収集して別の候補を選ぶ。
 
-propose / apply PR が merge された後は、関連 issue を `todo` に戻し、`in-progress` を外す。merge 検知と次フェーズの開始を同じセッションでは行わない。propose PR が未mergeのまま close された場合は、issue を `todo` に戻して `in-progress` と自分の assignment を外す。
+## 既存 PR の修正
 
-## OpenSpec フェーズ
+自分が担当する Open PR にレビュー指摘、CI 失敗、コンフリクトがある場合は、それをこの Routine の1作業として扱う。
 
-OpenSpec CLI と該当スキルを必ず併用する。CLI の status / instructions が返す schema と path を正とし、固定の成果物構成を仮定しない。
+- PR のレビューコメントと CI ログを読み、今回直す範囲を明確にする。
+- 指摘または失敗に関係する変更だけを行い、無関係なリファクタリングを混ぜない。
+- 必要な test、typecheck、lint、build を実行する。
+- 修正を同じ branch に commit・push し、PR に対応内容と検証結果をコメントする。
+- 追加修正を終えたらセッションを終了する。レビュー承認や merge の確認まで同じセッションで進めない。
 
-### Propose
+## Issue の実装
 
-- `todo` issue 本文、コメント、acceptance criteria を読む。
-- 既存 change と Open PR に同じ目的や同じコード領域の作業がないことを確認する。
-- `openspec-propose` スキルで change を作成する。既存 change と依存・競合する場合は proposal / design / tasks に明記する。複雑すぎる場合は propose しない。
-- issue 番号を含む branch を使う。
-- PR title は `#<issue>: [propose] <要約>`、本文には `Closes #<issue>` を含める。
-- change の内容を説明する Xmile Artifact を作り、その URL を PR 本文へ貼る。
+要件が明確で、重複がなく、安全に着手できる `todo` Issue がある場合に実行する。
 
-### Apply
+1. Issue の目的、受け入れ条件、制約、関連コードを確認する。
+2. Issue をロックし、専用 branch を作成する。
+3. 受け入れ条件を満たす最小限の変更を実装する。既存の設計、命名、テスト、エラー処理の慣習を尊重する。
+4. 変更に対応するテストを追加または更新する。
+5. プロジェクトが要求する test、typecheck、lint、build を実行する。
+6. 失敗を解消できない場合は、原因と未解決点を記録してから報告する。無理に PR を作らない。
+7. branch を push し、PR を1件作成する。PR title は `#<issue>: <要約>` とし、本文には目的、変更範囲、検証コマンドと結果、既知の制約、`Closes #<issue>` を含める。
+8. PR URL を確認したら、実装作業を完了としてセッションを終了する。
 
-- proposal が default branch に存在し、対応する propose PR が merge 済みであることを確認する。
-- `openspec-apply-change` スキルで tasks を実装する。change と関係のない改善を混ぜない。
-- project が要求する test、typecheck、lint、build を実行し、結果を記録する。
-- PR title は `#<issue>: [apply] <要約>` とする。
-- `.claude/skills/create-pr-description-artifact` が存在する場合はそれを使う。存在しない場合は Xmile Artifact MCP で、変更点・設計判断・検証結果を説明する Artifact を直接作成する。URL を PR 本文へ貼る。
+PR を作る直前に Open PR を再取得し、同じ Issue、目的、branch、または対象ファイルの PR がないことを確認する。重複が見つかったら新規 PR を作らない。
 
-### Archive
+## 実装完了後の後処理
 
-- OpenSpec の task がすべて完了し、apply PR が default branch に merge 済みであることを確認する。
-- `openspec-archive-change` スキルで archive し、要求される spec sync と validation を完了する。
-- PR title は `#<issue>: [archive] <要約>` とする。
-- archive PR では Artifact は不要とする。
+自分の PR が merged または closed になっており、Issue の状態更新など後処理だけが残っている場合に実行する。
 
-## PR 作成の共通ゲート
-
-PR を作る直前に Open PR を再取得し、同じ issue、change、目的の PR がないことを確認する。重複が見つかったら新規 PR を作らない。
-
-PR 本文には次を含める。
-
-- 目的と変更範囲
-- OpenSpec change 名とフェーズ（該当する場合）
-- 検証コマンドと結果
-- 残課題または既知の制約
-- 必須の場合は Xmile Artifact URL
-
-PR を作成したら URL を確認し、そのフェーズを終えてセッションを終了する。
+- merged の場合は Issue の受け入れ条件と PR の結果を確認し、`in-progress` を外して完了ラベルへ更新する。
+- closed without merge の場合は、実装が取り込まれていないことを確認し、`todo` に戻して `in-progress` と自分の assignment を外す。
+- 後処理を行ったら、その Routine で別の Issue や PR に着手しない。
 
 ## フォールバック
 
-propose / apply / archive のいずれも安全に実行できない場合、以下から実行可能なものを1つだけ選ぶ。直近の同種レポートや Open Issue / PR と重複しないことを先に確認する。
+実装や既存 PR の対応を安全に開始できない場合でも、可能なら次のうち1つだけを実行する。直近の同種 PR、Issue、レポートと重複しないことを先に確認する。
 
-### 1. 大きな frontend component の振る舞い保存リファクタリング
+### 大きな frontend component の振る舞い保存リファクタリング
 
-`apps/client` が存在し、500行以上の component があるプロジェクトだけが対象。
+`apps/client` が存在し、500行以上の component がある場合だけ対象にする。
 
-- 既存の分割慣習を調べ、データ取得は custom hook、表示は子 component、純粋ロジックは関数 module に分ける。
-- hook は1ファイル1hookとし、対象周辺の配置慣習を踏襲する。
+- 既存の分割慣習に従い、データ取得を custom hook、表示を子 component、純粋ロジックを関数 module に分ける。
 - UI、挙動、公開 export、props を変えない。メモ化、機能改善、仕様変更を追加しない。
-- tracking issue を作成してロックし、issue 番号入り branch を使う。OpenSpec propose は不要。
-- 既存 test をすべて通し、apply と同じ方法で Artifact を作成して PR 本文へ貼る。
+- Issue がなければ tracking Issue を作成してロックし、Issue 番号入り branch と PR を使う。
+- 既存テストをすべて通し、PR 本文に変更範囲と検証結果を記録する。
 
-この repository のように `apps/client` を持たない場合は、この候補をスキップする。
+### セキュリティチェック
 
-### 2. セキュリティチェック
+- `docs/securities/` の過去1か月の report と既存 Issue を読み、重複しない仮説を約3つ立てる。
+- 利用可能なセキュリティレビュー用 skill があれば使用する。
+- 調査中はコードを変更せず、read-only で確認する。
+- 新規の Critical / High 問題だけ Issue を作成する。
+- 結果は重大度に関わらず `docs/securities/<YYYYMMDD-HHmm>-<title>/report.md` に記録し、tracking Issue と PR で保存する。
 
-- `docs/securities/` の過去1か月の report と既存 GitHub Issues を読み、重複しない仮説を約3つ立てる。
-- セキュリティレビュー用の利用可能な skill があれば使用する。
-- 全コードを対象に read-only で調査し、診断中はコードを変更しない。
-- Critical / High の新規問題だけ GitHub Issue を作成する。
-- 結果は重大度に関わらず `docs/securities/<YYYYMMDD-HHmm>-<title>/report.md` に記録する。
-- report を repository に残すための tracking issue を作成してロックし、issue 番号入り branch と PR を使う。診断結果と作成 issue を PR 本文に記載する。
+### デザイン改善提案
 
-### 3. デザイン改善提案
-
-- 既存画面がある場合、`ux-heuristics` 等の利用可能な UX skill でユーザビリティを分析する。
-- Xmile Artifact MCP で、現状の課題、根拠、改善案を説明するページを作る。
-- コード、OpenSpec、GitHub Issue、PR は作成しない。Artifact 作成だけで完了する。
+- 既存画面がある場合、利用可能な UX skill でユーザビリティを分析する。
+- 現状の課題、根拠、改善案を Issue または Markdown レポートにまとめる。
+- コードを変更せず、提案の記録だけでこの Routine を完了してよい。
 
 ## 終了報告
 
-最初に実行した作業を述べ、その後に対象 issue / change / PR、Artifact URL、検証結果、残ったブロッカーだけを簡潔に報告する。候補がなかったという理由だけで終了してはならない。
+最初に実行した作業を述べ、その後に対象 Issue、PR URL、変更内容、検証結果、残ったブロッカーを簡潔に報告する。作業対象がなかった場合は、確認した候補と安全に進められなかった理由、および実行したフォールバックを記録する。
