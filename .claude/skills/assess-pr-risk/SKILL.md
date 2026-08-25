@@ -5,7 +5,7 @@ description: 作成された PR を変更量・複雑度・動作確認推奨度
 
 # PR リスク評価
 
-対象 PR のリスクを3軸で評価し、結果を PR にコメントする。人間レビューが不要で、merge の安全条件も満たす場合だけ merge する。
+対象 PR のリスクを3軸で評価し、結果を PR にコメントする。人間レビューが不要で、merge の安全条件も満たす場合だけ merge する。評価は PR の実際の差分、検証結果、リポジトリの保護設定を根拠にし、変更行数だけで安全と判断しない。
 
 ## 対象を確定する
 
@@ -20,17 +20,18 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 - review 状態と未解決 review threads
 - mergeability と branch protection
 
-生成物、lockfile、snapshot の大量更新は変更量には含める。ただし複雑度の根拠は実質的なソース差分を中心に判断し、数字だけで安全とみなさない。
+生成物、lockfile、snapshot の大量更新は変更量に含める。ただし複雑度の根拠は実質的なソース差分を中心に判断し、数字だけで安全とみなさない。差分が大きくても、単純な機械生成変更であることを明確に確認できる場合は、その事実を根拠に記録する。
 
-## 特例を先に判定する
+## 先に確認する一般的な注意領域
 
-### OpenSpec change の作成 PR
+次のいずれかを含む PR は、3軸の評価を行ったうえで、人間レビューが必要になる可能性が高い。特例で自動的に最低リスクとは扱わない。
 
-`openspec/changes/<name>/` 配下に proposal、tasks、spec delta 等を新規追加する PR は、リスク軸の結果に関わらず人間レビューを必須とし、merge しない。既存 change の軽微な編集を「作成 PR」と誤判定せず、新しい change directory の追加を diff で確認する。
-
-### OpenSpec change の archive PR
-
-active change を `openspec/changes/archive/` へ移動するだけの PR は、3軸すべて「最低」とする。rename に紛れて実装コードや無関係な spec 変更が含まれる場合は特例を使わず、通常どおり評価する。
+- 認証、認可、secret、個人情報、課金、外部公開設定に関する変更
+- DB schema、migration、data migration、削除や変換を伴う運用スクリプト
+- public API、イベント形式、永続化形式、後方互換性に影響する変更
+- CI/CD、production 設定、infra、依存パッケージ、lockfile の変更
+- 自動生成ファイルや snapshot が大量に変わり、元となる変更を差分から確認できないもの
+- 重要な変更に対する test、typecheck、lint、build、実環境確認が不足しているもの
 
 ## 3軸の評価
 
@@ -46,14 +47,17 @@ active change を `openspec/changes/archive/` へ移動するだけの PR は、
 
 フロントエンドだけの変更であることをファイル一覧から確認できる場合は、2500行以下を最低とする。frontend と backend、DB、infra、認証、CI、migration 等が混在する場合はこの例外を使わない。2501行以上は高い。
 
+ドキュメントのみ、または機械生成物のみの差分であっても、変更量の数値は記録する。リスクを下げる場合は、内容が機械的で意味のあるロジック変更を含まないことを複雑度の根拠にする。
+
 ### 複雑度
 
-- 簡単な frontend の表示・style 変更だけ: 最低
+- ドキュメント、コメント、単純な style、またはロジックを変えない小さな表示変更だけ: 最低
 - ロジックが関連 test で十分にカバーされ、diff と test の対応を確認できる: 最低
 - 簡単なロジックや domain の修正: 中程度
-- DB schema や migration の変更（例: `prisma/schema.prisma`、migration）: 中程度
-- data migration: 高い
-- 後方互換性を壊す API / schema / behavior、不可逆な処理、広い権限変更: 高い
+- DB schema や migration の変更: 中程度
+- data migration、不可逆な処理、広い権限変更: 高い
+- 後方互換性を壊す API / schema / behavior: 高い
+- 認証・認可、secret、課金、個人情報、production infra の変更: 高い
 
 「test ファイルがある」だけでは最低にしない。変更した分岐、境界条件、失敗経路を test が実際に検証しているか diff で確認する。
 
@@ -62,16 +66,19 @@ active change を `openspec/changes/archive/` へ移動するだけの PR は、
 - 自動 test、typecheck、lint、build 等で変更の主要な振る舞いを担保でき、required checks が成功している: 最低
 - 外部サービス、実機、実ブラウザ、production 相当環境での確認が重要、または主要動作を自動検証できていない: 高い
 
-外部サービスとの連携を含む場合は、mock test があっても高いとする。
+外部サービスとの連携を含む場合は、mock test があっても高いとする。UI、認証、決済、通知、データ移行など、実環境依存の強い変更は、ローカルの test が成功していても追加確認が必要か検討する。
 
 ## 人間レビューの要否
 
 次のいずれかに該当すれば人間レビューが必要。
 
 - いずれかの軸が「高い」
-- OpenSpec change の作成 PR
+- 認証・認可、secret、課金、個人情報、production infra、data migration を含む
+- required checks が未完了、失敗、取消しのいずれかである
+- 主要な変更に対する test や動作確認の根拠が不足している
+- 差分の意図、影響範囲、ロールバック方法を確認できない
 
-それ以外で、全軸が「最低」または「中程度」なら人間レビューは不要と判定する。
+それ以外で、全軸が「最低」または「中程度」なら人間レビューは不要と判定する。ただし、判定の根拠を具体的にコメントする。
 
 ## コメントする
 
@@ -79,6 +86,8 @@ active change を `openspec/changes/archive/` へ移動するだけの PR は、
 
 ```markdown
 ## PR リスク評価
+
+対象 commit: `<head SHA>`
 
 | 軸 | リスク | 根拠 |
 | --- | --- | --- |
@@ -88,10 +97,12 @@ active change を `openspec/changes/archive/` へ移動するだけの PR は、
 
 **判定: 人間によるレビューが<必要 / 不要>**
 
-<不要かつ merge 済みなら「自動 merge しました」/ 必要なら理由 / merge を見送った場合は安全ゲートの理由>
+<不要なら「安全ゲート通過後に自動 merge します」/ 必要なら理由 / merge を見送った場合は安全ゲートの理由>
 ```
 
-コメント時点では、merge 結果がまだ確定していない。人間レビュー不要と判定した場合は、まず「安全ゲート通過後に自動 merge します」としてコメントし、merge 後に末尾を「自動 merge しました」へ更新する。コメント更新ができない環境では、評価コメントを投稿してから merge し、merge 成功を短い追記コメントで報告する。
+コメント時点では merge 結果がまだ確定していない。人間レビュー不要と判定した場合は、まず「安全ゲート通過後に自動 merge します」としてコメントし、merge 後に末尾を「自動 merge しました」へ更新する。コメント更新ができない環境では、評価コメントを投稿してから merge し、merge 成功を短い追記コメントで報告する。
+
+評価後に head SHA が変わった場合は、古い評価を新しい commit に適用しない。再評価して新しいコメントを作成または更新する。
 
 ## 自動 merge の安全ゲート
 
@@ -106,6 +117,8 @@ active change を `openspec/changes/archive/` へ移動するだけの PR は、
 - repository が auto-merge または通常 merge を許可している
 
 すべて満たす場合だけ repository の許可する merge method で merge する。満たさない場合は merge せず、評価コメントに具体的なゲート理由を記載する。権限不足や一時的エラーを branch protection の迂回で解決しない。
+
+merge 直前に PR の状態と head SHA を再取得する。再取得結果が評価時と異なる場合は merge を中止し、必要なら再評価する。
 
 ## 完了報告
 
