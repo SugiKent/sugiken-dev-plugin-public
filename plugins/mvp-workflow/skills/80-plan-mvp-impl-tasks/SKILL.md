@@ -1,6 +1,6 @@
 ---
 name: 80-plan-mvp-impl-tasks
-description: "個人開発プロジェクトでMVPの仕様が決まった後、プロジェクト全体を実装するための『順序』を計画するスキル。基盤→仕組み→ユーザー体験順、で並べたタスクリストを docs/MVP_IMPL_TASKS.md に記録する。「実装順序」「実装タスク」「impl tasks」「MVPの実装計画」等のリクエスト時に使用。"
+description: "個人開発プロジェクトでMVPの仕様が決まった後、プロジェクト全体を実装するための『順序』を計画するスキル。基盤→仕組み→ユーザー体験順、で並べたタスクリストを `docs/mvp/implementation-tasks.md` に記録する。「実装順序」「実装タスク」「impl tasks」「MVPの実装計画」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -33,7 +33,7 @@ MVP の仕様が固まった後、プロジェクト全体を一気に実装す�
 
 ### Step 1: コンテキスト収集
 
-- `docs/` 配下のドキュメント（特に `PROJECT.md` や MVP 定義） をすべて読む
+- `docs/mvp/`（特に `mvp.md` と `decisions.md`）を必ず読み、必要に応じて `docs/domain/` と `docs/quality/` を読む
 - ROOT の `README.md` も読む
 - 既に実装済みのファイル（`package.json` / `apps/` / `packages/` など）があれば軽くスキャンし、どこまで進んでいるかを把握する
 
@@ -51,12 +51,14 @@ MVP の仕様が固まった後、プロジェクト全体を一気に実装す�
 
 **重要**: 詳細までは書かない。各タスクは 1〜3 行程度の見出しレベルで十分。詳細実装 spec は後続の OpenSpec 系スキルで設計するため、ここで書きすぎると二重管理になる。
 
-### Step 4: `docs/MVP_IMPL_TASKS.md` への書き出し
+### Step 4: `docs/mvp/implementation-tasks.md` への書き出し
 
-以下のフォーマットで `docs/MVP_IMPL_TASKS.md` を作成（既存があれば更新）する。
+以下のフォーマットで `docs/mvp/implementation-tasks.md` を作成（既存があれば更新）する。
 
 ```markdown
 # MVP 実装タスク（順序付き）
+
+最終更新: YYYY-MM-DD-HHmm
 
 > このドキュメントは「実装の順序」を定義する。各タスクの詳細実装 spec は OpenSpec で別途設計する。
 > 上から順番に着手し、前段が完了してから次へ進むこと。
@@ -96,7 +98,7 @@ MVP の仕様が固まった後、プロジェクト全体を一気に実装す�
 
 ユーザーに以下を伝える。
 
-- `docs/MVP_IMPL_TASKS.md` を作成/更新した旨
+- `docs/mvp/implementation-tasks.md` を作成/更新した旨
 - 並べたタスクの section 構造（章タイトルのみ）
 - 次のアクション: 「1 つ目のタスクから OpenSpec で詳細 spec を作る」
 
@@ -104,5 +106,5 @@ MVP の仕様が固まった後、プロジェクト全体を一気に実装す�
 
 - **詳細を書きすぎない**: 詳細は OpenSpec の責務。ここでは順序と粒度のみ
 - **章を勝手に増やさない**: 「基盤 → 仕組み → 認証 → 体験」の 4 章構造を崩さない。認証不要なら章ごと省略
-- **既存ファイルは尊重**: すでに `docs/MVP_IMPL_TASKS.md` がある場合は上書きせず、追記/更新の差分を確認する
+- **既存ファイルは尊重**: すでに `docs/mvp/implementation-tasks.md` がある場合は上書きせず、追記/更新の差分を確認する
 - **実装はしない**: このスキルの役割は順序の計画のみ

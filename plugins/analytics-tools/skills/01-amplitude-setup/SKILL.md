@@ -15,7 +15,7 @@ Amplitude は「とりあえず入れて全部 track」すると 1 週間で破�
 
 ## 0. 大原則
 
-1. **tracking plan を先に書く** （`docs/analytics/tracking-plan.md`）
+1. **tracking plan を先に書く** （`docs/domain/analytics/tracking-plan.md`）
 2. **命名規約は最初に決めて二度と変えない**: event 名は **日本語** で `名詞_動詞過去形`（例: `画面_表示`, `CTA_クリック`, `サインアップ_失敗`）。property 名は `snake_case` 英語
 3. **必ず拾う 4 系統**:
    - **A: PV (page / screen view)** — Web も Mobile も全画面
@@ -32,7 +32,7 @@ Amplitude は「とりあえず入れて全部 track」すると 1 週間で破�
 
 ## 1. tracking plan を先に書く
 
-`docs/analytics/tracking-plan.md` を以下の構造で書き、 **実装前に user に内容を確認してもらう** 。
+`docs/domain/analytics/tracking-plan.md` を以下の構造で書き、 **実装前に user に内容を確認してもらう** 。
 
 ### 1.1 含めるセクション
 
@@ -321,7 +321,7 @@ dev で 4 系統それぞれを実機検証する:
 ## 10. 適用順序チェックリスト
 
 1. Amplitude で **dev project と prod project を別に作成** し、各 API key を取得
-2. `docs/analytics/tracking-plan.md` を §1 で書き、 **user に確認してもらう** （実装前）
+2. `docs/domain/analytics/tracking-plan.md` を §1 で書き、 **user に確認してもらう** （実装前）
 3. `.env.example` に Web / Mobile / Server の key を追加
 4. Web / Mobile / Server それぞれで SDK を install
 5. `lib/analytics.ts` を §4 / §5 / §6 の方針で作る（関数の最小セットだけ実装）

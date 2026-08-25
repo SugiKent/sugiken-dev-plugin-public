@@ -1,6 +1,6 @@
 ---
 name: 20-enumerate-e2e-cases
-description: "OpenSpec の propose 段階で、提案中の change 仕様から網羅的な E2E テストケースを列挙し `e2e/cases/{YYYY-MM-DD-HHmm}_cases.md` に書き出すスキル。仕様コンテキストが新鮮なうちに 9 観点でケースを洗い出しておくことで、後の実装フェーズが網羅性を見失わず走り切れる。「テストケース列挙」「E2E ケース洗い出し」「propose 段階のテスト設計」「網羅的ケース」等のリクエスト時に使用。"
+description: "OpenSpec の propose 段階で、提案中の change 仕様から網羅的な E2E テストケースを列挙し `docs/quality/e2e/cases/{YYYY-MM-DD-HHmm}-cases.md` に書き出すスキル。仕様コンテキストが新鮮なうちに 9 観点でケースを洗い出しておくことで、後の実装フェーズが網羅性を見失わず走り切れる。「テストケース列挙」「E2E ケース洗い出し」「propose 段階のテスト設計」「網羅的ケース」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Bash, Write
 model: opus
 context: fork
@@ -9,6 +9,8 @@ context: fork
 # E2E ケース列挙スキル（propose 段階）
 
 **目的**: OpenSpec の propose 段階で、提案中の仕様から E2E ケースを網羅的に列挙し、1 つの `cases.md` に固定する。実装はしない。ここで作ったケースファイルが後段 [[30-implement-e2e]] の「正」になる。
+
+docs を参照・更新する際は [[01-docs-management]] に従い、E2E の正本を `docs/quality/e2e/` に置く。
 
 > このスキルは `context: fork` で subagent 化して走る。会話履歴は引き継がないため、**入力（対象 change / プラットフォーム）は起動時のプロンプトから受け取る**。成果物はファイルとして残し、人間レビューは呼び出し側（メインコンテキスト）が行う。
 
@@ -23,7 +25,7 @@ context: fork
 
 **アプリケーションコード > openspec / docs**
 
-- `openspec/changes/<id>/proposal.md` / `specs/` / `tasks.md`、`docs/` を読む。
+- `openspec/changes/<id>/proposal.md` / `specs/` / `tasks.md` と、関係する `docs/domain/`、`docs/quality/`、`docs/mvp/` を読む。
 - 既存アプリコードがあれば主要画面・主要 API・認証の有無・ロール種別を把握する。
 
 ## Step 2: 9 観点で網羅する
@@ -42,7 +44,7 @@ context: fork
 | 8 | Responsive / OS 差異 | iPhone / Pixel / desktop、iOS / Android 差 |
 | 9 | State persistence | リロード、再起動、deeplink 直アクセス、認証失効 |
 
-## Step 3: `e2e/cases/{YYYY-MM-DD-HHmm}_cases.md` を作成
+## Step 3: `docs/quality/e2e/cases/{YYYY-MM-DD-HHmm}-cases.md` を作成
 
 タイムスタンプは `date "+%Y-%m-%d-%H%M"`（`Bash`）で取得。冒頭にメタ情報、本体は表形式：
 
@@ -92,7 +94,7 @@ context: fork
 
 ```
 ## E2E ケース列挙完了
-- 出力: e2e/cases/{filename}.md
+- 出力: docs/quality/e2e/cases/{filename}.md
 - 対象 change: <id> / プラットフォーム: <Web/モバイル/両方>
 - 総ケース数: N（P0: x / P1: y / P2: z）
 - 観点別: Happy N / Sad N / ... / State N

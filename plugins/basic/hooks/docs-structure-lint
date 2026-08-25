@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Reject document writes that bypass the project's fixed docs taxonomy."""
+
+import json
+import os
+import re
+import sys
+
+DOC_EXTENSIONS = (".md", ".mdx", ".txt", ".rst")
+ALLOWED_AREAS = {"domain", "playbooks", "quality", "postmortems", "agent-memory", "mvp"}
+TIMESTAMP_PREFIX = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{4}-")
+LEGACY_PREFIXES = (
+    ("docs", "MVP.md"),
+    ("docs", "MVP_IMPL_TASKS.md"),
+    ("docs", "e2e_case.md"),
+    ("docs", "howToDevelopment"),
+    ("e2e", "cases"),
+)
+
+
+def get_path(payload):
+    tool_input = payload.get("tool_input") or {}
+    return tool_input.get("file_path", "")
+
+
+def normalized_parts(path):
+    return os.path.normpath(path).replace("\\", "/").split("/")
+
+
+def requires_timestamp(following):
+    return (
+        following[0] in {"postmortems", "agent-memory"}
+        or following[:3] == ["quality", "e2e", "cases"]
+    )
+
+
+def main():
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        return 0
+
+    path = get_path(payload)
+    if not path.lower().endswith(DOC_EXTENSIONS):
+        return 0
+
+    parts = normalized_parts(path)
+    for prefix in LEGACY_PREFIXES:
+        matches = [
+            index for index in range(len(parts) - len(prefix) + 1)
+            if tuple(parts[index:index + len(prefix)]) == prefix
+        ]
+        is_legacy_path = any(
+            # docs/quality/e2e/cases/ is the supported E2E location; the
+            # root-level e2e/cases/ location remains prohibited.
+            not (prefix == ("e2e", "cases") and index > 0 and parts[index - 1] == "quality")
+            for index in matches
+        )
+        if is_legacy_path:
+            sys.stderr.write(
+                "【docs 構成違反】旧パスへの書き込みはできません: %s\\n"
+                "docs/domain, playbooks, quality, postmortems, agent-memory, mvp のいずれかへ移してください。\\n" % path
+            )
+            return 2
+
+    if "docs" not in parts:
+        return 0
+    docs_index = len(parts) - 1 - parts[::-1].index("docs")
+    following = parts[docs_index + 1:]
+    if len(following) < 2 or following[0] not in ALLOWED_AREAS:
+        sys.stderr.write(
+            "【docs 構成違反】%s は許可されていない docs パスです。\\n"
+            "文書は docs/{domain,playbooks,quality,postmortems,agent-memory,mvp}/<file> に置いてください。\\n" % path
+        )
+        return 2
+    if following[0] == "domain" and len(following) < 3:
+        sys.stderr.write(
+            "【docs 構成違反】docs/domain/ 直下に文書は置けません: %s\\n"
+            "業務領域のフォルダを作り、docs/domain/<area>/<file> に置いてください。\\n" % path
+        )
+        return 2
+    if requires_timestamp(following) and not any(TIMESTAMP_PREFIX.match(part) for part in following[1:]):
+        sys.stderr.write(
+            "【docs 鮮度違反】時系列が重要な文書には日時プレフィックスが必要です: %s\\n"
+            "YYYY-MM-DD-HHmm-<slug>.md、または YYYY-MM-DD-HHmm-<slug>/ の配下にしてください。\\n" % path
+        )
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

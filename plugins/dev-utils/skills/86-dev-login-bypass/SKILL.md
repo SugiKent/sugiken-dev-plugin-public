@@ -275,7 +275,7 @@ if (process.env.NODE_ENV !== "production") {
 
 ## Step 6: クライアント — `apps/client/src/pages/DevLoginPage.tsx`（新規）
 
-`/api/dev/login/users` を fetch して一覧表示。各行の「ログイン」は **素の `<a href>`**（full-page navigation）で `/api/dev/login/as?userId=...` へ。デザインはプロジェクトの `docs/DESIGN.MD` のトークン（`bg-surface` / `text-foreground` 等）に合わせる。
+`/api/dev/login/users` を fetch して一覧表示。各行の「ログイン」は **素の `<a href>`**（full-page navigation）で `/api/dev/login/as?userId=...` へ。デザインはプロジェクトの `docs/quality/design-system.md` のトークン（`bg-surface` / `text-foreground` 等）に合わせる。
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -419,7 +419,7 @@ const DevLoginPage = import.meta.env.DEV
 2. capture が無ければ Step 2 で `auth.ts` にヘルパー + `sendMagicLink` 分岐を追加。
 3. Step 3〜4 で Service / Plugin を新規作成。
 4. Step 5 / 7 で `app.ts`（サーバ）と `App.tsx`（クライアント）に dev 限定登録を 1 箇所ずつ追加。
-5. Step 6 で `DevLoginPage` を作成。文言・色は `docs/DESIGN.MD` に従う。
+5. Step 6 で `DevLoginPage` を作成。文言・色は `docs/quality/design-system.md` に従う。
 6. Step 8 で多層ガードと除外ロジックをテストで固定。
 7. `tsc --noEmit` を server / client それぞれで通す。
 8. dev サーバを起動し `/login/dev` を開いて、各ユーザーで実際にログインできることを手で確認する。

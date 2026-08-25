@@ -42,7 +42,7 @@ model: sonnet
    curl -fsSL "https://get.maestro.mobile.dev" | bash   # or: brew tap mobile-dev-inc/tap && brew install maestro
    maestro --version                                    # Java 17+ 必須
    ```
-2. **ディレクトリ**: `.maestro/{flows,subflows}` / `.maestro/config.yaml` / `e2e/cases/`（詳細は Mobile リファレンス §2-2）。
+2. **ディレクトリ**: `.maestro/{flows,subflows}` / `.maestro/config.yaml` / `docs/quality/e2e/cases/`（詳細は Mobile リファレンス §2-2）。E2E の設計・進捗は後者を正本とし、テスト実装そのものは `.maestro/` に置く。
 3. **アプリ側の準備（必須）**: 全インタラクティブ要素へ `testID`（命名規則 `{screen}_{action}_{target}`）を付与。E2E フラグでアニメ・splash・analytics を無効化（Mobile リファレンス §2-4）。testID の付与状況を確認し、不足を洗い出す。
 4. **Claude Code 連携（任意）**:
    ```bash

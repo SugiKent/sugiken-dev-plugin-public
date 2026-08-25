@@ -31,7 +31,7 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash
 
 - 変更した全ファイルパス。
 - 実装した画面 / コンポーネントと、カバーした状態（正常 / ローディング / 空 / エラー / 権限なし）。
-- デザイン忠実度: `docs/DESIGN.MD` / `design-sample.png` との一致状況と、やむを得ず外した箇所（理由付き）。
+- デザイン忠実度: `docs/quality/design-system.md` / `design-sample.png` との一致状況と、やむを得ず外した箇所（理由付き）。
 - バックエンドとのデータ契約（依存した API とその型）。未確定・要調整の点。
 - 型 / lint / unit の結果。未完了タスクとその理由（人間作業のみ残す）。
 

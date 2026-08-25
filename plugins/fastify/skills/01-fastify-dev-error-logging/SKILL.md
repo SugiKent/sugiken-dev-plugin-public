@@ -423,7 +423,7 @@ if (hasInvite === hasAdmission) {
 
 ## 7. ドキュメント
 
-`docs/howToDevelopment/logging.md` に以下を必ず書く:
+`docs/playbooks/dev-error-logging.md` に以下を必ず書く:
 
 1. 出力フィールドの一覧（`requestId / method / url / statusCode / requestBody / errorMessage / errorStack / validationDetails`）
 2. redact paths の一覧と「新規 sensitive field は `REDACT_PATHS` に追加（ハンドラで個別 sanitize しない）」
@@ -459,7 +459,7 @@ if (hasInvite === hasAdmission) {
 6. `lib/validate.ts` に `parseBodyOrThrow` を新規作成
 7. **既存ルートを `parseBodyOrThrow` で書き換える**（基盤だけ入れても効かないことを忘れない）
 8. テスト 8 項目（§6）を vitest で書く
-9. `docs/howToDevelopment/logging.md` を §7 で書く
+9. `docs/playbooks/dev-error-logging.md` を §7 で書く
 10. `pnpm dev` 起動 → `curl -X POST .../some-route -d '{"email": 123}'` で実環境動作確認（**ここを必ずやる**）
 
 10 番のステップを省くと、テスト 100% パスでも実環境で「ログがスカスカで何も読めない」状態に陥る。実体験。

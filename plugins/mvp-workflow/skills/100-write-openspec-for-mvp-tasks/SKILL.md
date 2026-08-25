@@ -1,13 +1,13 @@
 ---
 name: 100-write-openspec-for-mvp-tasks
-description: "IMPL_MVP_TASKS.md に基づいて openspec の specs を書く"
+description: "`docs/mvp/implementation-tasks.md` に基づいて OpenSpec の specs を書く"
 ---
 
 # やること
 
-@docs/MVP_IMPL_TASKS.md に基づいて spec を作成してください.
-docs 内の仕様や技術仕様、技術スタックの記述を完全に理解をして作業をしてください。
-spec は @docs/MVP_IMPL_TASKS.md に基づいた粒度で細かく分けてください.
+`docs/mvp/implementation-tasks.md` に基づいて spec を作成してください。
+`docs/mvp/` を必ず読み、必要に応じて `docs/domain/` と `docs/quality/` の仕様・技術仕様・技術スタックの記述を完全に理解して作業をしてください。
+spec は `docs/mvp/implementation-tasks.md` に基づいた粒度で細かく分けてください。
 
 # spec の書き方
 
@@ -25,8 +25,7 @@ spec 名には順番が分かりやすいように先頭に数字を付けてく
 ## レビュー観点
 
 - spec内の design/proposal/tasks で矛盾がいないか
-- docs 内ドキュメントとの矛盾がないか
+- `docs/mvp/` を中心とした docs 内ドキュメントとの矛盾がないか
 - すでに書かれている spec との矛盾や齟齬がないか
 - 考慮漏れがないか
 - 誰しもが迷わず実装可能なほど書かれているか
-

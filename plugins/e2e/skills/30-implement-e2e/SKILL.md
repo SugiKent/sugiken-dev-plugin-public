@@ -1,6 +1,6 @@
 ---
 name: 30-implement-e2e
-description: "洗い出し済みの `e2e/cases/*_cases.md` を正として、網羅的な E2E テストを実装するスキル。Web は Playwright、モバイルは Maestro。ケース ID 単位で実装し、その場で実行→失敗→修正の recursive ループを回し、テスト側/実装側どちらのバグかを判定して両方を適切に直す。緑になったケースは cases.md の実装列を更新する。「E2E 実装」「e2e を実装して」「Playwright テスト作成」「Maestro フロー作成」「ケースファイルで実装」等のリクエスト時に使用。"
+description: "洗い出し済みの `docs/quality/e2e/cases/*-cases.md` を正として、網羅的な E2E テストを実装するスキル。Web は Playwright、モバイルは Maestro。ケース ID 単位で実装し、その場で実行→失敗→修正の recursive ループを回し、テスト側/実装側どちらのバグかを判定して両方を適切に直す。緑になったケースは cases.md の実装列を更新する。「E2E 実装」「e2e を実装して」「Playwright テスト作成」「Maestro フロー作成」「ケースファイルで実装」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 model: opus
 context: fork
@@ -15,14 +15,14 @@ context: fork
 ## 前提
 
 - 環境は [[10-setup-e2e-env]] で構築済みであること。未構築なら先にセットアップする（または呼び出し側へ差し戻す）。
-- ケースは [[20-enumerate-e2e-cases]] が作った `e2e/cases/{timestamp}_cases.md`。指定がなければ最新のレビュー済みケースファイルを使う。
+- ケースは [[20-enumerate-e2e-cases]] が作った `docs/quality/e2e/cases/{timestamp}-cases.md`。指定がなければ最新のレビュー済みケースファイルを使う。
 
 ## ケースファイルの解決順序（厳守）
 
-集約台帳（例: `docs/e2e_case.md`）でオーケストレーションされている場合、`e2e/cases/` には並行セッションが propose 中の無関係な change のケースファイルが存在しうる。最新タイムスタンプに機械的に飛びつくと、指定と異なる change を実装し、他セッションの資産を書き換える事故になる。
+集約台帳（`docs/quality/e2e/all-changes-cases.md`）でオーケストレーションされている場合、個別ケースには並行セッションが propose 中の無関係な change のファイルが存在しうる。最新タイムスタンプに機械的に飛びつくと、指定と異なる change を実装し、他セッションの資産を書き換える事故になる。
 
-1. 呼び出し元がケースファイルのパス（または節・ケース ID 範囲）を明示した場合、それだけを正とする。`e2e/cases/` の探索は行わない。
-2. 指定が無い場合に限り、最新の `e2e/cases/{timestamp}_cases.md` を拾う。
+1. 呼び出し元がケースファイルのパス（または節・ケース ID 範囲）を明示した場合、それだけを正とする。個別ケースの探索は行わない。
+2. 指定が無い場合に限り、最新の `docs/quality/e2e/cases/{timestamp}-cases.md` を拾う。
 3. 作業開始前に「これから読むケースファイルのパス」を宣言する。指定と異なるファイルを開いてしまったと気づいた時点で作業を止め、呼び出し元へ報告する（そのまま実装を続けない）。指定ファイルが存在しない場合も、代替を探さず報告する。
 
 ## リファレンス（着手前に必読）
@@ -80,7 +80,7 @@ cases.md の 1 行 = 1 テストファイル：
 
 ```
 ## E2E 実装完了
-- 対象: [Web / モバイル / 両方] / ケースファイル: e2e/cases/{filename}.md
+- 対象: [Web / モバイル / 両方] / ケースファイル: docs/quality/e2e/cases/{filename}.md
 - 実装ケース数: N / N（P0: x / P1: y / P2: z）
 - 生成物: e2e/tests/ または .maestro/flows/ 配下 N ファイル、共通基盤: [POM/subflow/fixtures]
 - 実行結果: 全 P0/P1 緑（連続 N 回）、flaky: 0% / N%

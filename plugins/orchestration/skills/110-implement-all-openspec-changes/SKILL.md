@@ -1,6 +1,6 @@
 ---
 name: 110-implement-all-openspec-changes
-description: "単一の Claude Code セッションで、openspec/changes 配下のすべての承認済み OpenSpec change を、実装順と archive 順を分けて安全に実装・archive するオーケストレーションスキル。MODIFIED delta の衝突、実装中に発見した後続 change、共有ファイルの並行コミット、共有 DB の汚染を管理し、途中と最終の結合レビューを行う。E2E 基盤があるプロジェクトでは、開始時に全 change を読ませた専属 SubAgent が docs/e2e_case.md を先行作成し、各 change 内では E2E を作成・実行せず、全 change 完了後にケース実装・全件実行・必要な修正を行う。「openspec を全部実装」「changes を実装しきる」「MVP 全実装」「apply を回しきる」「全 change archive まで」等のリクエスト時に使用。"
+description: "単一の Claude Code セッションで、openspec/changes 配下のすべての承認済み OpenSpec change を、実装順と archive 順を分けて安全に実装・archive するオーケストレーションスキル。MODIFIED delta の衝突、実装中に発見した後続 change、共有ファイルの並行コミット、共有 DB の汚染を管理し、途中と最終の結合レビューを行う。E2E 基盤があるプロジェクトでは、開始時に全 change を読ませた専属 SubAgent が `docs/quality/e2e/all-changes-cases.md` を先行作成し、各 change 内では E2E を作成・実行せず、全 change 完了後にケース実装・全件実行・必要な修正を行う。「openspec を全部実装」「changes を実装しきる」「MVP 全実装」「apply を回しきる」「全 change archive まで」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestion, mcp__codex__codex, mcp__codex__codex-reply
 ---
 
@@ -28,7 +28,7 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestio
 
 ## 最終ゴール（最上位の成功条件）
 
-**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンであること。既存の E2E 基盤がある場合は、`docs/e2e_case.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。高リスクまたは横断的な変更では、必要な結合レビューの指摘も解消する。
+**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンであること。既存の E2E 基盤がある場合は、`docs/quality/e2e/all-changes-cases.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。高リスクまたは横断的な変更では、必要な結合レビューの指摘も解消する。
 ---
 
 # 全体フロー
@@ -65,9 +65,9 @@ Phase 0 で全 change を把握した直後に、既存の E2E 基盤がある�
 E2E 基盤がある場合は、次の専属 SubAgent を最優先で起動する。
 
 - `20-enumerate-e2e-cases` skill を invoke し、`openspec/changes/` 配下の **全 change** の proposal・spec・design・tasks と、既存 E2E の構成・規約を対象にする。
-- このスキルでは標準の `e2e/cases/{timestamp}_cases.md` ではなく、集約ファイル **`docs/e2e_case.md`** を出力先として明示する。既存ファイルがあれば内容を保持しつつ更新する。
+- このスキルでは標準の個別ケースではなく、集約ファイル **`docs/quality/e2e/all-changes-cases.md`** を出力先として明示する。既存ファイルがあれば内容を保持しつつ更新する。
 - 全 change を横断した E2E ケースを洗い出す。正常系だけでなく、権限境界・入力エラー・空状態・主要な change 間連携を含め、各ケースから根拠となる change を追跡できるようにする。
-- 書き込み先は原則 `docs/e2e_case.md` のみに限定し、実装 SubAgent との競合を避ける。
+- 書き込み先は原則 `docs/quality/e2e/all-changes-cases.md` のみに限定し、実装 SubAgent との競合を避ける。
 
 この SubAgent の起動後は完了を待たず、Phase 2 と Phase 3 を進める。ケース設計を実装と並走させることで、他の実装作業をブロックしない。Phase 4 に入る前に SubAgent の完了を待ち、全 change がケースへ反映されていることを確認する。
 
@@ -152,11 +152,11 @@ SubAgent の完了報告や「無関係な既存の失敗」「環境起因」�
 
 すべての change が archive・commit されたら、システム全体の結合レビューを行う。
 
-- Phase 1 の SubAgent を完了させ、`docs/e2e_case.md` と最終的な全 change の仕様に漏れやずれがないか確認する。
-- `30-implement-e2e` skill を E2E 実装専属 SubAgent として invoke する。標準の `e2e/cases/*_cases.md` ではなく **`docs/e2e_case.md` を正とする**ことを起動プロンプトで明示し、未実装ケースのテストファイルを追加し、既存ケースも必要に応じて改善させる。`30-implement-e2e` はケースファイル指定を厳守する skill なので、`docs/e2e_case.md` 内の対象範囲（節・ケース ID 範囲）を具体的に渡す。
+- Phase 1 の SubAgent を完了させ、`docs/quality/e2e/all-changes-cases.md` と最終的な全 change の仕様に漏れやずれがないか確認する。
+- `30-implement-e2e` skill を E2E 実装専属 SubAgent として invoke する。個別ケースではなく **`docs/quality/e2e/all-changes-cases.md` を正とする**ことを起動プロンプトで明示し、未実装ケースのテストファイルを追加し、既存ケースも必要に応じて改善させる。`30-implement-e2e` はケースファイル指定を厳守する skill なので、台帳内の対象範囲（節・ケース ID 範囲）を具体的に渡す。
 - 全 E2E ケースのヘッドレス実行は **`40-run-and-report-e2e` skill を直接 invoke**する（実行と報告のみ）。E2E ハートビートを遵守する。`40-run-and-report-e2e` はフォアグラウンドで完走を見届ける skill であり、「実行中、完了したら報告する」で終わる中間報告は未完了として扱う。
 - 失敗を「E2E テストの不備」「プロダクト実装の不備」「環境・データ準備の不備」に分類し、それぞれ E2E 実装 SubAgent、該当領域の実装 SubAgent、環境を担当できる SubAgent に修正させる。
-- 修正後は `docs/e2e_case.md` を正として、未実装ケースがなく全ケースがグリーンになるまで、失敗した本番契約に必要な範囲でテストまたは実装を直し、全件を再実行する。
+- 修正後は `docs/quality/e2e/all-changes-cases.md` を正として、未実装ケースがなく全ケースがグリーンになるまで、失敗した本番契約に必要な範囲でテストまたは実装を直し、全件を再実行する。
 - 結合レビューは、高リスク変更、複数 change の境界、または E2E が示した不整合がある場合に行う。レビュー修正でプロダクト実装または E2E に変更が入った場合は、影響するケースに加えて全 E2E を再確認する。
 - この最終フェーズで既に archive 済みの change の範囲を超える欠陥が判明した場合も、既存 archive を改変して押し込まない。新規後続 change を発行し、Phase 2 の台帳・順序管理へ戻して実装、文書同期、検証、archive を行う。
 

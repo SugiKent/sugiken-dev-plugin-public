@@ -6,6 +6,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/docs-structure-lint",
+            "timeout": 10,
+            "statusMessage": "docs 構成を検査中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ja-writing-lint",
             "timeout": 10,
             "statusMessage": "日本語チェック中..."
