@@ -29,6 +29,8 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash
    - サーバ: dev ログイン用プラグインを `app.ts` で `process.env.NODE_ENV !== "production"` のときだけ登録（既存の dev 分岐＝`storage` / `dev-error-log` と同じ判定に揃える）。本番では route 自体が存在せず 404。
    - クライアント: `/login/dev` ルートと `DevLoginPage` の import を `import.meta.env.DEV` で分岐。本番ビルドに **バンドルされない**（`lazy` の動的 import ごと落とす）。
    - **環境変数フラグ（`ENABLE_DEV_LOGIN` 等）を新設しない**。判定点が増えるだけ。既存の `NODE_ENV` 分岐に揃える。
+   - **ステージング・プレビュー環境では必ず `NODE_ENV=production` を使う**。`development` をステージングに流すとサーバ側ガードが外れ、`/api/dev/login/*` が外部から到達可能になる。デプロイ前チェックリストに「ステージングの `NODE_ENV` が `production` であること」を含める。
+   - **クライアントが Vite でない（Next.js 等）**: `import.meta.env.DEV` に相当する分岐だけでは tree-shaking されない場合がある。ルート定義ごとビルド時に除去し、本番バンドルに `/login/dev` のコードが含まれないことをビルド成果物で確認する（後述「プロジェクト固有の適応ポイント」も参照）。
 3. **Better Auth catch-all と衝突しない別プレフィックス** `/api/dev/login/...` に置く。`/api/auth/*` の下に潜らせない。
 4. **ボタンはアンカー遷移（full-page navigation）**。SPA の `<Link>` ではなく素の `<a href>` で遷移し、redirect 経由の `Set-Cookie` を確実に効かせる（招待受諾フローと同じ流儀）。
 5. **無効化・削除ユーザーは一覧から除外し、セッション確立時も弾く**。サイレント成功にしない（存在しない userId は明示的に 400）。

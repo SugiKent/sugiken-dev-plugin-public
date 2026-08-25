@@ -12,12 +12,26 @@ PR ごとに出力品質を二値スコアでゲートする。閾値割れで f
 ```ts
 import { evaluate } from "../evaluate";
 import { config } from "../config";
+import { z } from "zod";
 
 // テストケース: [{x, y}] を fixtures から読む（実出力を CI 前段で生成しておく）
 const THRESHOLDS: Record<string, number> = { consistency: 0.8, coherence: 0.7 }; // 次元別 raw 閾値
 
+const MAX_EVAL_CASES_BYTES = 64_000; // 巨大 JSON による DoS を防ぐ
+const MAX_EVAL_CASES = 500;
+
+const EvalCaseSchema = z.object({ x: z.string().max(10_000), y: z.string().max(10_000) });
+const EvalCasesSchema = z.array(EvalCaseSchema).max(MAX_EVAL_CASES);
+
+function parseEvalCases(raw: string | undefined): { x: string; y: string }[] {
+  const input = raw ?? "[]";
+  if (input.length > MAX_EVAL_CASES_BYTES) throw new Error(`EVAL_CASES exceeds ${MAX_EVAL_CASES_BYTES} bytes`);
+  const parsed = JSON.parse(input);
+  return EvalCasesSchema.parse(parsed);
+}
+
 async function main() {
-  const cases: { x: string; y: string }[] = JSON.parse(process.env.EVAL_CASES ?? "[]");
+  const cases = parseEvalCases(process.env.EVAL_CASES);
   let failed = false;
   for (const c of cases) {
     const r = await evaluate(c.x, c.y, config.judgeModel);
