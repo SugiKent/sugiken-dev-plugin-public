@@ -24,7 +24,7 @@
     {
       "name": "architect",
       "source": "./plugins/architect",
-      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / DB 設計 / 疑い駆動開発 / セキュリティの設計・レビュー系スキル",
+      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティの設計・レビュー系スキル",
       "category": "quality"
     },
     {
