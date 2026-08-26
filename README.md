@@ -1,4 +1,4 @@
-# sugiken-dev-plugins-public
+# sugiken-dev-plugin-public
 
 SugiKent の個人開発用 Claude Code plugin 集（公開版）。
 この repo を Claude Code の plugin marketplace として各マシン・各プロジェクトに配布する。
@@ -9,7 +9,7 @@ SugiKent の個人開発用 Claude Code plugin 集（公開版）。
 
 ```bash
 # marketplace を登録
-claude plugin marketplace add SugiKent/sugiken-dev-plugins-public
+claude plugin marketplace add SugiKent/sugiken-dev-plugin-public
 
 # 必要な plugin を install (user scope = 全プロジェクト共通)
 claude plugin install mvp-workflow@sugiken-dev-public
@@ -31,7 +31,7 @@ description による自動呼び出しは従来どおり機能する。
 | `mvp-workflow` | workflow | 個人開発 MVP の構想〜OpenSpec 化までのワークフロー (skill はフェーズ番号順) |
 | `openspec` | workflow | OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集 |
 | `orchestration` | workflow | openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式) |
-| `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / DB 設計 / 疑い駆動開発 / セキュリティ |
+| `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ |
 | `e2e` | quality | 網羅的 E2E の 4 フェーズ分解。Web=Playwright, モバイル=Maestro |
 | `design` | quality | UI/UX 設計・ユーザビリティ評価系スキル |
 | `llm-eval` | quality | LLM-as-a-Judge 評価基盤のセットアップ (BINEVAL 手法準拠) |

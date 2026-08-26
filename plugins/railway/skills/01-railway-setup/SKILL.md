@@ -245,6 +245,8 @@ curl -s -X POST https://backboard.railway.com/graphql/v2 \
 
 ## 8. API token の在り処
 
+**注意**: `user.token` は機密情報。ログ・PR 本文・commit message・Artifact・スクリーンショットに **絶対に出力しない**。`echo $TOKEN`、デバッグ用の `curl` 全文ログ、エージェントの完了報告への貼り付けは禁止。検証時は `test -n "$TOKEN"` 等の存在確認だけに留める。
+
 `~/.railway/config.json` の `user.token` フィールド。CLI でできない操作（`serviceConnect`, `serviceInstanceUpdate`, `githubRepos` listing 等）を直接 GraphQL で叩くときに使う。
 
 ```bash
