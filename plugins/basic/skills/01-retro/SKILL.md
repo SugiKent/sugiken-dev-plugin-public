@@ -52,7 +52,7 @@ docs を読む・更新する判断では、先に [[01-docs-management]] の分
 - **既存スキル改善**: 使ったスキルに改善点がある場合
 - 対象の判断:
   - そのプロジェクト固有の内容 → プロジェクトの `.claude/skills/`
-  - プロジェクトを跨いで使える汎用的な内容 → plugin repo `SugiKent/ai-agents-skills-and-more-for-dev` の `plugins/*/skills/`（plugin 経由で配布されているスキルの改善はこちら。install 先のキャッシュを直接編集しない）
+  - プロジェクトを跨いで使える汎用的な内容 → plugin repo `SugiKent/sugiken-dev-plugin-public` (https://github.com/SugiKent/sugiken-dev-plugin-public) の `plugins/*/skills/`（plugin 経由で配布されているスキルの改善はこちら。install 先のキャッシュを直接編集しない）
 
 #### B. ルール更新 (`.claude/rules/`)
 
@@ -125,8 +125,8 @@ docs を読む・更新する判断では、先に [[01-docs-management]] の分
 
 ユーザーが提案を承認した場合:
 
-1. **このプロジェクト（plugin repo）への反映依頼は、GitHub Issue を作成する。** Issue には対象ファイル、変更の理由、提案した変更内容を記載し、実装依頼として追跡可能にする。
-2. 承認された提案のうち、このプロジェクト外のものは、対象プロジェクトの運用ルールに従って具体的なファイル変更として準備する。
+1. **plugin repo（`SugiKent/sugiken-dev-plugin-public`）への反映依頼は、その repo に GitHub Issue を作成する。** Issue には対象ファイル、変更の理由、提案した変更内容を記載し、実装依頼として追跡可能にする。
+2. 承認された提案のうち、plugin repo 以外（作業中のプロジェクト自身など）のものは、対象プロジェクトの運用ルールに従って具体的なファイル変更として準備する。
 
 **重要**: ユーザーの承認なしに Issue 作成やファイル変更をしない。プレビューの提示 → 承認 → Issue 作成または実行の順序を厳守する。
 
