@@ -1,4 +1,4 @@
-# sugiken-dev-plugins-public
+# sugiken-dev-plugin-public
 
 SugiKent の個人開発用 Claude Code plugin 集（公開版）。
 この repo を Claude Code の plugin marketplace として各マシン・各プロジェクトに配布する。
@@ -9,7 +9,7 @@ SugiKent の個人開発用 Claude Code plugin 集（公開版）。
 
 ```bash
 # marketplace を登録
-claude plugin marketplace add SugiKent/sugiken-dev-plugins-public
+claude plugin marketplace add SugiKent/sugiken-dev-plugin-public
 
 # 必要な plugin を install (user scope = 全プロジェクト共通)
 claude plugin install mvp-workflow@sugiken-dev-public
