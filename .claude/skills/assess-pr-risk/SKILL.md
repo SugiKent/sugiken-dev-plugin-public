@@ -1,11 +1,11 @@
 ---
 name: assess-pr-risk
-description: この Claude Code plugin marketplace の PR を、変更量・配布物への影響・検証の十分さで評価し、人間レビューの要否を PR にコメントする。人間レビューが不要で安全ゲートも通る場合は merge する。「PR のリスク評価」「この PR は人間レビューが必要か判断」「PR を評価して merge」「PR リスク」等の依頼で使用する。アプリケーションコードがない、またはドキュメント中心の PR でも、plugin の配布・発動・メタデータ整合性を評価する。
+description: この Claude Code plugin marketplace の PR を、変更量・配布物への影響・検証の十分さ・セキュリティ敏感パスで評価し、人間レビューの要否を PR にコメントする。人間レビューが不要で安全ゲートも通る場合は merge する。「PR のリスク評価」「この PR は人間レビューが必要か判断」「PR を評価して merge」「PR リスク」等の依頼で使用する。アプリケーションコードがない、またはドキュメント中心の PR でも、plugin の配布・発動・メタデータ整合性を評価する。
 ---
 
 # PR リスク評価
 
-対象 PR の差分を、次の3軸で評価し、結果を PR に1回コメントする。このリポジトリの主な成果物はアプリケーションではなく plugin marketplace の配布物なので、コード行数だけでなく「インストール後に意図した skill が呼び出せるか」「marketplace の索引や plugin 構成を壊さないか」を重視する。人間レビュー不要と判定しても、安全ゲートを通るまで merge しない。
+対象 PR の差分を、セキュリティ敏感パスを先に判定したうえで、次の3軸で評価し、結果を PR に1回コメントする。このリポジトリの主な成果物はアプリケーションではなく plugin marketplace の配布物なので、コード行数だけでなく「インストール後に意図した skill が呼び出せるか」「marketplace の索引や plugin 構成を壊さないか」を重視する。人間レビュー不要と判定しても、安全ゲートを通るまで merge しない。
 
 ## 対象を確定する
 
@@ -22,7 +22,7 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 
 ## 先に確認する注意領域
 
-次の変更を含む PR は、3軸の評価結果にかかわらず人間レビューが必要になる可能性が高い。
+次の変更を含む PR は、セキュリティ敏感パスまたは3軸の評価結果にかかわらず人間レビューが必要になる可能性が高い。
 
 - `.claude-plugin/marketplace.json` の plugin 登録、source、category、description
 - plugin の追加・削除、skill / agent / hooks の発動条件や権限に関わる変更
@@ -30,6 +30,28 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 - hooks、スクリプト、実行可能ファイル、依存関係、CI/CD、外部公開設定の変更
 - README、NOTICE、第三者由来の instruction やライセンス表記の変更
 - 参照リンク切れ、重複した skill 名、frontmatter / JSON の破損、plugin パス不整合の疑い
+
+## セキュリティ敏感パス（先に判定）
+
+changed files 一覧を diff で確認し、次のいずれかに該当するパスへ**追加・変更・削除**がある PR は、他軸の結果に関わらず人間レビューを必須とし、merge しない。
+
+判定は path の部分一致（glob 相当）で行う。リポジトリのディレクトリ構造に応じて、同等の認証・CI・シークレット取扱いパスも同様に扱う。
+
+| カテゴリ | パターン例 |
+| --- | --- |
+| 認証・認可 | `**/auth/**`, `**/better-auth/**`, `**/middleware.*`, `**/session.*`, `**/permissions.*`, `**/rbac/**` |
+| CI / デプロイ | `.github/workflows/**`, `.gitlab-ci.yml`, `**/Dockerfile*`, `docker-compose*.yml`, `**/railway.toml`, `**/fly.toml` |
+| シークレット・環境変数 | `.env`, `.env.*`, `**/.env.example`, `**/secrets/**`, `**/credentials/**` |
+| 依存・サプライチェーン | `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`, `go.sum`, `Cargo.lock`（lockfile のみの自動更新 PR は別途判断） |
+| セキュリティポリシー | `docs/securities/**`, `SECURITY.md`, `**/assess-pr-risk/**`, `**/claude-code-routine-orchestration/**` |
+| フック・自動化 | `**/hooks/**`, `.claude/**`, `.cursor/**`, `**/automation/**` |
+
+次も人間レビュー必須とする。
+
+- PR 本文・コメント・commit message に、認証バイパス・権限緩和・シークレット露出・外部入力の信頼境界緩和を示唆する記述がある
+- diff にハードコードされた API キー・トークン・パスワードらしき文字列が含まれる（ダミー例・テスト用プレースホルダを除く）
+
+利用可能な場合は `35-architect-security` で diff を read-only レビューし、指摘があれば人間レビュー必須とする。スキルが利用できない場合でも、上記パスに該当すれば merge しない。
 
 ## 3軸の評価
 
@@ -65,6 +87,7 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 
 次のいずれかに該当すれば、人間レビューが必要と判定する。
 
+- セキュリティ敏感パスに該当する（上記「セキュリティ敏感パス」）
 - いずれかの軸が「高い」
 - hooks、実行スクリプト、依存関係、secret、認証・権限、外部投稿、破壊的操作に関係する
 - marketplace 登録、plugin の追加・削除、skill の発動条件に影響するが、実環境での確認根拠が不足している
@@ -84,6 +107,7 @@ PR 番号または URL から repository と PR を一意に特定する。番�
 
 | 軸 | リスク | 根拠 |
 | --- | --- | --- |
+| セキュリティ敏感パス | <該当なし / 該当> | <該当パスまたは該当理由。該当なしなら「敏感パスへの変更なし」> |
 | 変更量 | <最低/中程度/高い> | <+XXX / -YYY 行、合計 ZZZ 行> |
 | 配布物への影響・複雑度 | <最低/中程度/高い> | <marketplace / plugin / skill / hooks への影響> |
 | 検証推奨度 | <最低/高い> | <静的検証・読み込み確認・未確認事項> |
@@ -111,4 +135,4 @@ merge 直前に PR の状態と head SHA を再取得する。変化があれば
 
 ## 完了報告
 
-最初に「人間レビューが必要 / 不要」と merge 結果を述べ、3軸の評価、PR コメント URL、merge を見送った場合の理由だけを簡潔に報告する。
+最初に「人間レビューが必要 / 不要」と merge 結果を述べ、セキュリティ敏感パスの判定、3軸の評価、PR コメント URL、merge を見送った場合の理由だけを簡潔に報告する。
