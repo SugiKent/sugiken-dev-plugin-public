@@ -13,7 +13,7 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 
 ## このスキルの位置付け（先に読む）
 
-- 前提: `40-eval-directory-setup`（`evals/` 構造・run report スキーマ）と、確定正解データ（`41-golden-set-construction`）。
+- 前提: `40-eval-directory-setup`（`eval/<category>/<timestamp>-<topic>/` の証跡構造）と、確定正解データ（`41-golden-set-construction`）。
 - この差し替え口を消費する側:
   - 複数モデルの A/B 絶対評価（`EVAL_TARGET_MODEL` を切り替えて回す）
   - `45-method-gepa-optimization` — subprocess で `PROMPTS_OVERRIDE_FILE` に候補を注入して回す
@@ -48,8 +48,8 @@ export function createChatModel() {
 
 - **「ラベルだけ注入」の罠**: eval report に `targetModel` を書くだけで実際の agent は固定モデルの
   まま、という半端な実装が起きやすい。report のモデル名は必ず**実際に使われた値**（集約点の
-  export）から取る。config.json 用に `describeChatModelConfig()`（実 model / providerOptions /
-  reasoningEffort / overriddenByEnv を返す）を集約点に置く（40 の config.json が消費）。
+  export）から取る。run.json 用に `describeChatModelConfig()`（実 model / providerOptions /
+  reasoningEffort / overriddenByEnv を返す）を集約点に置く（40 の run.json が消費）。
 
 ## 2. prompt override 機構（`PROMPTS_OVERRIDE_FILE`）
 
@@ -83,7 +83,7 @@ export const SUPERVISOR_INSTRUCTIONS = applyPromptOverride("supervisor", DEFAULT
 PROMPTS_OVERRIDE_FILE=/abs/x.json <eval コマンド> --target <t> --cases id1,id2 --json-out /abs/out.json
 ```
 
-出力 JSON（40-eval-directory-setup の run report スキーマと同一の形。手法ごとに埋まる列が違うだけ）:
+出力 JSON（現在の run の `reports/` に保存する。手法ごとに埋まる列が違うだけ）:
 
 ```json
 {

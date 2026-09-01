@@ -27,7 +27,7 @@
 
 1. **ベースライン（現行モデルの実測）実走**: 現行モデルで全評価対象（target）を 1 回実行（eval が DB 等の共有状態（state）を使うなら
    **絶対に直列・1 プロセスのみ**）。
-2. **失敗分類マップ（gap-map）作成**（`evals/runs/<ts>/gap-map.md`）: fail / 低 score ケースの判定役の判断理由と
+2. **失敗分類マップ（gap-map）作成**（現在の run の `reports/gap-map.md`）: fail / 低 score ケースの判定役の判断理由と
    actual を読み、**失敗を原因で分類**する。分類が最適化の投資先を決める。
    実例の分類語彙: 「submit tool 未呼び出し（正しい結果を text に吐いて終わる = tool 呼び出しの作法（tool-calling
    discipline））」「status 誤選択」「判別キー（discriminator）名不遵守」「存在しないデータの捏造」
@@ -43,15 +43,16 @@
    「expected 確定の材料」として添える。**推奨案を併記**し、人間が「コメントを書いていない
    箇所は問題なし」で済む形にする。
 5. **人間レビュー → POLICY.md へ昇格**: 人間の回答をケース個別の修正で終わらせず、
-   **一般化した判断基準**として `POLICY.md` に書く。以後のケース追加・prompt 最適化・
+   **一般化した判断基準**として現在の run の `artifacts/gold/POLICY.md` に書く。以後のケース追加・prompt 最適化・
    判定役の判定基準（criteria）はすべて POLICY が正。
    - 例: 「出張は calendar に」→「ワンタイムのイベントごとは calendar。人に紐づく定常的・
      不変的な情報（好み・アレルギー・誕生日）は memory」
    - 例: 「『午後』は聞き直す」→「開始時刻が特定できない指定は default で埋めず聞き直す。
      時刻明示時の終了時刻は reasonable default 可」
    - **既存の確定正解データも前提を疑う**: レビューで方針が変われば既存ケースの intent も追従させる
-6. **確定正解データへの昇格**: 決定を expected に反映 → silver タグ除去 → splits.json に登録 →
-   整合の機械検証（load / 相互網羅 / silver 残存なし）。
+6. **確定正解データへの昇格**: 決定を expected に反映 → silver タグ除去 →
+   `artifacts/gold/splits.json` に登録 → 整合の機械検証（load / 相互網羅 / silver 残存なし）。
+   後続 run では確定版一式を `inputs/gold/` へコピーし、コピー元 run を `run.json` に記録する。
 
 ## expected の書き方（昇格基準）
 

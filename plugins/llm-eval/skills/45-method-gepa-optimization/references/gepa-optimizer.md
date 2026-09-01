@@ -29,7 +29,7 @@
     **直列 subprocess** 実行、`--json-out` を読んで score/5 を 0–1 正規化
     （error / 構造的な不合格（structural）は 0）、判定役の LLM（judge）の `reason` を実行の軌跡（trajectories）に格納
   - `make_reflective_dataset(...)` — 判定役の `reason` を `Feedback` として反省ステップに渡す
-- `GEPAResult.best_candidate` を `best_prompts.json` に保存
+- `GEPAResult.best_candidate` を現在の run の `artifacts/best_prompts.json` に保存
 
 ## seed candidate の作り方
 
@@ -42,7 +42,7 @@
 
 - 反省ステップ用の LM への指示に **「最小差分の編集のみ提案する。1 回の編集で 1 つの振る舞いだけを
   追加または削除する。全体のリライトは禁止」** を明記する。
-- 1 iteration = 1 振る舞い変更として `optimizer/history.md` に記録
+- 1 iteration = 1 振る舞い変更として現在の run の `reports/history.md` に記録
   （日時 / 対象 prompt / 変更概要 / 学習用データ（train）Δ / 検証用データ（holdout）Δ / 採用可否）。
 - 効果が確認できない変更は積まない。「念のため」の指示は肥大化の温床。
 - 理由: 一括リライトは「どの記述が効いているのか」を不明にし、変更容易性の低い複雑で
@@ -58,8 +58,8 @@
 - 収束条件: 検証用データが N iteration 改善なし、または合格ゲート達成。
 - 最終 prompt の diff は**人間がレビュー**（対話チェックポイント 6）。プロジェクトの
   プロンプト設計規約（思考法を書く / 重複排除 / 列挙禁止など）への適合と肥大化をチェック。
-- 採用したら: prompt 反映 → prompt 内容を検証する既存テストを追従 → `evals/runs/` に最終結果を
-  commit → README に結論を追記。
+- 採用したら: prompt 反映 → prompt 内容を検証する既存テストを追従 → 現在の run の `reports/` に
+  最終結果を保存する。使用した最適化スクリプト一式は `scripts/`、入力 gold は `inputs/gold/` に残す。
 
 ## CLI 設計（実績のある形）
 
@@ -67,7 +67,7 @@
 run_gepa.py
   --components supervisor,family-memory   # 最適化対象（デフォルトは最重要 1 つ）
   --targets <eval target 名,...>
-  --cases <id,...>                        # 省略時 splits.json の train を読む
+  --cases <id,...>                        # 省略時 inputs/gold/splits.json の train を読む
   --seed-prompts ./seed_prompts.json
   --max-metric-calls 120                  # 予算
   --reflection-model <litellm id>         # 強いモデル（judge と同系でよい）

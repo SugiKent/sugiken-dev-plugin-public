@@ -1,6 +1,6 @@
 ---
 name: 41-golden-set-construction
-description: "評価手法に依存しない『ゴールデンデータセット（人間検証済みの唯一の正解集）』を、LLM による合成と人間によるレビューで半自動的に固めていく手順を敷設するメタスキル。別モデルをベースラインにせず、人間が検証した `expected` を唯一の物差しにする絶対評価のためのデータを作る。手順は Silver→Gold: (1) 現行モデルでベースライン実走し失敗を原因分類した gap-map を作る、(2) 弱点を突く Silver ケースを LLM が起案（silver タグ付き）、(3) SILVER_REVIEW.md に人間が確認すべき論点を表で提示、(4) 人間レビューの決定を各ケース expected に反映しつつ**一般化した製品判断基準を POLICY.md に集約**、(5) silver タグを外して Gold 昇格し train/holdout を層化固定。gold の格納先・splits・config.json 冪等刻印は 40-eval-directory-setup に従う。ここで作った gold を、code-based 照合（43）・LLM-judge（44）・GEPA 最適化（45）など**任意の評価手法が共通の正解として読む**。「ゴールデンデータセット」「golden dataset」「gold データセット」「gold 構築」「Silver to Gold」「合成データ 人間レビュー」「expected 正解を決める」「gap-map」「POLICY.md」「絶対評価の正解集」「eval のケースを作る」等の発話・タスク要求時に使用。"
+description: "評価手法に依存しない『ゴールデンデータセット（人間検証済みの唯一の正解集）』を、LLM による合成と人間によるレビューで半自動的に固めていく手順を敷設するメタスキル。別モデルをベースラインにせず、人間が検証した `expected` を唯一の物差しにする絶対評価のためのデータを作る。手順は Silver→Gold: (1) 現行モデルでベースライン実走し失敗を原因分類した gap-map を作る、(2) 弱点を突く Silver ケースを LLM が起案（silver タグ付き）、(3) SILVER_REVIEW.md に人間が確認すべき論点を表で提示、(4) 人間レビューの決定を各ケース expected に反映しつつ**一般化した製品判断基準を POLICY.md に集約**、(5) silver タグを外して Gold 昇格し train/holdout を層化固定。実行スクリプト・入力 gold・report・確定 gold の格納は 40-eval-directory-setup の run 証跡構造に従う。ここで作った gold を、code-based 照合（43）・LLM-judge（44）・GEPA 最適化（45）など**任意の評価手法が共通の正解として読む**。「ゴールデンデータセット」「golden dataset」「gold データセット」「gold 構築」「Silver to Gold」「合成データ 人間レビュー」「expected 正解を決める」「gap-map」「POLICY.md」「絶対評価の正解集」「eval のケースを作る」等の発話・タスク要求時に使用。"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -13,8 +13,9 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 
 ## このスキルの位置付け（先に読む）
 
-- 前提: `40-eval-directory-setup` で `evals/datasets/` 構造・`splits.json`・`config.json` の
-  刻印が用意されていること（確定正解データの住所と冪等性の器）。
+- 前提: `40-eval-directory-setup` で `eval/<category>/<timestamp>-<topic>/` の証跡構造と
+  `run.json` が用意されていること。gold 構築では category に `golden-set` を使い、既存 gold は
+  新 run の `inputs/gold/` へコピーし、確定版を `artifacts/gold/` に保存する。
 - このスキルの本体は **人間との対話**。AI は候補ケースと論点を整えて意思決定を高速化する役に徹する。
   口頭合意は将来の実行（run）で再現できないので、決定は必ず `POLICY.md` と各ケース `expected` に**文書化**する。
 - ここで確定した確定正解データと POLICY を、手法スキル（`43-method-code-based-scoring` /
@@ -33,7 +34,7 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 1. **ベースライン（現行モデルの実測）実走**: 現行モデルで全評価対象（target）を 1 回実行（eval が DB 等の共有状態（state）を使うなら
    **絶対に直列・1 プロセスのみ**）。実走にはモデルの差し替え口（seam, `42-eval-injection-seam`）を使うが、
    ベースライン計測は現行モデルのままでよい。
-2. **失敗分類マップ（gap-map）作成**（`evals/runs/<ts>/gap-map.md`）: fail / 低 score ケースの理由と actual を読み、
+2. **失敗分類マップ（gap-map）作成**（現在の run の `reports/gap-map.md`）: fail / 低 score ケースの理由と actual を読み、
    **失敗を原因で分類**する。分類が「どのケースを足すべきか」「後で何を最適化するか」を決める。
    分類語彙の例: 「submit tool 未呼び出し（正しい結果を text に吐いて終わる = tool 呼び出しの作法（tool-calling
    discipline））」「status 誤選択」「判別キー（discriminator）名不遵守」「存在しないデータの捏造」
@@ -49,15 +50,16 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
    「expected 確定の材料」として添える。**推奨案を併記**し、人間が「コメントを書いていない
    箇所は問題なし」で済む形にする。
 5. **人間レビュー → POLICY.md へ昇格（最重要）**: 人間の回答をケース個別の修正で終わらせず、
-   **一般化した判断基準**として `evals/datasets/POLICY.md` に書く。以後のケース追加・
+   **一般化した判断基準**として現在の run の `artifacts/gold/POLICY.md` に書く。以後のケース追加・
    評価手法の判定基準（criteria）・最適化はすべて POLICY が正。
    - 例:「出張は calendar に」→「ワンタイムのイベントごとは calendar。人に紐づく定常的・
      不変的な情報（好み・アレルギー・誕生日）は memory」
    - 例:「『午後』は聞き直す」→「開始時刻が特定できない指定は default で埋めず聞き直す。
      時刻明示時の終了時刻は reasonable default 可」
    - **既存の確定正解データも前提を疑う**: レビューで方針が変われば既存ケースの intent も追従させる
-6. **確定正解データへの昇格**: 決定を expected に反映 → silver タグ除去 → `splits.json` に登録（学習用データ（train）/検証用データ（holdout）の
-   層化固定は 40 参照）→ 整合の機械検証（load / 相互網羅 / silver 残存なし）。
+6. **確定正解データへの昇格**: 決定を expected に反映 → silver タグ除去 → `artifacts/gold/splits.json` に登録 →
+   整合の機械検証（load / 相互網羅 / silver 残存なし）。後続 run はこの確定版を `inputs/gold/` へ
+   丸コピーし、コピー元 run を `run.json` に記録する。
 
 ## expected の書き方（昇格基準）
 

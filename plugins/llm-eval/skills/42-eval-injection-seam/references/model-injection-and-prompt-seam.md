@@ -34,7 +34,7 @@ export function createChatModel() {
 - **「ラベルだけ注入」の罠**: eval の report に `targetModel` を書くだけで実際の agent は
   固定モデルのまま、という半端な実装が起きやすい。report のモデル名は必ず**実際に使われた
   値**（集約点の export）から取る。
-- config.json 用に `describeChatModelConfig()`（実際に使われた model / providerOptions /
+- run.json 用に `describeChatModelConfig()`（実際に使われた model / providerOptions /
   reasoningEffort / overriddenByEnv を返す関数）を集約点に置く。
 
 ## 2. prompt override 機構（`PROMPTS_OVERRIDE_FILE`）
