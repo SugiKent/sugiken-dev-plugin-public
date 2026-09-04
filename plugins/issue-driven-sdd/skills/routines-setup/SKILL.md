@@ -29,11 +29,7 @@ gh label create "question" --color D876E3 --description "AI が付ける PR ラ�
 
 既に一部が存在する場合、失敗したラベルだけスキップして残りを作る。ラベルの意味・付け外しの規則は `routine-common` を参照（ここでは作成コマンドだけを扱う）。
 
-## 2. Claude GitHub App を install する
-
-Routine の webhook 配送に必須。Web セットアップ（`/web-setup`）だけでは届かない。対象リポジトリへ Claude GitHub App を install する。
-
-## 3. Routine 5 本を作る
+## 2. Routine 5 本を作る
 
 | Name | Trigger | Filter | autofix_on_pr_create |
 | --- | --- | --- | --- |
@@ -53,13 +49,6 @@ schedule の sweep は Routines の schedule 機能から、イベント起動�
 
 判断規則はすべてスキル側に置き、Routine を作り直しても規則が失われないようにする。
 
-## 4. 最初の 1 件で確認する
+## 3. 人間に Claude Routine の設定依頼を出す
 
-- `Issue: Labeled` の Filter が発火する（起票時にラベルを付けた場合と、既存 issue に付けた場合の両方）
-- propose セッションが作った PR に auto-fix が付き、会話コメントへ同じセッションが応答する
-- Routine セッションから `gh api` で issue のラベルを付け替えられる（GraphQL は 403 になるので REST を使う）
-- `propose` PR の merge で apply Routine が起動する
-
-## 完了報告
-
-作成したラベル、install した GitHub App、作成した Routine 5 本、動作確認できた項目を簡潔に報告する。確認できなかった項目があれば、何を確認できなかったかを明記する。
+表にして各 routine の設定内容を細かく指示する。
