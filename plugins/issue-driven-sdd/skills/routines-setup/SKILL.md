@@ -37,9 +37,11 @@ gh label create "question" --color D876E3 --description "AI が付ける PR ラ�
 | `<project> apply` | `PR merged` | Labels contains `propose` | **true** |
 | `<project> archive` | `PR merged` | Labels contains `apply` | false |
 | `<project> sweep` | Schedule | なし | **true**（sweep 自身が propose を実行しうる） |
-| `<project> assess-pr-risk` | `PR opened` | Labels contains `apply` | false |
+| `<project> assess-pr-risk` | `PR opened` | Labels contains `apply` または `archive` | false |
 
-assess-pr-risk は **`apply` ラベルの PR だけ**を対象にする。フィルタなしだと propose / archive / docs の PR まで毎回リスク評価が走り、実装の入っていない PR に対してレビュー要否コメントが増える。実装差分を持つのは `apply` ラベルの PR なので、そこに絞る。
+assess-pr-risk は **`apply` と `archive` ラベルの PR** を対象にする。`apply` は実装差分を持つ PR で、リスク評価の本来の対象。`archive` は AI が作る `Closes #n` 付きの PR で、merge されるまで issue が閉じない。ここに assess-pr-risk が走らないと、人間が archive PR を毎回手で merge することになる。propose / docs の PR には実装差分が無いので対象に含めない。フィルタなしだとそれらにもレビュー要否コメントが増える。
+
+Filter に 2 つのラベルを指定できない UI なら、`<project> assess-pr-risk (apply)` と `<project> assess-pr-risk (archive)` の 2 本に分けて作る。
 
 `autofix_on_pr_create` は Routine 単位の設定（API の `session_context`、UI にもトグル）。`true` の Routine が作った PR は、その PR を作ったセッションがレビュー・会話コメントを受け取り続ける。
 
@@ -55,4 +57,4 @@ schedule の sweep は Routines の schedule 機能から、イベント起動�
 
 表にして各 routine の設定内容を細かく指示する。表には Name / Trigger / **Filter** / `autofix_on_pr_create` / Routine 本文の 1 行を必ず含め、Filter が「なし」の routine と「Labels contains ...」の routine を取り違えないよう明示する。
 
-特に assess-pr-risk については、**Filter に `apply` ラベルを設定すること**を依頼文に明記する。設定漏れだと全 PR でリスク評価が走るため、なぜ絞るのか（実装差分を持つのは `apply` ラベルの PR だけ）も 1 行添える。
+特に assess-pr-risk については、**Filter に `apply` と `archive` の 2 つのラベルを設定すること**を依頼文に明記する。`apply` だけだと archive PR が評価されず、issue を閉じる merge を人間が毎回手で行うことになる。Filter なしだと propose / docs の PR にもリスク評価が走る。この 2 点を理由として 1〜2 行添える。UI が 1 ラベルしか受け付けない場合は 2 本に分けて設定するよう伝える。

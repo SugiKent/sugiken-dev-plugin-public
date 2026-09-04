@@ -9,8 +9,8 @@ description: issue-driven-sdd 用にバックログ項目を GitHub Issue へ変
 
 ## 進め方
 
-1. 対象リポジトリを `gh repo view --json owner,name` で解決する。
-2. バックログ項目ごとに、既存 issue との重複を `gh issue list` / 検索で確認する。重複があれば新規作成せず、既存 issue にコメントで補足するか、報告のみに留める。
+1. 対象リポジトリを GitHub コネクタで解決する（`gh` コマンドは Claude Code のクラウド環境では使えない）。
+2. バックログ項目ごとに、既存 issue との重複を GitHub コネクタで検索して確認する。重複があれば新規作成せず、既存 issue にコメントで補足するか、報告のみに留める。
 3. 1 項目 1 issue にする。複数の変更をまとめて 1 issue にしない。
 4. issue 本文には次を含める。
    - 概要（何を・なぜ）

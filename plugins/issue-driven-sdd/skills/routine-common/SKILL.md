@@ -59,12 +59,9 @@ description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すと�
   「人の回答を全部受け取った」ことであって、「1 ラウンド終えた」ことではない。
 - 本文 1 行目の `未確定の判断: N 件` と**必ず一致させる**。N > 0 なら `question` が付いており、
   N = 0 なら付いていない。片方だけ更新すると、どちらが正しいのかが人に分からなくなる。
-- 付け外しのたびに読み直して反映を確認する（`gh pr view <n> --json labels`）。
+- 付け外しのたびに読み直して反映を確認する（GitHub コネクタで PR のラベルを取得し直す）。
 
-```bash
-gh api -X POST   repos/{owner}/{repo}/issues/<PR番号>/labels -f "labels[]=question"
-gh api -X DELETE repos/{owner}/{repo}/issues/<PR番号>/labels/question
-```
+ラベルの付け外しは GitHub コネクタで行う。`gh` コマンドは Claude Code のクラウド環境では使えない。
 
 ラベルをまだ作っていない新しいプロジェクトでは、作成コマンドを `routines-setup` skill から実行する（この skill はセットアップの実行を担わない）。
 
@@ -128,16 +125,10 @@ gh api -X DELETE repos/{owner}/{repo}/issues/<PR番号>/labels/question
 
 # GitHub の操作
 
-`gh` はセッションにプリインストール済みで、認証は不要。ただし **GraphQL 経路は 403 で塞がれる**
-ことがあるので、失敗したら REST へ落とす。
+**`gh` コマンドは Claude Code のクラウド環境（Routine のセッション含む）では使えない。**
+issue / PR の閲覧、ラベルの付け外し、コメントの投稿はすべて GitHub コネクタで行う。
 
-```bash
-# ラベルの付け外し（REST）
-gh api -X POST   repos/{owner}/{repo}/issues/<n>/labels -f "labels[]=stage:apply"
-gh api -X DELETE repos/{owner}/{repo}/issues/<n>/labels/stage:propose
-```
-
-段階を付け替えたら **読み直して反映を確認する**（`gh issue view <n> --json labels`）。
+段階を付け替えたら **読み直して反映を確認する**（GitHub コネクタで issue のラベルを取得し直す）。
 
 ## routine のコメントには必ずマーカーを入れる
 
@@ -228,7 +219,7 @@ E2E の要否や成果物の伝え方は、リポジトリごとに違う。prop
 
 | 項目 | 扱い |
 | --- | --- |
-| リポジトリ名 `{owner}/{repo}` | `gh repo view` で解決する |
+| リポジトリ名 `{owner}/{repo}` | GitHub コネクタで解決する（`gh repo view` は使えない） |
 | 着手してはいけない領域 | 対象プロジェクトの `CLAUDE.md` に閉じた領域の節があればそれに従う |
 | propose / apply / archive の実体 | `openspec` plugin のスキルを参照する |
 | `wip` の失効時間 | 既定 3 時間。この節の記述を変えるだけで済ませる |

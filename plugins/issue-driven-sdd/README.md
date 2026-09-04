@@ -26,7 +26,7 @@ PR:     propose / apply / archive / docs   ← 次段階の Routine のトリガ
 | `routine-apply` | `PR merged` ∧ label `propose` | issue を `stage:apply` へ → 実装 → `apply` PR |
 | `routine-archive` | `PR merged` ∧ label `apply` | issue を `stage:archive` へ → `openspec archive` → `archive` PR（`Closes #n`） |
 | `routine-sweep` | schedule（1 時間以上の間隔） | ラベルと実態の修復・`wip` 失効回収・応答が止まった PR の引き継ぎ・着手可能な issue を 1 つ実行 |
-| `assess-pr-risk` | 手動 / `PR opened` | PR のリスクを評価し、低ければ merge する |
+| `assess-pr-risk` | 手動 / `PR opened` ∧ label `apply` or `archive` | PR のリスクを評価し、低ければ merge する。archive PR も対象にしないと issue を閉じる merge が人手になる |
 | `create-github-issues` | 手動 | バックログを issue にする。段階ラベルは付けない |
 | `routines-setup` | 手動 | 新しいプロジェクトへの導入（ラベル作成・GitHub App install・Routine 5 本の設定・最初の 1 件での動作確認） |
 
@@ -46,7 +46,7 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 | `<project> apply` | `PR merged` | Labels contains `propose` | **true** |
 | `<project> archive` | `PR merged` | Labels contains `apply` | false |
 | `<project> sweep` | Schedule | なし | **true**（sweep 自身が propose を実行しうる） |
-| `<project> assess-pr-risk` | `PR opened` | なし | false |
+| `<project> assess-pr-risk` | `PR opened` | Labels contains `apply` または `archive` | false |
 
 `autofix_on_pr_create` は Routine 単位の設定（API の `session_context`、UI にもトグル）。`true` の Routine が作った PR は、その PR を作ったセッションがレビュー・会話コメントを受け取り続ける。仕様を詰める往復（grill）はこれに乗せる。
 
@@ -67,7 +67,7 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 5. 最初の 1 件で確認する
    - `Issue: Labeled` の Filter が発火する（起票時にラベルを付けた場合と、既存 issue に付けた場合の両方）
    - propose セッションが作った PR に auto-fix が付き、会話コメントへ同じセッションが応答する
-   - Routine セッションから `gh api` で issue のラベルを付け替えられる（GraphQL は 403 になるので REST を使う）
+   - Routine セッションから GitHub コネクタで issue のラベルを付け替えられる（`gh` コマンドは Claude Code のクラウド環境では使えない）
    - `propose` PR の merge で apply Routine が起動する
 
 ## 守る不変条件
@@ -87,7 +87,7 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 
 | 項目 | この plugin での扱い |
 | --- | --- |
-| リポジトリ名 `{owner}/{repo}` | `gh repo view` で解決する |
+| リポジトリ名 `{owner}/{repo}` | GitHub コネクタで解決する（`gh repo view` は使えない） |
 | 着手してはいけない領域 | 対象プロジェクトの `CLAUDE.md` に閉じた領域の節があればそれに従う |
 | propose / apply / archive の実体 | `openspec` plugin のスキルを参照する |
 | `wip` の失効時間 | 既定 3 時間。`routine-common` の 1 箇所で変える |
