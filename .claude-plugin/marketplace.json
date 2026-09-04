@@ -30,7 +30,7 @@
     {
       "name": "dev-utils",
       "source": "./plugins/dev-utils",
-      "description": "ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン)",
+      "description": "ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン / コミットからのカスタムリンター生成)",
       "category": "utility"
     },
     {
@@ -98,6 +98,12 @@
       "source": "./plugins/workshop",
       "description": "勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成までを支援",
       "category": "utility"
+    },
+    {
+      "name": "mobile-store",
+      "source": "./plugins/mobile-store",
+      "description": "モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消)",
+      "category": "workflow"
     }
   ]
 }
