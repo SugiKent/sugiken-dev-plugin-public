@@ -1,6 +1,6 @@
 ---
 name: routine-sweep
-description: 定期実行の Routine が呼ぶスキル。routine-dispatch と同じ手順を実行して GitHub の状態を修復し、ブロックが解けた issue を放出し、死んだ worker を再起動し、さらに応答が止まった PR を引き継ぐ。イベント起動（Issue: Labeled / Issue closed / PR merged）が webhook の上限超過や利用上限で落ちたときの保険。
+description: 定期実行の Routine が呼ぶスキル。routine-dispatch と同じ手順を実行して GitHub の状態を修復し、ブロックが解けた issue を放出し、死んだ worker を再起動し、さらに応答が止まった PR を引き継ぐ。最後に issue 番号同士の blocked-by 循環を検出し、輪ごとに 1 件だけ強制的に解除して全体が止まったままにならないようにする。イベント起動（Issue: Labeled / Issue closed / PR merged）が webhook の上限超過や利用上限で落ちたときの保険。
 ---
 
 まず同じ plugin の `routine-common` skill を読み、そのラベル規約に従う。
@@ -39,6 +39,32 @@ auto-fix はセッションが受け取るので、VM が回収された後も�
 見つかったら、PR のスレッド全体と diff を読み、**そのラベルに対応するスキル**
 （`routine-propose` / `routine-apply`）の続きを引き受ける。auto-fix を有効化し直す。
 引き継ぐのは 1 セッションで 1 件まで。
+
+## 3. 循環ブロックを検出し、1 つ解除する
+
+1 と 2 を終えた最後に、必ずこれを行う。`routine-dispatch` の 3 は個々の issue の
+`blocked-by:` が解けたかどうかしか見ないので、**issue 番号同士が輪になって互いを
+指す状態（A が `blocked-by: #B`、B が `blocked-by: #A` のような閉路）は自動では
+永久に解けない。** dispatch を何度実行してもこの輪は壊れないので、ここで検出し、
+1 件だけ強制的に解除する。
+
+1. **輪を数える。** open issue のうち、最新の `blocked-by:` コメントが issue 番号
+   （`#m` の形）を指しているものだけを集める。`change <name>` と `human` は issue
+   同士を指さないので対象外。`issue → blocked-by 先の issue` を辺とする有向グラフを
+   作り、たどると出発点へ戻る経路（閉路）が無いかを確認する。
+2. **閉路が無ければ、「open issue N 件・issue 番号宛の `blocked-by:` M 件を確認し、
+   閉路は無かった」と報告して終える。それも正しい終わり方である。**
+3. **閉路が見つかったら、輪の中で issue 番号が最も小さいものを 1 つ選び、
+   `routine-dispatch` の 3 の「全部解けた」列と同じ操作で強制的に進める。**
+   - `stage:todo` + `blocked` なら、`blocked` を外し、`stage:todo` を外して
+     `stage:propose` を付ける。
+   - `stage:propose` / `stage:apply` / `stage:archive` + `blocked` なら、`blocked`
+     を外し、段階ラベルを外して付け直す（worker を再起動させる）。
+   - どちらでも、issue へ `<!-- routine -->` で始まるコメントを投稿し、検出した輪
+     （関与した issue 番号を出発点から順に並べたもの）と、ブロッカーは実際には
+     解けていないが循環を断つために強制的に進めたことを書く。正しい依存関係かどうかの
+     判断は人に委ねる。
+4. **輪が複数あれば、輪ごとに 1 issue まで解除する。** 同じ輪の 2 件目以降には触れない。
 
 # `.claude/` `docs/` だけの修正
 
