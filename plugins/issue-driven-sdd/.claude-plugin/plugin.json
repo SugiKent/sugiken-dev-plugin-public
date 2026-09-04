@@ -1,1 +1,5 @@
-{"name":"issue-driven-sdd","description":"GitHub Issue のラベル 1 本で開発の段階を表し、Claude Code Routines が段階ごとに起動して OpenSpec の propose → apply → archive を回す構成一式","version":"0.1.0"}
+{
+  "name": "issue-driven-sdd",
+  "description": "GitHub Issue のラベル 1 本で開発の段階を表し、Claude Code Routines が段階ごとに起動して OpenSpec の propose → apply → archive を回す構成一式",
+  "author": { "name": "SugiKent" }
+}
