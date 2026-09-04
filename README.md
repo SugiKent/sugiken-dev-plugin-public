@@ -36,7 +36,7 @@ description による自動呼び出しは従来どおり機能する。
 | `e2e` | quality | 網羅的 E2E の 4 フェーズ分解。Web=Playwright, モバイル=Maestro |
 | `design` | quality | UI/UX 設計・ユーザビリティ評価系スキル |
 | `llm-eval` | quality | LLM-as-a-Judge 評価基盤のセットアップ (BINEVAL 手法準拠) |
-| `dev-utils` | utility | ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン) |
+| `dev-utils` | utility | ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン / コミットからのカスタムリンター生成) |
 | `dev-tool-bootstrap` | utility | 運用ツールのスキャフォールド (mini-sentry / READ-only admin ダッシュボード) |
 | `basic` | utility | 徹底質問 (grill-me) / 15歳向け図解説明 (eli5) / 表現思考 / retro / スケジュール抑制の汎用スキル |
 | `analytics-tools` | infra | プロダクト分析ツール導入 (Amplitude: Web / モバイル / サーバ) |
