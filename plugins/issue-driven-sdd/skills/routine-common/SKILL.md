@@ -68,6 +68,22 @@ gh api -X DELETE repos/{owner}/{repo}/issues/<PR番号>/labels/question
 
 ラベルをまだ作っていない新しいプロジェクトでは、作成コマンドを `routines-setup` skill から実行する（この skill はセットアップの実行を担わない）。
 
+# `github-trigger-context` の待ち方
+
+イベント起動の routine（`routine-propose` / `routine-apply` / `routine-archive`）だけが対象。
+定期実行の `routine-sweep` にはトリガー文脈が無いので、この節は適用しない。
+
+**`github-trigger-context` はセッション開始からやや遅れて届く。** 開始直後に見当たらないことは
+「届かない」ことを意味しない。次のように待ってから読む。
+
+1. まず届いているかを見る。届いていれば待たずに Issue / PR の ID を読み、そのまま着手する。
+2. 届いていなければ **5 秒 → 10 秒 → 30 秒 → 60 秒** の順に待ち、毎回のあとで届いたかを見直す
+   （待ち時間の合計は約 105 秒）。届いた時点で待つのをやめる。
+3. 待機は `sleep` で行う。harness が前景の `sleep` を塞ぐなら、その harness が提供する
+   待機手段を使う。
+4. 4 回待っても届かないなら、各スキルの規定どおり**推測で対象を決めず**、何が読めなかったかを
+   報告して終える（`routine-sweep` が後追いで拾う）。
+
 # 1 セッション 1 issue 1 PR
 
 - 1 つのセッションで扱う issue は 1 つ、作る PR は 1 つ。複数 issue をまたがない。

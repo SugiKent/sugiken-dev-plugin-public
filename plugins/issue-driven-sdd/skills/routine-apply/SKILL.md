@@ -8,8 +8,9 @@ description: propose ラベルの PR が merge されたときに起動し、対
 # 対象の特定
 
 **対象はトリガーとなった PR。起動時の `github-trigger-context` に PR の ID が書かれている。**
-まずそれを読んで対象を確定させる。読み取れない場合は、推測で対象を決めず、何が読めなかったかを
-報告して終える（`routine-sweep` が後追いで拾う）。
+これはセッション開始から遅れて届くので、`routine-common` の「`github-trigger-context` の待ち方」に
+従って待ってから読み、対象を確定させる。待ちきっても読み取れない場合は、推測で対象を決めず、
+何が読めなかったかを報告して終える（`routine-sweep` が後追いで拾う）。
 
 起動条件は **`propose` ラベルの PR が merge されたこと**。その PR 本文の `Refs #n` から
 対象 issue を引く。**このセッションで作る PR は 1 つ。**

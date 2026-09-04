@@ -8,7 +8,8 @@ description: GitHub issue に stage:propose ラベルが付いたときに起動
 # 対象の特定
 
 **対象はトリガーとなった Issue。起動時の `github-trigger-context` に Issue の ID が書かれている。**
-まずそれを読んで対象を確定させる。
+これはセッション開始から遅れて届くので、`routine-common` の「`github-trigger-context` の待ち方」に
+従って待ってから読み、対象を確定させる。
 
 そこから Issue を読み取れない場合は、**推測で対象を決めてはならない。** 何が読めなかったかを
 報告して終える（`routine-sweep` が後追いで拾う）。ラベルの状態だけを見て「たぶんこれだろう」と
