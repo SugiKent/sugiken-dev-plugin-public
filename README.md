@@ -33,6 +33,7 @@ description による自動呼び出しは従来どおり機能する。
 | `orchestration` | workflow | openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式) |
 | `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 |
 | `mobile-store` | workflow | モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消) |
+| `marketing` | workflow | 公開済みプロダクトのマーケティング運用 (現状分析・打ち手の優先順位付け) |
 | `e2e` | quality | 網羅的 E2E の 4 フェーズ分解。Web=Playwright, モバイル=Maestro |
 | `design` | quality | UI/UX 設計・ユーザビリティ評価系スキル |
 | `llm-eval` | quality | LLM-as-a-Judge 評価基盤のセットアップ (BINEVAL 手法準拠) |

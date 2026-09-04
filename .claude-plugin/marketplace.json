@@ -104,6 +104,12 @@
       "source": "./plugins/mobile-store",
       "description": "モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消)",
       "category": "workflow"
+    },
+    {
+      "name": "marketing",
+      "source": "./plugins/marketing",
+      "description": "公開済みプロダクトのマーケティング運用 (現状分析・打ち手の優先順位付け)",
+      "category": "workflow"
     }
   ]
 }
