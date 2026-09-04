@@ -5,7 +5,7 @@ description: issue-driven-sdd 用にバックログ項目を GitHub Issue へ変
 
 # create-github-issues
 
-バックログ（メモ、Slack のやり取り、口頭の要望など）を GitHub Issue に変換する。この skill は Issue を作るだけで、着手はしない。段階ラベル（`stage:propose` 等）は付けない。付けるのは人であり、それが `routine-propose` の起動条件になる。
+バックログ（メモ、Slack のやり取り、口頭の要望など）を GitHub Issue に変換する。この skill は Issue を作るだけで、着手はしない。段階ラベル（`stage:todo` 等）は付けない。付けるのは人であり、人が付けた `stage:todo` が `routine-dispatch` の起動条件になる。
 
 ## 進め方
 

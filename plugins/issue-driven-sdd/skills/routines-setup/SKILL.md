@@ -1,60 +1,80 @@
 ---
 name: routines-setup
-description: issue-driven-sdd を新しいプロジェクトへ導入するときのセットアップ手順。ラベル作成コマンド・前提条件・Claude Code Routines 5 本の設定表・最初の 1 件での動作確認を実行する。手動起動。「issue-driven-sdd を導入して」「Routines をセットアップして」「ラベルを作って」等の依頼で使用する。ラベルの意味や運用規則は `routine-common` を参照。
+description: issue-driven-sdd を対象プロジェクトへ導入する、または導入済みの設定を現在の規約に合わせて直すスキル。GitHub のラベルと Claude Code Routines の現状を読み取り、あるべき状態との差分だけを直す。何度実行しても同じ結果になる。手動起動。「issue-driven-sdd を導入して」「Routines をセットアップして」「Routine の設定を直して」「ラベルを作って」等の依頼で使用する。ラベルの意味や運用規則は `routine-common` を参照。
 ---
 
 # routines-setup
 
-issue-driven-sdd の構成を対象プロジェクトへ一度だけ導入するための手順。日常の判断規則は `routine-common` に置き、こちらは初期セットアップのコマンド実行に限定する。
+issue-driven-sdd の構成を対象プロジェクトに揃える。**現状を読んでから差分だけを直す。**
+初回導入も、規約が変わった後の追従も、同じ手順で済む。日常の判断規則は `routine-common` に置き、
+こちらは設定の突き合わせに限定する。
+
+手元の Claude Code セッションで実行する前提。`gh` と Routines の API（`RemoteTrigger` ツール、
+または `/schedule`）が使える。Routine のセッションからは実行しない。
 
 ## 前提
 
-`openspec` plugin（propose / apply / archive の実体）を対象プロジェクトへ導入していること。無ければ先に導入する。
+`openspec` plugin（propose / apply / archive の実体）を対象プロジェクトへ導入していること。
+無ければ先に導入する。Claude GitHub App がリポジトリに install されていること。無いと webhook が届かない。
 
-## 1. ラベルを作る
+## 1. ラベルを揃える
 
-対象リポジトリを `gh repo view --json owner,name` で解決し、次の 9 個を作る。
+`gh label list` で現状を読み、次の表と突き合わせる。無いラベルは作り、あるラベルは色と説明を
+表に合わせて直す。表に無い旧ラベルは消さない（人が使っている可能性がある）。
 
-```bash
-gh label create "stage:propose" --color 0E8A16 --description "AIが着手開始する。人間が唯一手動でつけるラベル。"
-gh label create "stage:apply"   --color 1D76DB --description "proposal PR が merge されると AI が自動で付ける。ここから実装が始まる。"
-gh label create "stage:archive" --color 5319E7 --description "実装 PR が merge されると AI が自動で付ける。archive PR の merge で issue が閉じる。"
-gh label create "wip"           --color FBCA04 --description "AI が作業中。人間は触らない。open PR が無いまま 3 時間経つか、前段階の merge より古ければ AI が外す。"
-gh label create "propose" --color 0E8A16 --description "AI が付ける PR ラベル。openspec の proposal を追加する PR。merge すると実装が始まる。"
-gh label create "apply"   --color 1D76DB --description "AI が付ける PR ラベル。実装の PR。merge すると archive が始まる。"
-gh label create "archive" --color 5319E7 --description "AI が付ける PR ラベル。openspec archive の PR。merge すると issue が閉じる。"
-gh label create "docs"    --color C5DEF5 --description "AI が付ける PR ラベル。.claude/ と docs/ だけを変える PR。merge しても次の段階は始まらない。"
-gh label create "question" --color D876E3 --description "AI が付ける PR ラベル。人へ問うている未確定の判断が残っている PR。全部の回答が済むと AI が外す。"
-```
+| ラベル | 色 | 説明 |
+| --- | --- | --- |
+| `stage:todo` | `BFDADC` | 人が付ける唯一のラベル。承認済みで着手の順番待ち。AI が順番を決めて次へ進める |
+| `stage:propose` | `0E8A16` | AI が付ける。proposal を作っている段階。人が直接付けると順番を飛ばして即着手する |
+| `stage:apply` | `1D76DB` | AI が付ける。proposal PR が merge され、実装している段階 |
+| `stage:archive` | `5319E7` | AI が付ける。実装 PR が merge され、archive している段階。archive PR の merge で issue が閉じる |
+| `wip` | `FBCA04` | AI が作業中。人間は触らない。open PR が無いまま 3 時間経つか、前段階の merge より古ければ AI が外す |
+| `blocked` | `B60205` | 宣言されたブロッカーが解けるまで AI は着手しない。理由は最新の blocked-by コメントにある。人が外すときは段階ラベルを付け直す |
+| `propose` | `0E8A16` | AI が付ける PR ラベル。openspec の proposal を追加する PR。merge すると実装が始まる |
+| `apply` | `1D76DB` | AI が付ける PR ラベル。実装の PR。merge すると archive が始まる |
+| `archive` | `5319E7` | AI が付ける PR ラベル。openspec archive の PR。merge すると issue が閉じる |
+| `docs` | `C5DEF5` | AI が付ける PR ラベル。.claude/ と docs/ だけを変える PR。merge しても次の段階は始まらない |
+| `question` | `D876E3` | AI が付ける PR ラベル。人へ問うている未確定の判断が残っている PR。全部の回答が済むと AI が外す |
 
-既に一部が存在する場合、失敗したラベルだけスキップして残りを作る。ラベルの意味・付け外しの規則は `routine-common` を参照（ここでは作成コマンドだけを扱う）。
+## 2. Routine を揃える
 
-## 2. Routine 5 本を作る
+`RemoteTrigger list` で既存の Routine を読み、名前 `<project> <役割>` で次の表と対応付ける。
+無ければ作り、あれば本文・model・`autofix_on_pr_create`・トリガーを表に合わせて直す。
+旧構成の Routine（`PR merged` で apply / archive を起動していたもの）は、消さずにトリガーを
+付け替える。
 
-| Name | Trigger | Filter | autofix_on_pr_create |
-| --- | --- | --- | --- |
-| `<project> propose` | Custom → `Issue: Labeled` | Labels contains `stage:propose` | **true** |
-| `<project> apply` | `PR merged` | Labels contains `propose` | **true** |
-| `<project> archive` | `PR merged` | Labels contains `apply` | false |
-| `<project> sweep` | Schedule | なし | **true**（sweep 自身が propose を実行しうる） |
-| `<project> assess-pr-risk` | `PR opened` | Labels contains `apply` または `archive` | false |
+| Name | Trigger | Filter | model | autofix_on_pr_create | 本文 |
+| --- | --- | --- | --- | --- | --- |
+| `<project> dispatch` | `Issue: Labeled` / `Issue: Closed` / `PR merged` / `PR merged` | `stage:todo` / なし / `propose` / `apply` | sonnet | false | `routine-dispatch` skill を読み、そのとおりに実行する |
+| `<project> propose` | `Issue: Labeled` | `stage:propose` | 既定 | **true** | `routine-propose` skill を読み、そのとおりに実行する |
+| `<project> apply` | `Issue: Labeled` | `stage:apply` | 既定 | **true** | `routine-apply` skill を読み、そのとおりに実行する |
+| `<project> archive` | `Issue: Labeled` | `stage:archive` | 既定 | false | `routine-archive` skill を読み、そのとおりに実行する |
+| `<project> sweep` | Schedule | なし | 既定 | false | `routine-sweep` skill を読み、そのとおりに実行する |
+| `<project> assess-pr-risk` | `PR opened` | `apply` または `archive` | 既定 | false | `assess-pr-risk` skill を読み、そのとおりに実行する |
 
-assess-pr-risk は **`apply` と `archive` ラベルの PR** を対象にする。`apply` は実装差分を持つ PR で、リスク評価の本来の対象。`archive` は AI が作る `Closes #n` 付きの PR で、merge されるまで issue が閉じない。ここに assess-pr-risk が走らないと、人間が archive PR を毎回手で merge することになる。propose / docs の PR には実装差分が無いので対象に含めない。フィルタなしだとそれらにもレビュー要否コメントが増える。
+- dispatch は 4 つのトリガーを 1 本の Routine に付ける。UI が 1 本 1 トリガーしか許さないなら
+  `<project> dispatch (todo)` のように本文が同じ Routine を 4 本作る。
+- sweep の間隔はプロジェクトごとに決める。dispatch が落ちたときの保険なので、
+  落ちてから拾われるまでの許容時間で決める。
+- `autofix_on_pr_create` が true の Routine が作った PR は、その PR を作ったセッションが
+  レビュー・会話コメントを受け取り続ける。grill の往復はこれに乗せる。
+- 本文は 1 行だけにする。判断規則はすべてスキル側に置き、Routine を作り直しても規則が失われない
+  ようにする。skill のパスは導入方法に応じて読み替える。
+- webhook トリガーの一覧は API で読めない。既存 Routine の `list_runs` で起動しているイベントを
+  確認し、足りないトリガーは `create_webhook_trigger` か UI で足す。UI でしか設定できない項目は
+  設定内容を表にして人へ依頼する。Filter が「なし」の行と「Labels contains」の行を取り違えないよう明示する。
 
-Filter に 2 つのラベルを指定できない UI なら、`<project> assess-pr-risk (apply)` と `<project> assess-pr-risk (archive)` の 2 本に分けて作る。
+## 3. 動作を確認する
 
-`autofix_on_pr_create` は Routine 単位の設定（API の `session_context`、UI にもトグル）。`true` の Routine が作った PR は、その PR を作ったセッションがレビュー・会話コメントを受け取り続ける。
+捨て issue を 1 件作り、`stage:todo` を付けて次を見る。
 
-schedule の sweep は Routines の schedule 機能から、イベント起動の 4 本は UI から作る。Routine 本文は 1 行だけにする。
+1. dispatch が起動し、issue が `stage:propose` に変わる
+2. propose が起動し、`wip` が付き、propose PR ができる
+3. 同じイベントで propose が 2 本以上起動していないか。起動していれば `routine-common` の
+   「ラベルの書き手」にある後発撤退が効いているかを run log で見る
+4. Routine のセッションから GitHub コネクタでラベルを付け外しできる
 
-```
-`routine-propose` skill を読み、そのとおりに実行する。
-```
+起動の有無は `RemoteTrigger list_runs` で見る。発火が拒否された run は一覧に残らないので、
+一覧が空でも Routine が無効とは限らない。`get` で `enabled` を確かめる。
 
-判断規則はすべてスキル側に置き、Routine を作り直しても規則が失われないようにする。
-
-## 3. 人間に Claude Routine の設定依頼を出す
-
-表にして各 routine の設定内容を細かく指示する。表には Name / Trigger / **Filter** / `autofix_on_pr_create` / Routine 本文の 1 行を必ず含め、Filter が「なし」の routine と「Labels contains ...」の routine を取り違えないよう明示する。
-
-特に assess-pr-risk については、**Filter に `apply` と `archive` の 2 つのラベルを設定すること**を依頼文に明記する。`apply` だけだと archive PR が評価されず、issue を閉じる merge を人間が毎回手で行うことになる。Filter なしだと propose / docs の PR にもリスク評価が走る。この 2 点を理由として 1〜2 行添える。UI が 1 ラベルしか受け付けない場合は 2 本に分けて設定するよう伝える。
+確認が済んだら捨て issue を閉じ、`wip` が dispatch に回収されることまで見る。

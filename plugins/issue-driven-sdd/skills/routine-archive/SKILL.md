@@ -1,39 +1,29 @@
 ---
 name: routine-archive
-description: apply ラベルの PR が merge されたときに起動し、対応する issue を stage:archive へ進めて tasks 完了済みの openspec change を archive するスキル。openspec archive の実行・validate --strict・archive PR の作成までを担う。Routine「PR merged = apply」の本体。「change を archive して」等の発話でも使う。
+description: GitHub issue に stage:archive ラベルが付いたときに起動し、tasks 完了済みの openspec change を archive するスキル。openspec archive の実行・validate --strict・archive PR の作成までを担う。Routine「Issue: Labeled = stage:archive」の本体。段階ラベルは routine-dispatch が付けるので、このスキルは段階ラベルを書かない。「change を archive して」等の発話でも使う。
 ---
 
 まず同じ plugin の `routine-common` skill を読み、そのラベル規約・PR の作り方に従う。
 
 # 対象の特定
 
-**対象はトリガーとなった PR。起動時の `github-trigger-context` に PR の ID が書かれている。**
-これはセッション開始から遅れて届くので、`routine-common` の「`github-trigger-context` の待ち方」に
-従って待ってから読み、対象を確定させる。待ちきっても読み取れない場合は、推測で対象を決めず、
-何が読めなかったかを報告して終える（`routine-sweep` が後追いで拾う）。
+`routine-common` の「対象の特定」に従い、環境変数 `CCR_TRIGGER_ISSUE_NUMBER` から対象 issue を
+読む。読めなければ推測せず、何が読めなかったかを報告して終える。
 
-起動条件は **`apply` ラベルの PR が merge されたこと**。その PR 本文の `Refs #n` から
-対象 issue を引く。**このセッションで作る PR は 1 つ**（複数 change をまとめてよい）。
+対象 issue の `Refs #n` を本文に持つ **merge 済みの `apply` ラベル PR** を探し、その PR が
+触った change を起動の原因とする。見つからなければ issue へコメントして終える。
 
-# 1. issue を進める
+**このセッションで作る PR は 1 つ**（複数 change をまとめてよい）。
 
-`origin/main` を取り直したうえで、対象 issue のラベルを付け替える。
+# 1. 着手できるかを判定する
 
-```
-stage:apply を外す → stage:archive を付ける → wip を外して付け直す（無ければ付ける）
-```
-
-`wip` を付け直すのは付与時刻を merge より新しくするためである（`routine-apply` と同じ理由。
-`routine-sweep` が「merge より古い `wip`」を途中終了の残骸として外す）。外す操作と付ける操作は
-別々に行い、付け直したらタイムラインで最新の `wip` 付与が merge 時刻より新しいことを確認する。
-
-複数 issue を束ねた change なら全件。付け替えたら読み直して確認する。
-
-`Refs #n` が見つからない archive（教訓の archive 等）は、issue が無いだけなので何もしない。
+`routine-common` の「着手可否の判定」を上から順に見る。`blocked` か生きた `wip` が付いていれば
+黙って終える。着手すると決めたら「`wip` のロック」に従い、**`wip` を外して付け直す**。
 
 # 2. archive 対象を判定する
 
-`openspec/changes/` 直下（`archive/` を除く）の各 change について `tasks.md` を数える。
+`origin/main` の `openspec/changes/` 直下（`archive/` を除く）の各 change について
+`tasks.md` を数える。
 
 ```bash
 for d in openspec/changes/*/; do
@@ -54,7 +44,8 @@ done
 起動の原因になった change が未チェックを残している場合は、その中身を読む。実行できない
 タスク（本番実測・デプロイ後確認）が残っているなら、**その行を tasks から外して別 issue へ
 起票し**（`routine-apply` と同じ措置）、そのうえで archive する。それ以外の未チェックが
-残っているなら archive せず、issue へ何が残っているかをコメントして終える。
+残っているなら archive せず、issue へ何が残っているかをコメントし、`blocked-by: human` で
+書き戻して終える。
 
 該当が 0 件なら「archive 対象なし」と報告して終える。
 
@@ -99,3 +90,4 @@ PR を作った時点でセッションは完了。merge で issue が閉じ、`
 - **他セッションが作業中の change を archive する。** archive はディレクトリを移動するので、
   相手の編集を止め、古い設計で spec 正本を上書きする。open PR が触っている change は対象外
 - PR が merge される前に issue を閉じる
+- 段階ラベルを書く

@@ -1,26 +1,25 @@
 ---
 name: routine-common
-description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すときの共通規約。ラベルの意味・着手可否の判定・ロック・PR の作り方・auto-fix の有効化を定める。routine-propose / routine-apply / routine-archive / routine-sweep が冒頭で必ず参照する。単独では実行しない。
+description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すときの共通規約。ラベルの意味・ラベルの書き手・対象の特定・着手可否の判定・見送りの書き戻し・ロック・PR の作り方・auto-fix の有効化を定める。routine-dispatch / routine-propose / routine-apply / routine-archive / routine-sweep が冒頭で必ず参照する。単独では実行しない。
 ---
 
 対象プロジェクトの開発は **GitHub Issue のラベル 1 本で段階が決まる**。
-このファイルは 4 つの routine スキルが共有する規約を定める。
+このファイルは routine スキルが共有する規約を定める。
 
 # ラベル
 
 ## issue（段階。同時に 1 つだけ付く。前にしか進まない）
 
-```
-（なし）→ stage:propose → stage:apply → stage:archive → closed
-           人が付ける      routine-apply   routine-archive   archive PR の Closes
-```
+段階は「なし」から始まり、人が `stage:todo` を付けると dispatcher が `stage:propose`、
+`stage:apply`、`stage:archive` の順に進め、archive PR の `Closes` で閉じる。
 
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
 | （なし） | 起票のみ。routine は触らない | 誰でも | |
-| `stage:propose` | 承認済み。propose してよい | **人** | `routine-apply` |
-| `stage:apply` | proposal 合意済み。実装してよい | `routine-apply` | `routine-archive` |
-| `stage:archive` | 実装 merge 済み。archive してよい | `routine-archive` | GitHub（`Closes #n`） |
+| `stage:todo` | 承認済み。着手の順番待ち | **人** | `routine-dispatch` |
+| `stage:propose` | propose してよい | `routine-dispatch` | `routine-dispatch` |
+| `stage:apply` | proposal 合意済み。実装してよい | `routine-dispatch` | `routine-dispatch` |
+| `stage:archive` | 実装 merge 済み。archive してよい | `routine-dispatch` | GitHub（`Closes #n`） |
 
 **段階ラベルが 2 つ以上付いている issue には着手しない。** 状態が壊れているので、
 何と何が付いているかを issue へ 1 度コメントして終える（fail-closed）。
@@ -29,19 +28,19 @@ description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すと�
 
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
-| `wip` | routine が作業中のロック | 着手した routine | PR merge / close 後の routine、または `routine-sweep` の失効回収 |
+| `wip` | worker が作業中のロック | 着手した worker | 見送った worker、または `routine-dispatch` の失効回収 |
+| `blocked` | 宣言されたブロッカーが解けるまで着手しない | 見送った worker、または受付時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch`、または人 |
 
 ## PR
 
-| ラベル | 付ける PR | merge で起動する routine |
+| ラベル | 付ける PR | merge で `routine-dispatch` が進める段階 |
 | --- | --- | --- |
-| `propose` | proposal を追加する PR | `routine-apply` |
-| `apply` | 実装の PR | `routine-archive` |
+| `propose` | proposal を追加する PR | issue を `stage:apply` へ |
+| `apply` | 実装の PR | issue を `stage:archive` へ |
 | `archive` | `openspec archive` の PR | なし（`Closes #n` で issue が閉じる） |
 | `docs` | `.claude/` `docs/` だけの PR | なし |
 
-**PR ラベルは Routine のトリガー条件そのものである。** 付け忘れると次の段階が起動しない
-（`routine-sweep` が後追いで拾うが、最大 1 時間遅れる）。
+**PR ラベルは dispatcher が段階を進める条件そのものである。** 付け忘れると次の段階が始まらない。
 
 ## PR（修飾）
 
@@ -50,68 +49,126 @@ description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すと�
 | `question` | 人へ問うている未確定の判断が残っている。merge してはいけない | 問いを投稿した routine | 全部の回答を受け取った routine |
 
 段階ラベル（`propose` / `apply` / `archive` / `docs`）とは直交するので、**段階ラベルへ重ねて付ける。**
-段階ラベルは merge 後にどの routine が起動するかを決めており、質問の有無で書き換えると次の段階が
-起動しなくなる。
 
-- **人へ問いを投げたら、同じ操作の中で `question` を付ける。** コメントを投稿してからラベルを
-  付けるまでの間に人が見ると、「答えを待っている PR」だと分からない。
-- **未確定の判断が 0 件になったら外す。** 残り 1 件でも外してはならない。外す条件は
-  「人の回答を全部受け取った」ことであって、「1 ラウンド終えた」ことではない。
+- **人へ問いを投げたら、同じ操作の中で `question` を付ける。**
+- **未確定の判断が 0 件になったら外す。** 残り 1 件でも外してはならない。
 - 本文 1 行目の `未確定の判断: N 件` と**必ず一致させる**。N > 0 なら `question` が付いており、
-  N = 0 なら付いていない。片方だけ更新すると、どちらが正しいのかが人に分からなくなる。
-- 付け外しのたびに読み直して反映を確認する（GitHub コネクタで PR のラベルを取得し直す）。
+  N = 0 なら付いていない。
+- 付け外しのたびに読み直して反映を確認する。
 
-ラベルの付け外しは GitHub コネクタで行う。`gh` コマンドは Claude Code のクラウド環境では使えない。
+ラベルをまだ作っていない新しいプロジェクトでは、作成コマンドを `routines-setup` skill から実行する。
 
-ラベルをまだ作っていない新しいプロジェクトでは、作成コマンドを `routines-setup` skill から実行する（この skill はセットアップの実行を担わない）。
+# ラベルの書き手
 
-# `github-trigger-context` の待ち方
+| ラベル | 書いてよいのは |
+| --- | --- |
+| `stage:todo` | 人 |
+| `stage:propose` / `stage:apply` / `stage:archive` | `routine-dispatch` だけ。人が直接付けるのは「dispatcher を飛ばして今すぐ着手させる」強制操作 |
+| `wip` | worker が付ける。外すのは worker と `routine-dispatch` |
+| `blocked` | worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` と人 |
+| PR のラベル | PR を作った worker |
 
-イベント起動の routine（`routine-propose` / `routine-apply` / `routine-archive`）だけが対象。
-定期実行の `routine-sweep` にはトリガー文脈が無いので、この節は適用しない。
+worker は段階ラベルを書かない。書き手を 1 つにしないと、merge・見送り・失効回収が
+同じラベルを同時に書いて状態が壊れる。
 
-**`github-trigger-context` はセッション開始からやや遅れて届く。** 開始直後に見当たらないことは
-「届かない」ことを意味しない。次のように待ってから読む。
+**ラベルの書き込みは routine を再起動させる。** `Issue: Labeled` の Filter は issue のラベル集合で
+判定されるので、`stage:propose` の issue に `wip` を付けるだけで propose の routine が
+もう 1 回起動する。したがって、
 
-1. まず届いているかを見る。届いていれば待たずに Issue / PR の ID を読み、そのまま着手する。
-2. 届いていなければ **5 秒 → 10 秒 → 30 秒 → 60 秒** の順に待ち、毎回のあとで届いたかを見直す
-   （待ち時間の合計は約 105 秒）。届いた時点で待つのをやめる。
-3. 待機は `sleep` で行う。harness が前景の `sleep` を塞ぐなら、その harness が提供する
-   待機手段を使う。
-4. 4 回待っても届かないなら、各スキルの規定どおり**推測で対象を決めず**、何が読めなかったかを
-   報告して終える（`routine-sweep` が後追いで拾う）。
+- 起動された worker は最初に `wip` と `blocked` を見て、付いていれば**黙って終える**。
+  コメントも投稿しない。これは再起動であって空振りではない。
+- ラベルは **1 操作 1 ラベル**で付け外しする。集合しか書けないツールなら、そのラベルを含まない
+  集合を書いてから、含む集合を書く。
+
+## 人が持つ操作
+
+| したいこと | 操作 |
+| --- | --- |
+| 承認して順番待ちに入れる | `stage:todo` を付ける |
+| 取り下げる・止める | 段階ラベルを外す。`stage:todo` でも `stage:propose` 以降でも同じ |
+| 順番を飛ばして今すぐ着手させる | `stage:propose` を直接付ける |
+| ブロックを人の判断で解く | `blocked` を外し、段階ラベルを外して付け直す。`stage:todo` なら dispatcher が付け直し後のコメントだけを見て再評価する。`stage:propose` 以降なら worker が再調査するので、閉じた領域のような原因は先に方針の文書を変えておく |
+| 死んだ worker をやり直させる | 段階ラベルを外して付け直す |
+
+PR を merge せずに close すると、dispatcher は「人が却下した」とみなして `blocked-by: human` を
+書き、再起動しない。やり直させたいときは上の操作で明示する。
+
+# 対象の特定
+
+イベント起動の worker（`routine-propose` / `routine-apply` / `routine-archive`）は、
+**環境変数から対象を読む。**
+
+| 変数 | 内容 |
+| --- | --- |
+| `CCR_TRIGGER_EVENT` | 起動したイベント。`issues.labeled` など |
+| `CCR_TRIGGER_ISSUE_NUMBER` | 対象 issue の番号 |
+| `CCR_TRIGGER_REPO` | `owner/repo` |
+
+`CCR_TRIGGER_ISSUE_NUMBER` があればそれが対象。無ければ会話に届く `github-trigger-context` を
+読む。どちらにも無ければ**推測で対象を決めず**、何が読めなかったかを報告して終える。
+ラベルの状態だけを見て「たぶんこれだろう」と選ぶと、別セッションが作業中の issue を横取りする。
+取りこぼしは `routine-dispatch` が再起動する。
+
+`routine-dispatch` と `routine-sweep` はトリガー文脈を使わず、毎回全体を見る。
 
 # 1 セッション 1 issue 1 PR
 
 - 1 つのセッションで扱う issue は 1 つ、作る PR は 1 つ。複数 issue をまたがない。
-- **PR を作ったらセッションを終える。** merge を待たない。次の段階は merge イベントで
-  起動する別セッションが担う。例外は grill（`routine-propose` を参照）で、そこでは
-  auto-fix によって同じセッションが PR 上のやり取りを続ける。
+- **PR を作ったらセッションを終える。** merge を待たない。merge は `routine-dispatch` が受けて
+  次の段階ラベルを付け、別セッションが起動する。例外は grill（`routine-propose` を参照）で、
+  そこでは auto-fix によって同じセッションが PR 上のやり取りを続ける。
 - 並行性は「セッションを複数走らせる」ことで出す。`wip` が互いの衝突を防ぐ。
 
 # 着手可否の判定
 
-`stage:*` が付いているだけでは着手してよいことにならない。**次のどれかに当たるなら着手せず、
-理由を issue へ 1 度コメントして終える**（同じコメントが既にあるなら重ねない）。
+段階ラベルが付いているだけでは着手してよいことにならない。上から順に見て、当たったところで止める。
 
-1. **`wip` が付いている。** ただし次のどちらかなら失効とみなして奪ってよい（`routine-sweep` の
-   回収と同じ判定）。
-   - open PR が無く、`wip` が付いてから 3 時間を超えている
-   - open PR が無く、`wip` がその issue の直近の PR merge より古く、merge から 30 分を超えている
-     （前段階の routine が付け、次段階の routine が着手前に途中終了した残骸）
-2. **段階ラベルが 2 つ以上ある。**
-3. **依存 issue が閉じていない。** issue 本文に `depends on #m` があり `#m` が open なら着手しない。
-4. **進行中の作業と同じ場所を触る。** 「進行中」は open PR と、`openspec/changes/` 直下に残る
+1. **`blocked` が付いている。** 黙って終える。
+2. **`wip` が付いている。** 黙って終える。ただし open PR が無く、次のどちらかなら失効とみなして
+   奪ってよい（`routine-dispatch` の回収と同じ判定）。
+   - `wip` が付いてから 3 時間を超えている
+   - 最新の `wip` 付与が、その issue の最新の PR merge より古く、merge から 30 分を超えている
+3. **段階ラベルが 2 つ以上ある。** 何と何が付いているかをコメントして終える。
+4. **依存 issue が閉じていない。** issue 本文に `depends on #m` があり `#m` が open。
+   `blocked-by: #m` で書き戻す。
+5. **進行中の作業と同じ場所を触る。** 「進行中」は open PR と、`openspec/changes/` 直下に残る
    （archive されていない）change。「同じ場所」は次のいずれか。
    - 同じ spec capability の同じ要求を MODIFIED する
    - 同じ画面・同じルート
    - 同じ service / repository のファイル
    propose 段階では delta spec を、apply 段階では PR の変更ファイルを読んで判定する。
-5. **その機能が閉じられている。** プロジェクトのドキュメント（`CLAUDE.md` や製品の目的地を
-   定めた文書）が「開発を止めた」「利用を停止した」と宣言している領域は対象外。
-   この場合は理由をコメントしたうえで **`stage:propose` を外す**（人の再判断へ戻す）。
+   相手の issue 番号か change 名で `blocked-by:` を書き戻す。
+6. **change の前提が満たされていない。** `tasks.md` の冒頭に「先行 change の archive を確認する」
+   のような前提条件があり、満たされていない。`blocked-by: change <name>` で書き戻す。
+7. **その機能が閉じられている。** プロジェクトのドキュメント（`CLAUDE.md` や製品の目的地を
+   定めた文書）が「開発を止めた」「利用を停止した」と宣言している領域。
+   `blocked-by: human` で書き戻す。人が方針を変えない限り解けない。
 
-4 で見送った場合、衝突相手が merge されれば次の周期で自然に選定対象へ戻る。
+4 以降は調査を伴う。**調査の結果は必ず書き戻す。** 書き戻さないと、次に起動した worker が
+同じ調査をもう 1 度払う。
+
+## 見送りの書き戻し
+
+着手しないと決めたら、次を 1 回の操作でまとめて行い、終える。
+
+1. issue へコメントを投稿する。1 行目を `<!-- routine -->` にし、2 行目以降にブロッカーを
+   1 件 1 行で `blocked-by: #589` のように書き、空行を挟んで人が読める理由を添える。
+2. `blocked` を付ける。
+3. `wip` を付けていたら外す。
+
+`blocked-by:` の形は 3 つだけ。issue か PR の番号 `#m`、`change <change名>`、`human`。
+**`blocked-by:` 行を含む最新のコメントが正本**になるので、ブロッカーが増減したら全部書き直す。
+解けたかどうかの判定と放出は `routine-dispatch` が担う。worker はブロッカーの解消を待たない。
+
+# `wip` のロック
+
+着手すると決めたら **最初に `wip` を付ける**。既に付いている場合でも、**外してから付け直す**。
+付与時刻を今にするためで、`routine-dispatch` は「最新の merge より古い `wip`」を前段階の
+残骸として外すからだ。付け直したら issue のタイムラインを読み、最新の `wip` 付与イベントが
+今の時刻であることを確認する。
+
+付け直した直後のタイムラインに、**自分の付与の 2 分以内に別の `wip` 付与イベント**があれば、
+同じトリガーから 2 つのセッションが起動している。後発として黙って終える。
 
 # `origin/main` を正本にする
 
@@ -128,7 +185,7 @@ description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すと�
 **`gh` コマンドは Claude Code のクラウド環境（Routine のセッション含む）では使えない。**
 issue / PR の閲覧、ラベルの付け外し、コメントの投稿はすべて GitHub コネクタで行う。
 
-段階を付け替えたら **読み直して反映を確認する**（GitHub コネクタで issue のラベルを取得し直す）。
+ラベルを付け外ししたら **読み直して反映を確認する**。
 
 ## routine のコメントには必ずマーカーを入れる
 
@@ -153,7 +210,7 @@ routine の GitHub 操作は**あなた個人のアカウント**として現れ
 - **draft PR を作らない。** すべて ready for review で作る。
 - title は `[<フェーズ>] #<issue番号> <要約>`（例: `[propose] #12 通話ログの見出しを固定する`）。
 - **本文の参照は `Refs #n`。`Closes #n` を書いてよいのは `archive` PR だけ。**
-  propose / apply で `Closes` を書くと merge 時に issue が閉じ、以降の段階が起動しない。
+  propose / apply で `Closes` を書くと merge 時に issue が閉じ、以降の段階が始まらない。
 - PR ラベルを必ず付ける（`propose` / `apply` / `archive` / `docs`）。
 - **auto-fix を有効化する。** PR を作ったら、その URL を対象に auto-fix を有効化し、
   「CI の失敗と、レビューコメント・会話コメントの両方を文脈として理解して対応する」ことを
@@ -172,8 +229,8 @@ draft を使わないので、「まだ merge してはいけない PR」を人�
 未確定の判断: 0 件 — レビューをお願いします
 ```
 
-grill のラウンドごとに更新する。`routine-apply` は N が 0 でない PR が merge された場合、
-実装せずに issue へコメントして `stage:propose` へ戻す。
+grill のラウンドごとに更新する。N が 0 でない `propose` PR が merge された場合、
+`routine-dispatch` は段階を進めず `blocked-by: human` で人に戻す。
 
 # openspec を通さない変更（`.claude/` と `docs/`）
 
@@ -219,8 +276,9 @@ E2E の要否や成果物の伝え方は、リポジトリごとに違う。prop
 
 | 項目 | 扱い |
 | --- | --- |
-| リポジトリ名 `{owner}/{repo}` | GitHub コネクタで解決する（`gh repo view` は使えない） |
+| リポジトリ名 `{owner}/{repo}` | `CCR_TRIGGER_REPO`、無ければ GitHub コネクタで解決する |
 | 着手してはいけない領域 | 対象プロジェクトの `CLAUDE.md` に閉じた領域の節があればそれに従う |
 | propose / apply / archive の実体 | `openspec` plugin のスキルを参照する |
-| `wip` の失効時間 | 既定 3 時間。この節の記述を変えるだけで済ませる |
+| `wip` の失効時間 | 既定 3 時間。この節と `routine-dispatch` の表を変える |
+| 再起動の上限 | 既定 3 回。`routine-dispatch` の 4 を変える |
 | プロジェクト固有のルール | `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読む（E2E の要否・スクリーンショット方針もここで決まる） |

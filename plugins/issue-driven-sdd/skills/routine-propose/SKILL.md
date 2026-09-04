@@ -1,28 +1,28 @@
 ---
 name: routine-propose
-description: GitHub issue に stage:propose ラベルが付いたときに起動し、openspec change の proposal を作るスキル。仕様に未確定の判断が残っていれば PR 上で人へ問い、auto-fix によって同じセッションで回答を受け取りながら詰め切る（grill）。Routine「Issue: Labeled = stage:propose」の本体。
+description: GitHub issue に stage:propose ラベルが付いたときに起動し、openspec change の proposal を作るスキル。仕様に未確定の判断が残っていれば PR 上で人へ問い、auto-fix によって同じセッションで回答を受け取りながら詰め切る（grill）。Routine「Issue: Labeled = stage:propose」がこのスキルを呼ぶ。段階ラベルは routine-dispatch が付けるので、このスキルは段階ラベルを書かない。
 ---
 
 まず同じ plugin の `routine-common` skill を読み、そのラベル規約・着手可否・PR の作り方に従う。
 
 # 対象の特定
 
-**対象はトリガーとなった Issue。起動時の `github-trigger-context` に Issue の ID が書かれている。**
-これはセッション開始から遅れて届くので、`routine-common` の「`github-trigger-context` の待ち方」に
-従って待ってから読み、対象を確定させる。
-
-そこから Issue を読み取れない場合は、**推測で対象を決めてはならない。** 何が読めなかったかを
-報告して終える（`routine-sweep` が後追いで拾う）。ラベルの状態だけを見て「たぶんこれだろう」と
-選ぶと、別セッションが作業中の issue を横取りする。
+`routine-common` の「対象の特定」に従い、環境変数 `CCR_TRIGGER_ISSUE_NUMBER` から対象 issue を
+読む。読めなければ**推測で対象を決めてはならない。** 何が読めなかったかを報告して終える。
+ラベルの状態だけを見て「たぶんこれだろう」と選ぶと、別セッションが作業中の issue を横取りする。
+取りこぼしは `routine-dispatch` が再起動する。
 
 対象は 1 件だけ。**このセッションで作る PR は 1 つ。**
 
 # 1. 着手できるかを判定する
 
-`routine-common` の「着手可否の判定」を実行する。着手しないと決めたら、理由を issue へ
-1 度コメントして終える。これは正しい終わり方であり、空振りではない。
+`routine-common` の「着手可否の判定」を上から順に見る。`blocked` か生きた `wip` が付いていれば
+黙って終える。それ以外で見送るなら「見送りの書き戻し」に従い、`blocked-by:` を書いて終える。
+これは正しい終わり方であり、空振りではない。書き戻した理由が解けたら `routine-dispatch` が
+この issue を再び放出する。
 
-着手すると決めたら **最初に `wip` を付ける**（ロック）。付けたら読み直して反映を確認する。
+着手すると決めたら `routine-common` の「`wip` のロック」に従い、**最初に `wip` を外して
+付け直す**。付けたら読み直して反映を確認する。
 
 # 2. 事実を自分で調べる
 
@@ -124,6 +124,6 @@ auto-fix によって、同じセッションが人の返信を受け取る。
 # 6. 終える
 
 PR を作った（または grill を終えて ready にした）時点でこのセッションは完了。**merge を待たない。**
-`wip` は付けたままにする（PR が open なので、`routine-sweep` の失効回収には当たらない）。
+`wip` は付けたままにする（PR が open なので、`routine-dispatch` の失効回収には当たらない）。
 
-次の段階は `propose` ラベルの PR が merge された時点で `routine-apply` が起動して担う。
+merge は `routine-dispatch` が受けて issue を `stage:apply` へ進め、`routine-apply` が起動する。

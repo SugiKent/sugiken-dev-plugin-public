@@ -1,51 +1,37 @@
 ---
 name: routine-apply
-description: propose ラベルの PR が merge されたときに起動し、対応する issue を stage:apply へ進めて openspec change を実装するスキル。実装が済んだら apply ラベルの PR を作って終える。Routine「PR merged = propose」の本体。
+description: GitHub issue に stage:apply ラベルが付いたときに起動し、merge 済みの proposal に対応する openspec change を実装するスキル。実装が済んだら apply ラベルの PR を作って終える。Routine「Issue: Labeled = stage:apply」の本体。段階ラベルは routine-dispatch が付けるので、このスキルは段階ラベルを書かない。
 ---
 
 まず同じ plugin の `routine-common` skill を読み、そのラベル規約・着手可否・PR の作り方に従う。
 
 # 対象の特定
 
-**対象はトリガーとなった PR。起動時の `github-trigger-context` に PR の ID が書かれている。**
-これはセッション開始から遅れて届くので、`routine-common` の「`github-trigger-context` の待ち方」に
-従って待ってから読み、対象を確定させる。待ちきっても読み取れない場合は、推測で対象を決めず、
-何が読めなかったかを報告して終える（`routine-sweep` が後追いで拾う）。
+`routine-common` の「対象の特定」に従い、環境変数 `CCR_TRIGGER_ISSUE_NUMBER` から対象 issue を
+読む。読めなければ推測せず、何が読めなかったかを報告して終える。
 
-起動条件は **`propose` ラベルの PR が merge されたこと**。その PR 本文の `Refs #n` から
-対象 issue を引く。**このセッションで作る PR は 1 つ。**
+対象 issue の `Refs #n` を本文に持つ **merge 済みの `propose` ラベル PR** を探し、それを
+proposal の正本とする。複数あれば最新の merge。見つからなければ issue へコメントして終える。
+人が `stage:apply` を直接付けた強制起動でも同じ。
 
-# 1. merge された PR を検証する
+**このセッションで作る PR は 1 つ。**
 
-- **本文 1 行目の「未確定の判断」が 0 件か。`question` ラベルが外れているか。** どちらか
-  一方でも満たさないなら実装してはならない。
-  issue へ「未確定のまま merge された」とコメントし、`stage:apply` を付けずに
-  `stage:propose` のまま（既に外れていれば付け直して）終える。
-- `Refs #n` が無いなら、PR の title と change の `proposal.md` から issue を探す。
-  1 つの change が複数 issue を束ねることがあるので、`proposal.md` を `grep -a '#'` で全件見る。
-  見つからなければ issue を触らず、PR へコメントして終える。
+# 1. 着手できるかを判定する
 
-# 2. issue を進める
+`routine-common` の「着手可否の判定」を上から順に見る。`blocked` か生きた `wip` が付いていれば
+黙って終える。それ以外で見送るなら「見送りの書き戻し」に従い、`blocked-by:` を書いて終える。
 
-`origin/main` を取り直したうえで、対象 issue のラベルを付け替える。
+このスキルで特に見るもの。
 
-```
-stage:propose を外す → stage:apply を付ける → wip を外して付け直す（無ければ付ける）
-```
+- merge 済み `propose` PR の本文 1 行目が `未確定の判断: 0 件` で、`question` が外れているか。
+  満たさなければ `blocked-by: human` で書き戻す。未確定のまま実装してはならない。
+- change の `tasks.md` の冒頭に「先行 change の archive を確認する」のような前提条件があれば、
+  `origin/main` で満たされているか。満たされていなければ `blocked-by: change <name>` で書き戻す。
+- 進行中の作業と同じ場所を触らないか（判定 5）。
 
-`wip` を付け直すのは、付与時刻を merge より新しくするためである。`routine-sweep` は
-「merge より古い `wip`」を途中終了した前段階の残骸とみなして外すので、付け直さないと
-このセッションの作業中に横取りされる。**外す操作と付ける操作は別々に行う。** ラベル集合を
-まとめて上書きすると、`wip` が既にある場合はタイムラインに付与イベントが出ず、付け直したことに
-ならない。付け直したら issue のタイムラインを読み、最新の `wip` 付与が PR の merge 時刻より
-新しいことを確認する。
+着手すると決めたら `routine-common` の「`wip` のロック」に従い、**`wip` を外して付け直す**。
 
-複数 issue を束ねた change なら**全件**同じ操作をする。付け替えたら読み直して確認する。
-
-着手可否（`routine-common`）を改めて判定する。ここで見送るなら `wip` を外してからコメントする
-（propose と違い、apply は他セッションが拾える状態に戻す）。
-
-# 3. 実装する
+# 2. 実装する
 
 `openspec-apply-change` の作法に従い、`origin/main` の change の `tasks.md` を上から実装する。
 
@@ -63,7 +49,7 @@ stage:propose を外す → stage:apply を付ける → wip を外して付け�
   tasks に残っていると分かったら、**その行を tasks から外し、別 issue として起票する**。
   段階ラベルは付けない。archive を止めないための措置である。
 
-# 4. PR を作って終える
+# 3. PR を作って終える
 
 `routine-common` の「PR の作り方」に従う。
 
@@ -73,8 +59,8 @@ stage:propose を外す → stage:apply を付ける → wip を外して付け�
 - auto-fix を有効化し、レビュー・会話コメントを文脈として扱う
 - 作成直後に `mergeable_state` を確認する
 
-PR を作った時点でセッションは完了。**merge を待たない。** 次は `apply` ラベルの PR が
-merge された時点で `routine-archive` が起動する。
+PR を作った時点でセッションは完了。**merge を待たない。** `wip` は付けたままにする。
+merge は `routine-dispatch` が受けて issue を `stage:archive` へ進め、`routine-archive` が起動する。
 
 # レビュー指摘への対応
 
