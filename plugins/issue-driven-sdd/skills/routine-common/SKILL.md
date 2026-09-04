@@ -96,7 +96,9 @@ PR を merge せずに close すると、dispatcher は「人が却下した」�
 # 対象の特定
 
 イベント起動の worker（`routine-propose` / `routine-apply` / `routine-archive`）は、
-**環境変数から対象を読む。**
+**環境変数から対象を読む。** Claude Code の remote 環境では、起動のトリガーになった GitHub
+イベントの情報が `CCR_TRIGGER_` プレフィックスの環境変数に載る。まず `env | grep ^CCR_TRIGGER_`
+で実際に渡っている変数を全部見る。
 
 | 変数 | 内容 |
 | --- | --- |
@@ -104,8 +106,9 @@ PR を merge せずに close すると、dispatcher は「人が却下した」�
 | `CCR_TRIGGER_ISSUE_NUMBER` | 対象 issue の番号 |
 | `CCR_TRIGGER_REPO` | `owner/repo` |
 
-`CCR_TRIGGER_ISSUE_NUMBER` があればそれが対象。無ければ会話に届く `github-trigger-context` を
-読む。どちらにも無ければ**推測で対象を決めず**、何が読めなかったかを報告して終える。
+`CCR_TRIGGER_ISSUE_NUMBER` があればそれが対象。無ければ、`env` で見えた他の `CCR_TRIGGER_*`
+（PR 番号やイベントのペイロードなど）から対象 issue を一意に決められるかを確かめる。
+一意に決まらなければ**推測で対象を決めず**、何が読めなかったかを報告して終える。
 ラベルの状態だけを見て「たぶんこれだろう」と選ぶと、別セッションが作業中の issue を横取りする。
 取りこぼしは `routine-dispatch` が再起動する。
 
