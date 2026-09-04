@@ -11,15 +11,11 @@ Orca の pane（`orca terminal split`）を1つ作り、各 pane で Claude エ�
 監視付きディスパッチで各 change のアーカイブ完了を構造的に検知する** ところまでが責務で、アーカイブ
 そのもの（デルタ仕様同期 + `mv`）は各 pane の Claude が担う。
 
-着手側の [[orca-111-apply-unstarted-changes]] と対をなす **アーカイブ側**。pane 運用・
-shared checkout・監視付きディスパッチの前提はそちらと同じ。
-
 **worktree は一切作らない。** すべての pane は **現在のチェックアウト（main 作業ツリー）を共有する**。
 
 関連スキル: pane/terminal 操作の基礎は [[orca-cli]]、worker への dispatch と完了待ち（task-create /
 dispatch --inject / check --wait）は [[orchestration]]、アーカイブの中身はプロジェクトの
-`openspec-archive-change`（= `/opsx:archive`）、着手側は
-[[orca-111-apply-unstarted-changes]]。
+`openspec-archive-change`（= `/opsx:archive`）。
 
 **引数は不要。** 完了 change はコードベースから自動検出する。
 

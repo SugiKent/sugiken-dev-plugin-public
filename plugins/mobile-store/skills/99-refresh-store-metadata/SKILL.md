@@ -1,6 +1,6 @@
 ---
 name: 99-refresh-store-metadata
-description: "個人開発の Expo + React Native モバイルアプリで、App Store / Google Play のストア文言（name / subtitle / keywords / promotional_text / description / short_description / full_description）を、実装の現状に合わせて最新化するスキル。`openspec/specs/` の capability 一覧・実際の画面実装・PROJECT.md を突き合わせて『実装済みなのにストアで訴求されていない機能』と『ストアに書いてあるが実装に存在しない記述（虚偽表示リスク）』のドリフトを検出し、字数上限・ASO・iOS/Android 整合を守って書き換える。「ストアの説明文を最新化」「metadata を最新化」「ストア文言が実装と合ってない」「description を実装に合わせて」「新機能をストアに反映」「キーワードを見直したい」「ASO を見直したい」「訴求漏れがないか確認」等の発話・タスク要求時に使用。書き換えとローカル検証までが責務で、App Store Connect / Play Console への push は行わない（99-push-fastlane-metadata の責務）。release_notes / changelogs も扱わない（同 push スキル Step 0 の責務）。"
+description: "個人開発の Expo + React Native モバイルアプリで、App Store / Google Play のストア文言（name / subtitle / keywords / promotional_text / description / short_description / full_description）を、実装の現状に合わせて最新化するスキル。`openspec/specs/` の capability 一覧・実際の画面実装・PROJECT.md を突き合わせて『実装済みなのにストアで訴求されていない機能』と『ストアに書いてあるが実装に存在しない記述（虚偽表示リスク）』のドリフトを検出し、字数上限・ASO・iOS/Android 整合を守って書き換える。「ストアの説明文を最新化」「metadata を最新化」「ストア文言が実装と合ってない」「description を実装に合わせて」「新機能をストアに反映」「キーワードを見直したい」「ASO を見直したい」「訴求漏れがないか確認」等の発話・タスク要求時に使用。書き換えとローカル検証までが責務で、App Store Connect / Play Console への push は行わない。release_notes / changelogs も扱わない（push 側の責務）。"
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion
 ---
 
@@ -19,9 +19,9 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion
 
 | やること | やらないこと |
 |---|---|
-| `ja/*.txt` と `android/ja-JP/*.txt` の文言書き換え | App Store Connect / Play Console への push → [[99-push-fastlane-metadata]] |
+| `ja/*.txt` と `android/ja-JP/*.txt` の文言書き換え | App Store Connect / Play Console への push（別スキルの責務） |
 | ドリフト検出・字数検証・iOS/Android 整合 | `release_notes.txt` / `changelogs/default.txt` の生成 → 同スキル **Step 0**（バージョン単位の差分要約であり、本スキルの「恒常的な製品紹介文の最新化」とは別物） |
-| user 承認を取ってから書き込み | スクショ画像の生成 → [[95-store-images-setup]] |
+| user 承認を取ってから書き込み | スクショ画像の生成 |
 | 変更のコミット | 審査提出・自動公開 |
 
 > release_notes を本スキルで書かないのは意図的。「今回のバージョンで何が変わったか」と「このアプリは何ができるか」は寿命の違う文章で、混ぜると両方腐る。
@@ -122,7 +122,7 @@ git diff -- apps/mobile/fastlane/metadata
 
 1. Step 2 のドリフト表と Step 4 の `git diff` を提示し、**承認を取る**。「更新しました」で終わらせない。
 2. 承認後にコミット（[[20-commit-meaningful-diffs]] に従い、metadata 以外を巻き込まない）。
-3. ストアへの反映は **[[99-push-fastlane-metadata]] を起動して引き継ぐ**。本スキルは push しない。引き継ぎ時に「今回 name/subtitle/description を変えたので iOS 審査が再走する」かどうかを明示して渡す。
+3. ストアへの反映は **push 用のスキルに引き継ぐ**。本スキルは push しない。引き継ぎ時に「今回 name/subtitle/description を変えたので iOS 審査が再走する」かどうかを明示して渡す。
 
 ## よくある落とし穴
 
@@ -151,9 +151,6 @@ push が走っている最中に本スキルで metadata を編集しない。
 
 | スキル | 関係 |
 |---|---|
-| **[[99-push-fastlane-metadata]]** | 本スキルの出力を App Store Connect / Play Console へ push する。release_notes / changelogs はあちらの責務 |
-| **[[95-store-images-setup]]** | スクショ・Feature Graphic の生成。文言を変えたらスクショ内キャプションもズレていないか確認する |
-| **[[99-release-mobile]]** | binary を含む本リリース。バージョン提出の直前に本スキルで棚卸しするのが標準フロー |
 | **[[01-humanizer-ja]]** | 生成した文言が AI くさくなったときの書き直しに使う |
 
 - `apps/mobile/fastlane/metadata/README.md` — 各フィールドの上限・運用メモ
