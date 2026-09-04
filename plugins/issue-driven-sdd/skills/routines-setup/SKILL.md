@@ -19,7 +19,7 @@ issue-driven-sdd の構成を対象プロジェクトへ一度だけ導入する
 gh label create "stage:propose" --color 0E8A16 --description "AIが着手開始する。人間が唯一手動でつけるラベル。"
 gh label create "stage:apply"   --color 1D76DB --description "proposal PR が merge されると AI が自動で付ける。ここから実装が始まる。"
 gh label create "stage:archive" --color 5319E7 --description "実装 PR が merge されると AI が自動で付ける。archive PR の merge で issue が閉じる。"
-gh label create "wip"           --color FBCA04 --description "AI が作業中。人間は触らない。open PR が無いまま 3 時間経つと AI が外す。"
+gh label create "wip"           --color FBCA04 --description "AI が作業中。人間は触らない。open PR が無いまま 3 時間経つか、前段階の merge より古ければ AI が外す。"
 gh label create "propose" --color 0E8A16 --description "AI が付ける PR ラベル。openspec の proposal を追加する PR。merge すると実装が始まる。"
 gh label create "apply"   --color 1D76DB --description "AI が付ける PR ラベル。実装の PR。merge すると archive が始まる。"
 gh label create "archive" --color 5319E7 --description "AI が付ける PR ラベル。openspec archive の PR。merge すると issue が閉じる。"

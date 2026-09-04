@@ -20,8 +20,12 @@ description: apply ラベルの PR が merge されたときに起動し、対�
 `origin/main` を取り直したうえで、対象 issue のラベルを付け替える。
 
 ```
-stage:apply を外す → stage:archive を付ける（wip は付いたまま）
+stage:apply を外す → stage:archive を付ける → wip を外して付け直す（無ければ付ける）
 ```
+
+`wip` を付け直すのは付与時刻を merge より新しくするためである（`routine-apply` と同じ理由。
+`routine-sweep` が「merge より古い `wip`」を途中終了の残骸として外す）。外す操作と付ける操作は
+別々に行い、付け直したらタイムラインで最新の `wip` 付与が merge 時刻より新しいことを確認する。
 
 複数 issue を束ねた change なら全件。付け替えたら読み直して確認する。
 

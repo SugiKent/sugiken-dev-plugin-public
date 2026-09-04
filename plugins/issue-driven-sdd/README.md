@@ -9,7 +9,7 @@ GitHub Issue のラベル 1 本で開発の段階を表し、Claude Code の Rou
 ```
 issue:  （なし）→ stage:propose → stage:apply → stage:archive → closed
                    人が付ける      apply routine   archive routine   archive PR の Closes
-        修飾: wip（作業中ロック。open PR 無しで 3 時間超なら失効）
+        修飾: wip（作業中ロック。open PR 無しで 3 時間超、または前段階の merge より古ければ失効）
 
 PR:     propose / apply / archive / docs   ← 次段階の Routine のトリガー条件そのもの
         修飾: question（人へ問うている未確定の判断が残っている。merge してはいけない）
