@@ -172,35 +172,7 @@ main()
 
 ## lib 雛形
 
-### `DevScripts/lib/prisma.ts`
-
-```ts
-import { PrismaClient } from "@prisma/client"
-
-export const prisma = new PrismaClient()
-
-export async function disconnect(): Promise<void> {
-  await prisma.$disconnect()
-}
-```
-
-### `DevScripts/lib/resolveUser.ts`
-
-`email` でも `id` でも user を引けるヘルパー。プロジェクトのスキーマに合わせて調整する。
-
-```ts
-import { prisma } from "./prisma"
-
-export async function resolveUser(idOrEmail: string) {
-  const value = idOrEmail.trim()
-  if (!value) throw new Error("user identifier is empty")
-  const user = value.includes("@")
-    ? await prisma.user.findUnique({ where: { email: value }, select: { id: true, email: true } })
-    : await prisma.user.findUnique({ where: { id: value }, select: { id: true, email: true } })
-  if (!user) throw new Error(`user not found: ${value}`)
-  return user
-}
-```
+`DevScripts/lib/` には prisma client（`disconnect()` 付き）と、`email` でも `id` でも user を引ける resolver など、サブコマンド間で共有する薄いヘルパーだけを置く。プロジェクトのスキーマに合わせて調整する。
 
 ## worker ジョブ呼び出しの雛形 — `DevScripts/commands/runPicks.ts`
 
@@ -245,14 +217,7 @@ CLI 内で `prisma.conversation.create` 等を直接書く場合、**対応す�
 
 ## 実装手順
 
-1. `DevScripts/` を作成し、`package.json` / `tsconfig.json` を上記雛形で配置する
-2. root の `package.json` に `cli` script と `tsx` / `@types/node` / `@prisma/client` を追加する
-3. `pnpm install` を root から実行する
-4. `cli.ts` / `lib/prisma.ts` / 最初のサブコマンド 1 個を実装する
-5. `pnpm cli help` を実行して動作確認する
-6. `pnpm cli <最初のサブコマンド>` で end-to-end の動作を確認する
-7. `tsc --noEmit` を `DevScripts/` 内で回して型が通ることを確認する
-8. プロジェクトの AGENTS.md / README に「`pnpm cli help` を見ろ」と 1 行追記する
+`DevScripts/` と root の `cli` script を上記雛形で用意し、最初のサブコマンド 1 個を実装する。`pnpm cli help` と、その最初のサブコマンドを end-to-end で実行して動作を確認し、`DevScripts/` 内で `tsc --noEmit` が通ることを確認する。最後にプロジェクトの AGENTS.md / README に「`pnpm cli help` を見ろ」と 1 行追記する。
 
 ## 注意事項
 

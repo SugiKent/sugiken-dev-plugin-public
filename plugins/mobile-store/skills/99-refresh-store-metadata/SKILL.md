@@ -26,56 +26,22 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion
 
 > release_notes を本スキルで書かないのは意図的。「今回のバージョンで何が変わったか」と「このアプリは何ができるか」は寿命の違う文章で、混ぜると両方腐る。
 
-## 起動条件 (trigger)
-
-- 「ストアの説明文を最新化」「metadata を最新化」「ストア文言を実装に合わせて」
-- 「新機能をストアに反映」「◯◯ の訴求が抜けてない？」「訴求漏れを確認して」
-- 「description を書き直したい」「short_description を見直したい」
-- 「キーワードを見直したい」「ASO を見直したい」
-- 「ストアに書いてあることと実装がズレてないか確認して」
-- リリース前に「ストア情報の棚卸し」を求められたとき
-
 ## Step 1: 実装側の機能インベントリを作る（証拠収集）
 
-**推測で書かない。** 以下から実際に出荷されている機能を列挙する。リポジトリのルートで実行する。
+**推測で書かない。** 以下から実際に出荷されている機能を列挙する。
 
-```bash
-# 1) capability の正本。archive 済み = 実装済みと見なせる
-ls openspec/specs/
-for d in openspec/specs/*/; do
-  echo "== $(basename "$d")"
-  sed -n '/^## Purpose/,/^## Requirements/p' "$d/spec.md" | sed '1d;$d' | grep -v '^$'
-  grep -c '^### Requirement:' "$d/spec.md" | sed 's/^/  requirements: /'
-done
-
-# 2) 未 archive の change があれば「まだ出荷されていない」候補
-ls openspec/changes/ | grep -v '^archive$'
-
-# 3) 実際の画面 / 主要コンポーネント（specs に無い後付け機能を拾う）
-find apps/mobile/src -maxdepth 3 -type d | sort
-
-# 4) ビジネス仕様側の未実装記述
-sed -n '1,80p' PROJECT.md
-```
+- `openspec/specs/` — capability の正本。archive 済み = 実装済みと見なせる
+- `openspec/changes/`（archive 以外）— 未 archive の change は「まだ出荷されていない」候補
+- `apps/mobile/src` の実際の画面 / 主要コンポーネント — specs に無い後付け機能を拾う
+- `PROJECT.md` — ビジネス仕様側の未実装記述
 
 各機能について **「ストアの文章にできる粒度のユーザー価値」** に翻訳してメモする。`### Requirement:` の見出しをそのまま並べない（内部仕様語彙はストア文言にならない）。
 
-> 判断が要るのは「この capability はユーザーに見える価値か」の仕分けだけ（認証基盤・API バージョニングのような不可視の capability は落とす）。列挙自体は上記コマンドで機械的に済ませる（LLM は判断タスクにのみ使う）。
+> 判断が要るのは「この capability はユーザーに見える価値か」の仕分けだけ（認証基盤・API バージョニングのような不可視の capability は落とす）。列挙自体は機械的に済ませる（LLM は判断タスクにのみ使う）。
 
 ## Step 2: 現行のストア文言を読み、ドリフト表を作る
 
-```bash
-cd apps/mobile/fastlane/metadata
-for f in ja/name.txt ja/subtitle.txt ja/keywords.txt ja/promotional_text.txt ja/description.txt \
-         android/ja-JP/title.txt android/ja-JP/short_description.txt android/ja-JP/full_description.txt; do
-  echo "===== $f ($(tr -d '\n' < "$f" | wc -m | tr -d ' ') chars)"; cat "$f"
-done
-
-# 前回いつ更新されたか（ドリフトの深さの目安）
-cd -
-git log -3 --format='%h %ad %s' --date=short -- apps/mobile/fastlane/metadata/ja/description.txt
-git log --oneline "$(git log -1 --format=%H -- apps/mobile/fastlane/metadata/ja/description.txt)..HEAD" | wc -l
-```
+`apps/mobile/fastlane/metadata` 配下の 8 ファイル（`ja/name.txt` / `ja/subtitle.txt` / `ja/keywords.txt` / `ja/promotional_text.txt` / `ja/description.txt` / `android/ja-JP/title.txt` / `android/ja-JP/short_description.txt` / `android/ja-JP/full_description.txt`）を読み、各ファイルの字数を数える。あわせて `description.txt` の最終更新日を git log で確認し、ドリフトの深さの目安にする。
 
 Step 1 のインベントリと突き合わせ、**必ずこの表を user に提示する**（これが本スキルの成果物の核）:
 
@@ -155,13 +121,7 @@ git diff -- apps/mobile/fastlane/metadata
 ## Step 5: user 承認 → コミット → 引き継ぎ
 
 1. Step 2 のドリフト表と Step 4 の `git diff` を提示し、**承認を取る**。「更新しました」で終わらせない。
-2. 承認後にコミット（[[20-commit-meaningful-diffs]] に従い、metadata 以外を巻き込まない）:
-
-```bash
-git add apps/mobile/fastlane/metadata
-git commit -m "docs: ストア文言を実装の現状に合わせて最新化"
-```
-
+2. 承認後にコミット（[[20-commit-meaningful-diffs]] に従い、metadata 以外を巻き込まない）。
 3. ストアへの反映は **[[99-push-fastlane-metadata]] を起動して引き継ぐ**。本スキルは push しない。引き継ぎ時に「今回 name/subtitle/description を変えたので iOS 審査が再走する」かどうかを明示して渡す。
 
 ## よくある落とし穴

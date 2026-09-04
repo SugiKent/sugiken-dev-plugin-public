@@ -219,7 +219,7 @@ property の取りうる値の総数は数百〜数千以内に抑える。
 - API client: `fetch` ラッパーで `X-Amp-Device-Id` を自動付与
 - env: `VITE_AMPLITUDE_API_KEY` （`01-env-vars-setup` の規約に従い、 dev key を user に取得依頼）
 
-実装は `apps/web/src/lib/analytics.ts` に 1 ファイルでまとめる。関数の最小セット: `initAnalytics()` / `trackEvent()` / `trackPageView()` / `trackCtaClick()` / `trackClientError()` / `trackApiError()` / `identifyUser()` / `incrementUserProperty()` / `resetAnalytics()` / `getAmplitudeHeaders()` / `setupBeaconFlush()` / `setupGlobalErrorTracking()`。
+実装は `apps/web/src/lib/analytics.ts` に 1 ファイルでまとめる。
 
 ---
 
@@ -258,7 +258,7 @@ property の取りうる値の総数は数百〜数千以内に抑える。
   - `app_version`, `env`, `service`, `correlation_id`, `duration_ms`, `is_success`
 - env: `AMPLITUDE_API_KEY_SERVER` （クライアントとは別 key にしても良いが、個人開発では同じ project で OK。 `event_source` で区別できる）
 
-実装は `apps/server/src/lib/analytics.ts` に集約。関数の最小セット: `initServerAnalytics()` / `trackServerEvent(name, identity, props)` / `shutdownServerAnalytics()`。
+実装は `apps/server/src/lib/analytics.ts` に集約する。
 
 `trackServerEvent` の identity 引数は `{ userId?: string; deviceId?: string }` を取り、 **両方 undefined なら drop + warn** という規約にする。
 
@@ -318,21 +318,8 @@ dev で 4 系統それぞれを実機検証する:
 
 ---
 
-## 10. 適用順序チェックリスト
+## 10. 適用順序
 
-1. Amplitude で **dev project と prod project を別に作成** し、各 API key を取得
-2. `docs/domain/analytics/tracking-plan.md` を §1 で書き、 **user に確認してもらう** （実装前）
-3. `.env.example` に Web / Mobile / Server の key を追加
-4. Web / Mobile / Server それぞれで SDK を install
-5. `lib/analytics.ts` を §4 / §5 / §6 の方針で作る（関数の最小セットだけ実装）
-6. アプリ起動時に `init()` を呼ぶ
-7. Web: `setupBeaconFlush()` + `setupGlobalErrorTracking()` + Router listener コンポーネント
-8. Mobile: `AppState` background で `flushOnBackground()` + `ErrorUtils` 監視 + Expo Router listener + `TrackedPressable` で主要 button を差し替え
-9. Server: `SIGTERM` で flush + 各 route / worker / cron で `trackServerEvent`
-10. ログインで `identifyUser`、ログアウトで `resetAnalytics`
-11. API client に `X-Amp-Device-Id` ヘッダを差し込む
-12. 4 系統の event を仕込む
-13. `pnpm dev` で §8 の検証フローを **必ず実機実行**
-14. Amplitude UI で「自分の user_id で全 event が届く」「サーバ event と client event が同じ user に紐づく」「event_properties が tracking plan 通り」を確認
+Amplitude で dev / prod project を分けて key を取る → `docs/domain/analytics/tracking-plan.md` を書いて **実装前に user に確認してもらう** → SDK を入れ、ログインで `identifyUser` / ログアウトで `resetAnalytics` / API client に `X-Amp-Device-Id` ヘッダを差し込む → 4 系統の event を仕込む → §8 の検証フローを **必ず実機実行** し、Amplitude UI で「自分の user_id で全 event が届く」「サーバ event と client event が同じ user に紐づく」「event_properties が tracking plan 通り」を確認する。
 
-13〜14 を省くと、本番後に「event 名がブレてた」「user merge が壊れてた」「サーバ event が別 user に行ってた」が発覚して過去データが救えなくなる。
+最後の実機検証を省くと、本番後に「event 名がブレてた」「user merge が壊れてた」「サーバ event が別 user に行ってた」が発覚して過去データが救えなくなる。

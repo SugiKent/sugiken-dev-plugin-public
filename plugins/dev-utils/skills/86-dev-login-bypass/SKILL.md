@@ -56,15 +56,7 @@ apps/client/src/
 
 **まず既存コードを読んで「本番ログインがどうセッションを張っているか」を把握する。** ここを誤ると方針 1 を破る。
 
-```bash
-# magic-link capture 機構が既にあるか（招待受諾フロー等で導入済みのことが多い）
-grep -rn "createMagicLinkCapture\|takeCapturedMagicLinkUrl\|signInMagicLink\|captureKey" apps/server/src/auth
-# セッション生成時のガード（無効化/削除拒否・active org 注入）
-grep -rn "session:\s*{" apps/server/src/auth/auth.ts
-grep -rn "create:\s*{" apps/server/src/auth/auth.ts
-# dev 限定の登録分岐（ここに相乗りする）
-grep -rn "NODE_ENV.*production\|registerDev" apps/server/src/app.ts
-```
+既存の auth 実装を読み、magic-link capture 機構（招待受諾フロー等で導入済みのことが多い）が既にあるか、セッション生成時のガード（無効化/削除拒否・active org 注入）がどこにあるか、dev 限定の登録分岐（ここに相乗りする）がどこにあるかを把握する。
 
 - **capture ヘルパーが既にある** → そのまま再利用する（Step 2 のヘルパー追加は不要）。
 - **無い** → Step 2 で `auth.ts` に追加する。
@@ -415,23 +407,6 @@ const DevLoginPage = import.meta.env.DEV
 - **無効化/削除カラムが無い**: `disabledAt` / `deletedAt` の where 条件を、プロジェクトの「ログイン可能」判定（例: `status: "active"`）に置き換える。**「全ユーザーが対象」で済ませず、本番のログイン可否条件に揃える**。
 - **クライアントが Vite でない（Next.js 等）**: `import.meta.env.DEV` を `process.env.NODE_ENV !== "production"` 相当に置き換え、本番ビルドに **コードが含まれない** ことを必ず確認する（tree-shaking されない場合はルート定義ごと分岐で落とす）。
 
-## 実装手順まとめ
+## ハマりどころ
 
-1. **読む**: Step 1 のコマンドで既存のセッション確立機構と dev 分岐を把握する。
-2. capture が無ければ Step 2 で `auth.ts` にヘルパー + `sendMagicLink` 分岐を追加。
-3. Step 3〜4 で Service / Plugin を新規作成。
-4. Step 5 / 7 で `app.ts`（サーバ）と `App.tsx`（クライアント）に dev 限定登録を 1 箇所ずつ追加。
-5. Step 6 で `DevLoginPage` を作成。文言・色は `docs/quality/design-system.md` に従う。
-6. Step 8 で多層ガードと除外ロジックをテストで固定。
-7. `tsc --noEmit` を server / client それぞれで通す。
-8. dev サーバを起動し `/login/dev` を開いて、各ユーザーで実際にログインできることを手で確認する。
-
-## やってはいけないこと
-
-- **Better Auth の内部 API でセッションを直接 insert して Cookie を自前 set する**: `session.create.before` の無効化/削除拒否・active org 注入をバイパスし、dev だけ本番と挙動が乖離する。必ず verify URL を踏ませる。
-- **`/api/auth/*` の下に dev route を潜らせる**: Better Auth catch-all と衝突する。別プレフィックス必須。
-- **SPA の `<Link>` でログインボタンを作る**: redirect 経由の `Set-Cookie` が効かず「押しても入れない」になる。素の `<a href>`。
-- **`ENABLE_DEV_LOGIN` 等の環境変数フラグを新設する**: 判定点が増える。既存の `NODE_ENV` / `import.meta.env.DEV` 分岐に揃える。
-- **存在しない/無効化ユーザーをサイレントに 200 で流す**: 明示的に 400 / `null` を返す（AGENTS.md ルール 10）。
-- **E2E テストでこの入口を使う**: dev 専用ツール。E2E は本番同等の経路（招待→magic-link 等）で書く（AGENTS.md ルール 12/13・CLI と同じ扱い）。
 - **cloudflared 公開時の `BETTER_AUTH_URL`**: verify URL の origin は `BETTER_AUTH_URL` 基準。公開して試すときはこれを公開オリジンに合わせないと redirect 先がローカルを指す（招待フローと共通の運用前提）。本スキルの対象外だが、ハマったらここを疑う。

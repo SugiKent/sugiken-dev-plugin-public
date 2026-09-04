@@ -19,35 +19,23 @@ model: sonnet
 
 ## Step 2-A: Web（Playwright）セットアップ
 
+リファレンス: `../30-implement-e2e/references/web-e2e-playwright.md`
+
 未導入の項目のみ実施する（既存を壊さない）。
 
-1. **インストール**
-   ```bash
-   pnpm add -D @playwright/test
-   npx playwright install              # ブラウザバイナリ
-   # CI(Linux): npx playwright install --with-deps
-   ```
-2. **ディレクトリ**: `e2e/{cases,tests,pages}` / `e2e/fixtures.ts` / `e2e/auth.setup.ts` を用意（雛形の詳細は Web リファレンス §1-2）。
-3. **`playwright.config.ts`**: `testDir: './e2e/tests'`、`trace: 'on-first-retry'`、`screenshot: 'only-on-failure'`、`setup` プロジェクトで storageState 依存、初期は chromium 単体。完全形は Web リファレンス §1-3。
-4. **`.gitignore`** に追加: `playwright/.auth/` / `test-results/` / `playwright-report/` / `blob-report/`
-5. **Claude Code 連携（任意）**:
-   ```bash
-   claude mcp add --scope project playwright npx @playwright/mcp@latest
-   ```
+1. **インストール**: リファレンス §1-1 に従い Playwright とブラウザバイナリを導入する。
+2. **ディレクトリと config**: §1-2 / §1-3 に従い `e2e/` の構成と `playwright.config.ts` を用意する（`setup` プロジェクトで storageState 依存、初期は chromium 単体、trace / screenshot は失敗時のみ）。
+3. **`.gitignore`**: §1-4 の項目を追加する。
+4. **Claude Code 連携（任意）**: §4-1 に従い Playwright MCP を登録する。
 
 ## Step 2-B: モバイル（Maestro）セットアップ
 
-1. **インストール**
-   ```bash
-   curl -fsSL "https://get.maestro.mobile.dev" | bash   # or: brew tap mobile-dev-inc/tap && brew install maestro
-   maestro --version                                    # Java 17+ 必須
-   ```
-2. **ディレクトリ**: `.maestro/{flows,subflows}` / `.maestro/config.yaml` / `docs/quality/e2e/cases/`（詳細は Mobile リファレンス §2-2）。E2E の設計・進捗は後者を正本とし、テスト実装そのものは `.maestro/` に置く。
-3. **アプリ側の準備（必須）**: 全インタラクティブ要素へ `testID`（命名規則 `{screen}_{action}_{target}`）を付与。E2E フラグでアニメ・splash・analytics を無効化（Mobile リファレンス §2-4）。testID の付与状況を確認し、不足を洗い出す。
-4. **Claude Code 連携（任意）**:
-   ```bash
-   claude mcp add maestro -- maestro mcp
-   ```
+リファレンス: `../30-implement-e2e/references/mobile-e2e-maestro.md`
+
+1. **インストール**: リファレンス §2-1 に従い Maestro を導入する。
+2. **ディレクトリ**: §2-2 / §2-3 に従い `.maestro/` と `docs/quality/e2e/cases/` を用意する。E2E の設計・進捗は後者を正本とし、テスト実装そのものは `.maestro/` に置く。
+3. **アプリ側の準備（必須）**: 全インタラクティブ要素へ `testID`（命名規則 `{screen}_{action}_{target}`）を付与。E2E フラグでアニメ・splash・analytics を無効化（§2-4）。testID の付与状況を確認し、不足を洗い出す。
+4. **Claude Code 連携（任意）**: Maestro MCP を登録する。
 
 ## Step 3: 完了確認とハンドオフ
 

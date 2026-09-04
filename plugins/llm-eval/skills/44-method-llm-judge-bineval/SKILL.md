@@ -64,12 +64,7 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 
 ### 0-a. プロジェクトが使っている LLM を検知する（`references/detect-and-wire-llm.md`）
 
-コードベースを走査し、 **現在使われている LLM プロバイダ・モデル・クライアント初期化パターン** を特定する:
-
-- 依存関係（`package.json` / `requirements.txt` / `pyproject.toml`）: `openai` / `@anthropic-ai/sdk` / `anthropic` / `@google/generative-ai` / `google-generativeai` / `@azure/openai` / `@aws-sdk/client-bedrock-runtime` / `cohere-ai` / `mistralai` / `ollama` / `ai`(Vercel AI SDK) / `langchain` 等
-- ソース中のクライアント生成・呼び出し（`new OpenAI(`, `new Anthropic(`, `genai.GenerativeModel(`, `bedrock` 等）と **既存の LLM ラッパーモジュール**（`lib/llm`, `services/ai` 等）
-- 環境変数（`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `AZURE_OPENAI_*` 等）
-- コード中のモデル文字列（`gpt-...`, `claude-...`, `gemini-...`, `o...` 等）
+コードベースを走査し、 **現在使われている LLM プロバイダ・モデル・クライアント初期化パターン** を特定する。手がかりは依存関係、ソース中のクライアント生成箇所と **既存の LLM ラッパーモジュール**、環境変数、コード中のモデル文字列。
 
 検知結果（プロバイダ / モデル / クライアント取得方法）をユーザーに提示する。 **既存ラッパーがあれば流用を最優先**。複数プロバイダが見つかる/曖昧な場合のみ AskUserQuestion で確認する。検知できない（LLM 未使用）場合は、その旨を伝えて使いたいプロバイダを尋ねる。
 

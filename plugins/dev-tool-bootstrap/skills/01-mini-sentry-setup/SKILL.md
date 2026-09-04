@@ -180,15 +180,15 @@ fingerprint = sha1(platform | exceptionType | 正規化(stack 1 行目))
 
 `apps/server/src/error-tracking/` 配下に 7 ファイル:
 
-| ファイル | 責務 | 概算行数 |
-|---|---|---|
-| `schema.ts` | Zod ingest payload schema | 35 |
-| `fingerprint.ts` | stack 正規化 + sha1 fingerprint | 25 |
-| `pii.ts` | sensitive key mask + UTF-8 safe truncate | 40 |
-| `service.ts` | `ingestErrorEvent(payload)` 本体（fingerprint → mask → INSERT → fire-and-forget notify） | 65 |
-| `routes.ts` | `POST /v1/errors/ingest` Express router（Bearer 認証 + 64KB cap + feature off 時 204） | 95 |
-| `notifier.ts` | `notifyIfNew(event)` + Discord/Slack formatter + Postgres advisory lock | 150 |
-| `server-sdk.ts` | `captureException(err, ctx?)` + `attachErrorTracker(app)` + process handlers | 115 |
+| ファイル | 責務 |
+|---|---|
+| `schema.ts` | Zod ingest payload schema |
+| `fingerprint.ts` | stack 正規化 + sha1 fingerprint |
+| `pii.ts` | sensitive key mask + UTF-8 safe truncate |
+| `service.ts` | `ingestErrorEvent(payload)` 本体（fingerprint → mask → INSERT → fire-and-forget notify） |
+| `routes.ts` | `POST /v1/errors/ingest` Express router（Bearer 認証 + 64KB cap + feature off 時 204） |
+| `notifier.ts` | `notifyIfNew(event)` + Discord/Slack formatter + Postgres advisory lock |
+| `server-sdk.ts` | `captureException(err, ctx?)` + `attachErrorTracker(app)` + process handlers |
 
 完全な実装コードは **`references/server-implementation.md`** を参照（**そのまま貼って動く** 状態）。
 
@@ -224,7 +224,7 @@ attachErrorTracker(app);
 
 ## 8. mobile (Expo / React Native) 実装
 
-`apps/mobile/src/error-tracking/index.ts` 1 ファイル、約 280 行。
+`apps/mobile/src/error-tracking/index.ts` 1 ファイル。
 
 **コア API**:
 
@@ -294,36 +294,6 @@ initErrorTracker();
 5. 存在しなければ webhook を fetch（3 秒 timeout、`User-Agent: <app-name>/mini-sentry`）
 6. 2xx であれば本行を `notified = true` に update
 7. webhook 失敗時は `notified` を立てない → 次回の同 fingerprint event がリトライする
-
-### Discord payload
-
-```js
-{
-  username: "mini-sentry",
-  content: `🚨 ${type}: ${message}`,
-  embeds: [{
-    title: `${platform} / ${environment}`,
-    description: "```\n<stack head 3 lines>\n```",
-    fields: [
-      { name: "release", value: release ?? "(none)", inline: true },
-      { name: "fingerprint", value: fingerprint.slice(0, 12), inline: true },
-    ],
-    timestamp: occurredAt.toISOString(),
-  }],
-}
-```
-
-### Slack payload
-
-```js
-{
-  text: `🚨 *${type}*: ${message}`,
-  blocks: [
-    { type: "section", text: { type: "mrkdwn", text: "..." } },
-    { type: "section", text: { type: "mrkdwn", text: "```\n<stack>\n```" } },
-  ],
-}
-```
 
 実装の完全版は `references/server-implementation.md` の `notifier.ts` を参照。
 
@@ -409,23 +379,7 @@ server 5 ファイル、mobile 1 ファイル。**E2E は書かない**（webhoo
 
 ---
 
-## 15. ゼロから構築する手順
-
-clean state から導入するときの順序:
-
-1. **Prisma schema に `ErrorEvent` モデルを追加 → migration 発行**（§3 / `references/db-schema.md`）
-2. **server 7 ファイルを `apps/server/src/error-tracking/` 配下に配置**（§6 / `references/server-implementation.md`）
-3. **`apps/server/src/index.ts` に `app.use("/v1/errors", errorTrackingRouter)` と `attachErrorTracker(app)` を挿入**（§7）
-4. **server `.env.example` / `.env` に環境変数 4 つを追加**（§10）
-5. **mobile 1 ファイルを `apps/mobile/src/error-tracking/index.ts` に配置**（§8 / `references/mobile-implementation.md`）
-6. **`apps/mobile/App.tsx` で `initErrorTracker()` を呼ぶ**（§9）
-7. **mobile `.env.example` / `.env` に環境変数 2 つを追加**（§10）
-8. **ユニットテスト 6 ファイルを追加して green を確認**（§14 / `references/tests.md`）
-9. **既存 catch 句の grep & `captureException` 注入**（§13）
-10. **本番環境変数を実値で設定**（server: Railway dashboard、mobile: EAS Secrets / `app.config.ts`）
-11. **本番 deploy 後、test event を 1 件発行して webhook が来ることを確認**
-
-最低限の動作確認:
+## 15. 動作確認
 
 ```bash
 # server を起動した状態で
@@ -497,13 +451,7 @@ const ep = (process.env as Record<string, string | undefined>)["EXPO_PUBLIC_ERRO
 
 ---
 
-## 17. 規模感
-
-server 約 525 行 / mobile 約 280 行 / テスト約 585 行 = **合計 1400 行程度** で機能完結する。Sentry SDK を入れても同等の bundle 増加になるので、「ライブラリ依存を減らす投資」として割が合う。
-
----
-
-## 18. 参考ディレクトリ
+## 17. 参考ディレクトリ
 
 - `references/db-schema.md` — Prisma schema + migration SQL
 - `references/server-implementation.md` — server 7 ファイルの完全実装コード
@@ -511,18 +459,3 @@ server 約 525 行 / mobile 約 280 行 / テスト約 585 行 = **合計 1400 �
 - `references/tests.md` — vitest（server）+ jest（mobile）の完全テストコード
 
 これらをそのままコピーすれば動作する状態にしてある。プロジェクトの命名規約（パッケージ名、import alias、logger の API）に合わせて微調整する。
-
----
-
-## 19. 将来の拡張ポイント
-
-MVP のスコープを超えるが、後続 change で扱える項目:
-
-- **閲覧ダッシュボード**（`/admin/errors` ルートで一覧 / 詳細 / fingerprint group / search）
-- **retention 自動化**（30 日 cron で古い event を delete）
-- **source map による symbolicate**（mobile の minified stack を本来の関数名に戻す）
-- **fingerprint クラスタリングの高度化**（stack pattern マッチング / 機械学習）
-- **rejection tracking の自動化**（mobile の unhandled promise rejection を Hermes 安定後に自動捕捉）
-- **alert routing**（特定 fingerprint だけ別 webhook、特定 environment だけ通知など）
-
-これらは全部「load-bearing な MVP の使用感を確かめた後」に判断する。先に作り込まない。

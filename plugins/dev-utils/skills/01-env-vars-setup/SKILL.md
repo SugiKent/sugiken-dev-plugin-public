@@ -132,86 +132,22 @@ Railway 等の PaaS では **dashboard の環境変数機能** に直接セッ�
 
 コードに `process.env.FOO` / `os.environ["FOO"]` / `Deno.env.get("FOO")` 等を追加・参照する変更を行ったら:
 
-1. **追加された env を列挙** する。grep で diff を確認して漏れを防ぐ。
-   ```bash
-   git diff | grep -E "(process\.env|os\.environ|Deno\.env\.get|getenv|ENV\[)" | sort -u
-   ```
+1. **追加された env を列挙** する（diff を確認して漏れを防ぐ）。
 2. 各変数を **ローカル完結 / 人間案件** に分類する。
-3. **`.env.example`** を更新:
-   - 全変数を記載する（ローカル完結も人間案件も）
-   - ローカル完結の変数は **動く dev 値** を入れる（`DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp_dev` のように）
-   - 人間案件はプレースホルダ（`OPENAI_API_KEY=your-openai-api-key-here`）にし、必要なら 1 行コメントで「取得元」を書く
-   - 既存変数の並びを乱さない（セクション分けがある場合は維持）
-4. **`.env`** を更新:
-   - ローカル完結の変数の値を実際に書き込む
-   - 人間案件は **書かない、もしくは空（`OPENAI_API_KEY=`）のまま** にする
-5. **gitignore 確認**: `.env` が `.gitignore` に入っていることを確認する。入っていない場合は追加する。`.env.example` は **コミットされるべき** ので gitignore から除外する。
+3. **`.env.example`** を更新: 全変数を記載し、ローカル完結は動く dev 値、人間案件はプレースホルダ（必要なら取得元を 1 行コメント）。既存変数の並びを乱さない。
+4. **`.env`** を更新: ローカル完結の値を実際に書き込み、人間案件は書かないか空のままにする。
+5. **gitignore 確認**: `.env` が `.gitignore` に入っていることを確認し、`.env.example` はコミット対象にする。
 6. **報告**: 人間案件がある場合は最後に明示的に列挙してユーザに依頼する。
 
 ---
 
-## 3. ファイル雛形
+## 3. ユーザへの報告
 
-### `.env.example`（コミット対象）
-
-```dotenv
-# --- App ---
-NODE_ENV=development
-PORT=3000
-LOG_LEVEL=debug
-
-# --- Database (local) ---
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp_dev
-REDIS_URL=redis://localhost:6379
-
-# --- Auth (dev secret, replace in prod) ---
-SESSION_SECRET=dev-only-change-me-in-prod
-
-# --- External services (get from each provider's dashboard) ---
-OPENAI_API_KEY=your-openai-api-key-here
-STRIPE_SECRET_KEY=your-stripe-secret-key-here
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret-here
-```
-
-### `.env`（gitignore 対象、ローカル）
-
-```dotenv
-NODE_ENV=development
-PORT=3000
-LOG_LEVEL=debug
-
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp_dev
-REDIS_URL=redis://localhost:6379
-
-SESSION_SECRET=dev-only-change-me-in-prod
-
-# Below are intentionally empty — fill in from each provider's dashboard.
-OPENAI_API_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-```
+人間案件がある作業の終わりには、外部サービスから取得が必要な変数を、取得元（URL や dashboard 上の場所）とセットで列挙して依頼する。URL や手順がはっきり分からない場合は「`<サービス名>` の dashboard で発行してください」程度でも良いが、 **何を取得すべきかは曖昧にしない** 。
 
 ---
 
-## 4. ユーザへの報告フォーマット
-
-人間案件がある作業の終わりに必ず以下のような報告を出す（無い場合は不要）:
-
-```
-以下の環境変数は外部サービスから取得する必要があります。.env を編集して値をセットしてください:
-
-- OPENAI_API_KEY: https://platform.openai.com/api-keys
-- STRIPE_SECRET_KEY: Stripe Dashboard → Developers → API keys
-- STRIPE_WEBHOOK_SECRET: `stripe listen` を実行すると表示される whsec_xxx
-
-セット後、`pnpm dev` で起動確認してください。
-```
-
-URL や手順がはっきり分からない場合は「`<サービス名>` の dashboard で発行してください」程度でも良いが、 **何を取得すべきかは曖昧にしない** 。
-
----
-
-## 5. やってはいけないこと
+## 4. やってはいけないこと
 
 - **外部 API キーにそれっぽいダミー値を入れる** （例: `OPENAI_API_KEY=sk-test1234567890`）。ユーザが「設定済み」と誤認する。
 - **`.env` をコミット対象にする** 。`.env.example` だけがコミットされる。
@@ -220,27 +156,3 @@ URL や手順がはっきり分からない場合は「`<サービス名>` の d
 - **本番値・個人の API key を `.env.example` に書く** 。リーク事故。
 - **monorepo で各 app 配下に `.env` を分散させる** 。値が二重管理になり同期漏れの事故になる。 root に集約して `--env-file=../../.env` で参照する。
 - **`dotenv` 等のライブラリを足す** 。Node.js 標準の `--env-file` で十分（依存ゼロ）。
-
----
-
-## 自動起動
-
-<auto_invoke>
-<trigger_phrases>
-- ".env"
-- ".env.example"
-- "環境変数"
-- "env vars"
-- "process.env"
-- "os.environ"
-- "Deno.env"
-- "getenv"
-- "DATABASE_URL"
-- "REDIS_URL"
-- "API_KEY"
-- "SECRET_KEY"
-- "dotenv"
-- "環境設定"
-- "env ファイル"
-</trigger_phrases>
-</auto_invoke>

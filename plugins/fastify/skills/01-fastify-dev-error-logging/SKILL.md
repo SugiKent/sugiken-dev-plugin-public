@@ -435,8 +435,6 @@ if (hasInvite === hasAdmission) {
 
 ## 8. アンチパターン集（書く前に思い出す）
 
-- ❌ `reply.code(400).send({ error: "..." })` で zod issues を捨てる
-- ❌ ハンドラごとに `sanitizeForLog(body)` を呼ぶ運用（漏れの元。`REDACT_PATHS` 一元化で対処）
 - ❌ `app.setErrorHandler` を `devErrorLog` で使う（Sentry と衝突）
 - ❌ `reply.payload` を読む（public API ではない。`onSend` の引数で取る）
 - ❌ `Fastify({ loggerInstance })` の戻り値を `as unknown as FastifyInstance` でキャスト
@@ -447,19 +445,8 @@ if (hasInvite === hasAdmission) {
 
 ---
 
-## 9. 適用順序のチェックリスト
+## 9. 適用順序
 
-新規 Fastify プロジェクトで本スキルを適用する順序:
+順序が効く。`lib/logger.ts`（§1）→ `app.ts` で `setupSentry` → `registerDevErrorLog`（§4）→ `devErrorLog` / `orpc` プラグイン（§2 / §3）→ `parseBodyOrThrow` で **既存ルートを書き換える**（§5。基盤だけ入れても効かない）→ テスト（§6）→ docs（§7）。
 
-1. `pino` を依存に追加（既にあれば skip）
-2. `lib/logger.ts` を §1 の形で書く（`REDACT_PATHS` / `LOG_FILE` / `getLogger`）
-3. `plugins/devErrorLog.ts` を §2 の形で新規作成
-4. `plugins/orpc.ts`（oRPC を使う場合）に `addContentTypeParser` だけ追加。詳細ログは devErrorLog 側が拾う
-5. `app.ts` で `getLogger` → `Fastify({ loggerInstance })` → `setupSentry` → `registerDevErrorLog` の順で組み立て
-6. `lib/validate.ts` に `parseBodyOrThrow` を新規作成
-7. **既存ルートを `parseBodyOrThrow` で書き換える**（基盤だけ入れても効かないことを忘れない）
-8. テスト 8 項目（§6）を vitest で書く
-9. `docs/playbooks/dev-error-logging.md` を §7 で書く
-10. `pnpm dev` 起動 → `curl -X POST .../some-route -d '{"email": 123}'` で実環境動作確認（**ここを必ずやる**）
-
-10 番のステップを省くと、テスト 100% パスでも実環境で「ログがスカスカで何も読めない」状態に陥る。実体験。
+最後に `pnpm dev` を起動して `curl -X POST .../some-route -d '{"email": 123}'` を打ち、`dev_error_response` 行が実際に出ることを見る。テストが 100% パスしていても、throw していないルートでフックが空振りしていれば実環境では「ログがスカスカで何も読めない」状態になる。実体験。

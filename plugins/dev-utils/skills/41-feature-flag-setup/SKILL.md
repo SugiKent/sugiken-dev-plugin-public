@@ -63,8 +63,7 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ## 手順
 
 ### 0. 読む（書く前に）
-- `references/design-decisions.md` を読み、 6 方針の根拠を把握する。
-- 既存コードを読む: 現状ハードコードされているフラグ（移行対象）、 ORM の model 規約、 認可ゲートの呼び方、 既存 seed の流儀、 `index.html` の場所と読み込み順。
+`references/design-decisions.md` で 6 方針の根拠を把握し、 既存コード（移行対象のハードコードフラグ・ORM の model 規約・認可ゲート・既存 seed の流儀・`index.html` の読み込み順）を読む。
 
 ### 1. スタック確認（AskUserQuestion）
 不明なら聞く。 推測で進めない:
@@ -74,32 +73,22 @@ allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 - 最初に移行する既存ハードコードフラグ（1 個に絞る。 残りは後続）。
 
 ### 2. DB（`references/db-and-seed.md`）
-- `schema.prisma` に `FeatureFlag`（`id` cuid / `name` @unique / `value` String / `description` String? / `createdAt` / `updatedAt`）を追記。
-- `migrate diff` で SQL を確認 → 手動 migration を作成 → `migrate deploy` → `generate`。
-- **`.claude/rules/prisma-schema.md` 等のプロジェクト規約があれば必ず従う**（rename 禁止・手動 migration 必須など）。
+`FeatureFlag` モデルを追加し、 手動 migration を作って `migrate deploy` → `generate`。 **プロジェクトの schema 規約（`.claude/rules/prisma-schema.md` 等）があれば必ず従う**。
 
 ### 3. CSV + 冪等 seed（`references/db-and-seed.md`）
-- `feature_flag/feature_flag.csv` を作り、 移行対象フラグを 1 行書く（`REAL_CALL_FEATURE_ENABLED,false` 等）。
-- CSV を読み `ON CONFLICT (name) DO NOTHING` で投入する seed を、 既存 seed パターンに準拠して実装。
-- `package.json` にコマンド追加（例 `featureflag:seed`）し、 デプロイ手順の `migrate deploy` 後段に組み込む。
+移行対象フラグを 1 行書いた CSV と、 `ON CONFLICT (name) DO NOTHING` の seed を既存 seed パターンに準拠して実装し、 デプロイ手順の `migrate deploy` 後段に組み込む。
 
 ### 4. サーバ（`references/server-implementation.md`）
-- `store.ts`: シングルトン + 遅延 TTL + 値解釈ヘルパ（boolean 等）。
-- `repository.ts` / `service.ts`: 全件取得・name 更新・更新成功時 dev は `reload()`。
-- `procedures.ts`: 一覧取得・値更新。 **更新（と本 change では一覧も）に admin role ゲート**。 入力検証失敗は握り潰さず throw。
-- `bootstrapRoute.ts`: `GET /api/feature-flags.js` で `window.__FEATURE_FLAGS__ = {...}` を `Content-Type: application/javascript` で返す。 シングルトンの現在値を使う。
+シングルトン + 遅延 TTL の store、 repository / service、 admin ゲート付き手続き、 `GET /api/feature-flags.js` の bootstrap route を実装する。 入力検証失敗は握り潰さず throw。
 
 ### 5. クライアント（`references/client-implementation.md`）
-- `lib/featureFlags.ts` を `window.__FEATURE_FLAGS__` 参照へ。 未定義時は安全側の既定値へフォールバック。
-- `index.html` の `<head>`、 React バンドルより**前**に `<script src="/api/feature-flags.js"></script>`。
-- admin 限定の管理画面ページ + ルート + 導線（admin にのみ表示）。
+`window.__FEATURE_FLAGS__` 参照（欠落時は安全側の既定値）、 `<head>` で React バンドルより前に読む bootstrap script、 admin 限定の管理画面を実装する。
 
 ### 6. テスト（`references/tests.md`）
-- CSV 冪等 seed / 遅延 TTL / 値解釈ヘルパ / role ゲート / bootstrap 出力 / クライアントフォールバック。
+CSV 冪等 seed / 遅延 TTL / 値解釈ヘルパ / role ゲート / bootstrap 出力 / クライアントフォールバック。
 
 ### 7. 仕上げ
-- lint・typecheck・テスト一式グリーン。
-- 移行したハードコードフラグの旧定義を削除し、 ロールバック挙動（`window.__FEATURE_FLAGS__` 欠落時に既定値）を確認。
+lint・typecheck・テスト一式グリーン。 移行したハードコードフラグの旧定義を削除し、 ロールバック挙動（`window.__FEATURE_FLAGS__` 欠落時に既定値）を確認。
 
 ## やってはいけない（アンチパターン）
 

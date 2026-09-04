@@ -60,105 +60,14 @@ apps/server/tests/admin/
 
 ## 実行手順
 
-### Step 1: 投入先プロジェクトの前提確認
-
-呼び出し時のプロジェクトルートを確認する。 以下を `Read` / `Bash ls` でチェック:
-
-- `apps/server/src/` が存在するか (monorepo) / `src/` か (single-package)
-- 既存 `admin/` ディレクトリがないか
-  - 存在する場合は **AskUserQuestion** で「既存を残してマージ / 退避してから入れ直し / 中止」を確認
-- 既存 `auth.ts` の export shape を確認: `auth.api.signInMagicLink(...)` と `getSessionFromRequest(req)` が呼べるか
-  - 呼べない場合は **AskUserQuestion** で「better-auth 入れる」か「別 auth 方式 (variants.md 参照)」を確認
-- 既存 `db.ts` の export shape を確認: `prisma` または `db` (Drizzle/Kysely) が export されているか
-  - 不一致なら queries.ts の `import { prisma } from "../db.js"` を該当 import に書き換える計画を立てる
-- `logger.ts` の export shape を確認: `logger.info / logger.warn` が呼べるか
-
-### Step 2: AskUserQuestion で設定値を回収
-
-以下を **AskUserQuestion** で 1 度にまとめて聞く (項目数 3-4):
-
-1. **ADMIN_EMAIL の値**: 既知 email (例: `you+admin@example.com`)
-   - 「ハードコードする値（env が未設定の時の fallback）」と「env name」の 2 値を取る
-2. **配置先パス**: `apps/server/src/admin` (monorepo) / `src/admin` (single-package) / その他
-3. **認証スタック**: better-auth magic link (default) / Email OTP / Basic Auth / Cloudflare Access / OAuth
-   - default 以外を選んだら `references/auth-variants.md` を Read して該当セクションに従って routes.ts / middleware.ts を書き換える
-4. **テストテンプレを入れるか**: yes (推奨) / no
-
-### Step 3: ディレクトリ一式をコピー
-
-このスキルの `references/admin-template/` 配下（`${CLAUDE_SKILL_DIR}/references/admin-template/`）を、 Step 2 で決めた配置先にコピー:
-
-- `env.ts`
-- `middleware.ts`
-- `routes.ts`
-- `views.ts`
-- `queries.ts`
-- `README.md`
-
-**コピー時に必ず置換する箇所**:
-
-- `env.ts` の `DEFAULT_ADMIN_EMAIL = "REPLACE_ME@example.com"` → Step 2 で聞いた値
-- `import { ... } from "../auth.js"` / `"../db.js"` / `"../logger.js"` → 該当プロジェクトのパスに合わせる
-
-テストテンプレを yes にした場合:
-
-- `references/test-templates/login.test.ts` を `apps/server/tests/admin/login.test.ts` にコピー
-- `references/test-templates/middleware.test.ts` を `apps/server/tests/admin/middleware.test.ts` にコピー
-- 内部の `REPLACE_ME@example.com` も Step 2 の値で置換
-
-### Step 4: server エントリへの mount
-
-`apps/server/src/index.ts` (またはエントリ相当ファイル) に以下を追記。 編集は `Edit` で:
-
-```ts
-import { adminRouter } from "./admin/routes.js";
-
-// 認証 middleware より "後" に mount する (better-auth の cookie が読める位置)
-app.use("/admin", adminRouter);
-```
-
-### Step 5: env への ADMIN_EMAIL 追加
-
-`.env.example` と `.env` (存在すれば) に追記:
-
-```
-# admin dashboard の宛先 email。 未設定なら env.ts の DEFAULT_ADMIN_EMAIL が使われる。
-ADMIN_EMAIL=""
-
-# admin/login で生成される magic link の base URL。
-SERVER_BASE_URL="http://localhost:3000"
-```
-
-`.env.example` がない場合は新規作成する。 `.env` 直書きはしない (= 値はユーザーが手で入れる)。
-
-### Step 6: 動作確認の案内
-
-このスキルでは動作確認は実行しない。 ユーザーに以下の手順を案内する:
-
-```
-1. server を起動: pnpm --filter @<your>/server dev (or 該当コマンド)
-2. ブラウザで http://localhost:3000/admin/login を開く (404 が返る)
-3. ADMIN_EMAIL の inbox に magic link が届くのを確認
-4. link を踏んで /admin に飛ぶ → Home が表示される (= admin 経路通過)
-5. /admin/users で User 一覧が出る (= Prisma User モデルが正しく繋がっている)
-```
-
-magic link が届かない場合は:
-
-- better-auth の `sendMagicLink` callback が実装されているか確認
-- SMTP 設定 (`SMTP_HOST` 等) を確認
-
-### Step 7: 「次にどのセクションを足すか」の提案
-
-雛形は Home + Users 2 ページしかない。 ユーザーに **AskUserQuestion** で次の着手を聞く:
-
-1. **エラーログダッシュボード** を足す (error events を fingerprint 集計、 24h/7d/30d range、 sparkline)
-2. **ユーザ Detail** を足す (`/users/:id` でその user のタイムライン / イベント / 関連 record)
-3. **ドメインモデル一覧** を足す (User 以外のテーブル: orders / posts / sessions 等)
-4. **観測イベント** を足す (`AiEvent` 的な generic event 集計)
-5. **何も追加しない**。 Home + Users だけで運用開始する
-
-選ばれたものに集中する。 **全部一気に作らない** (= 初期化スキルの責務は基盤導入まで)。
+1. 投入先を確認する。`apps/server/src/` (monorepo) か `src/` (single-package) か。既存の `admin/` があれば **AskUserQuestion** で「既存を残してマージ / 退避してから入れ直し / 中止」を確認する。
+2. 既存の `auth.ts` (`auth.api.signInMagicLink(...)` / `getSessionFromRequest(req)`)、 `db.ts` (`prisma` or `db`)、 `logger.ts` (`logger.info / logger.warn`) の export shape を確認する。合わなければ **AskUserQuestion** で「better-auth 入れる」か「別 auth 方式 (variants.md 参照)」を確認し、 import の書き換え計画を立てる。
+3. **AskUserQuestion** で 1 度にまとめて聞く: ADMIN_EMAIL の値 (env 未設定時の fallback) と env name、 配置先パス、 認証スタック (default: better-auth magic link)、 テストテンプレを入れるか。 default 以外の認証を選んだら `references/auth-variants.md` の該当セクションに従って routes.ts / middleware.ts を書き換える。
+4. `${CLAUDE_SKILL_DIR}/references/admin-template/` (テストを選んだ場合は `references/test-templates/` も `apps/server/tests/admin/` へ) をコピーする。 `REPLACE_ME@example.com` と `../auth.js` / `../db.js` / `../logger.js` の import は該当プロジェクトに合わせて必ず置換する。
+5. server エントリで `app.use("/admin", adminRouter)` を **認証 middleware より後** に mount する (better-auth の cookie が読める位置)。
+6. `.env.example` (存在すれば `.env` も) に `ADMIN_EMAIL` と `SERVER_BASE_URL` を追記する。 `.env` に値を直書きしない (= 値はユーザーが手で入れる)。
+7. 動作確認はこのスキルでは実行せず、 ユーザーに案内する: server 起動 → `/admin/login` を開く (404 が返る) → ADMIN_EMAIL の inbox に magic link が届く → `/admin` で Home、 `/admin/users` で User 一覧が出る。 届かない場合は better-auth の `sendMagicLink` callback と SMTP 設定を確認する。
+8. 雛形は Home + Users 2 ページしかない。 **AskUserQuestion** で次に足すセクション (エラーログダッシュボード / ユーザ Detail / ドメインモデル一覧 / 観測イベント / 何も追加しない) を聞き、 選ばれたものに集中する。 **全部一気に作らない** (= 初期化スキルの責務は基盤導入まで)。
 
 ## やってはいけないこと
 

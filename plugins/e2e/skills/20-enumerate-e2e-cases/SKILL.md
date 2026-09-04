@@ -46,7 +46,7 @@ docs を参照・更新する際は [[01-docs-management]] に従い、E2E の�
 
 ## Step 3: `docs/quality/e2e/cases/{YYYY-MM-DD-HHmm}-cases.md` を作成
 
-タイムスタンプは `date "+%Y-%m-%d-%H%M"`（`Bash`）で取得。冒頭にメタ情報、本体は表形式：
+冒頭にメタ情報、本体は表形式：
 
 ```markdown
 # E2E テストケース一覧

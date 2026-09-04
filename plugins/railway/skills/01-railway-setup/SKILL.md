@@ -315,33 +315,3 @@ curl -s -X POST https://backboard.railway.com/graphql/v2 \
 ```
 
 `serviceInstanceUpdate` の `input` に渡せる field 一覧（`railwayConfigFile` / `rootDirectory` / `region` / `watchPatterns` / `buildCommand` / `startCommand` 等）が返る。Railway 側で input schema が更新された時に自分で調べ直すための足場。
-
----
-
-## 自動起動
-
-<auto_invoke>
-<trigger_phrases>
-- "Railway"
-- "railway"
-- "railway.json"
-- "railpack.json"
-- "railpack"
-- "railwayConfigFile"
-- "railway deploy"
-- "railway service"
-- "Railway 接続"
-- "Railway GitHub"
-- "GitHub と接続"
-- "自動 deploy"
-- "auto deploy"
-- "serviceConnect"
-- "serviceInstanceUpdate"
-- "monorepo deploy"
-- "watchPatterns"
-- "Railway region"
-- "asia-southeast1"
-- "prisma generate"
-- "Railway crash"
-</trigger_phrases>
-</auto_invoke>

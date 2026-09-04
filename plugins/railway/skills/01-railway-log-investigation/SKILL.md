@@ -7,14 +7,6 @@ description: 個人開発プロジェクトで Railway 上に稼働している 
 
 Railway 上の service ログから HTTP 5xx や例外などの障害痕跡を **過去にさかのぼって** 発見し、構造化レポート (`railway_logs_analysis/{timestamp}/report.md`) として残すための Skill。
 
-## 起動ワード (自動トリガー)
-
-- 「Railway のログ確認して」「server のエラーログ調べて」
-- 「500系のエラーを探して」「最初に出たエラーを見つけて」
-- 「過去のデプロイメントを遡ってエラー調査」
-- 「Railway logs を分析してレポート作成」
-- 「日付 range を伸ばしてエラーを観測」
-
 ## 前提
 
 - `railway` CLI v4 以上 (`railway --version` で確認)
@@ -49,23 +41,17 @@ railway service status --all
 
 調査対象の service 名 (HTTP API server / worker など) を確定する。複数 service がある場合はそれぞれに対して以降の手順を実行する。
 
-### Step 2: 出力ディレクトリ準備
+### Step 2: 出力先
 
-```bash
-TS=$(date +%Y%m%d_%H%M%S)
-mkdir -p "railway_logs_analysis/$TS"
-echo "$TS" > /tmp/railway_log_ts.txt
-```
-
-`.gitignore` に `railway_logs_analysis/` が含まれているか確認し、無ければ追記する (**必ず gitignore 対象にする** — トークンや個人情報が混入するリスクがあるため)。
+成果物はすべて `railway_logs_analysis/{timestamp}/` 配下に書く (ディレクトリを作成し、そのパスを `OUTDIR` として以降のコマンド・スクリプトに渡す)。`.gitignore` に `railway_logs_analysis/` が含まれているか確認し、無ければ追記する (**必ず gitignore 対象にする** — トークンや個人情報が混入するリスクがあるため)。
 
 ### Step 3: ログ形式の偵察
 
 実際のログフィールドを 50〜100 行ほどサンプル取得して `jq` でフィールド構造を確認する。
 
 ```bash
-railway logs --service <svc> --lines 100 --json > "railway_logs_analysis/$TS/sample.json"
-jq -r '.res.statusCode // empty' "railway_logs_analysis/$TS/sample.json" | sort | uniq -c
+railway logs --service <svc> --lines 100 --json > "$OUTDIR/sample.json"
+jq -r '.res.statusCode // empty' "$OUTDIR/sample.json" | sort | uniq -c
 ```
 
 HTTP ステータスがどのキー (`.res.statusCode` / `.statusCode` / `.status` など) に入っているか、`level` のレベル分布、stderr 起因のノイズ (例: ORM の deprecation 警告など) がどう混ざるかを把握する。**Railway 側の `--filter @level:error` だけに依存すると、ORM の起動時警告などを誤検知するため、`statusCode` ベースでローカル再フィルタする方が信頼できる。**
@@ -74,13 +60,13 @@ HTTP ステータスがどのキー (`.res.statusCode` / `.statusCode` / `.statu
 
 ```bash
 railway deployment list --service <svc> --limit 50 --json \
-  > "railway_logs_analysis/$TS/deployments.json"
+  > "$OUTDIR/deployments.json"
 
 # 非 REMOVED を新しい順に
 jq -r '[.[] | select(.status == "SUCCESS" or .status == "FAILED" or .status == "SKIPPED")]
        | sort_by(.createdAt) | reverse
        | .[] | "\(.id)|\(.createdAt)|\(.status)"' \
-       "railway_logs_analysis/$TS/deployments.json"
+       "$OUTDIR/deployments.json"
 ```
 
 ### Step 5: 過去デプロイへの再帰的拡張 (本 Skill の核)
@@ -99,15 +85,7 @@ deployment_id  created_at  status  lines_fetched  fivexx_count  oldest_5xx_ts
 
 ### Step 6: 統計取得 (現稼働デプロイの詳細)
 
-最新の SUCCESS デプロイについて以下を集計しレポートに含める:
-
-```bash
-F="railway_logs_analysis/$TS/dep_<date>_<shortid>.jsonl"
-jq -r '.res.statusCode // empty' "$F" | sort | uniq -c | sort -rn   # ステータス分布
-jq -r '.level // empty'           "$F" | sort | uniq -c | sort -rn   # レベル分布
-jq -c 'select(.level == "error")' "$F"                                # error レコード全件
-jq -c 'select(.res.statusCode != null and (.res.statusCode|tonumber) >= 500)' "$F"  # 5xx 抽出
-```
+最新の SUCCESS デプロイについて、ステータス分布・レベル分布・error レコード全件・5xx 抽出を `jq` で集計しレポートに含める (statusCode のキーは Step 3 で確認したものを使う)。
 
 ### Step 7: レポート作成
 
@@ -156,8 +134,7 @@ jq -c 'select(
 ```bash
 #!/bin/bash
 set -u
-TS=$(cat /tmp/railway_log_ts.txt)
-OUTDIR="railway_logs_analysis/$TS"
+OUTDIR="${OUTDIR:?OUTDIR is required (e.g. railway_logs_analysis/20260904_1200)}"
 SVC="${SVC:?SVC environment variable is required (e.g. SVC=api)}"
 LINES="${LINES:-1000}"
 SUMMARY="$OUTDIR/per_deployment_summary.tsv"
@@ -188,7 +165,7 @@ echo "=== Summary ==="
 column -t -s $'\t' "$SUMMARY"
 ```
 
-`SVC` 環境変数で対象 service 名を渡す前提とする (`SVC=api bash /tmp/fetch_deps.sh`)。プロジェクト固有のデフォルト値を埋め込まない。
+`SVC` で対象 service 名、`OUTDIR` で Step 2 の出力先を環境変数として渡す前提とする (`SVC=api OUTDIR=railway_logs_analysis/<TS> bash /tmp/fetch_deps.sh`)。プロジェクト固有のデフォルト値を埋め込まない。
 
 ## 想定する成果物 (ディレクトリ構成)
 

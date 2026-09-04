@@ -68,18 +68,6 @@ worktree も repoId も不要。pane は現在アクティブな worktree（こ�
 新しいタブは作らない。`orca terminal list --json` の `visualLayouts` から、このチェックアウト
 （`worktreePath` が現在の作業ツリー）の `activeTabId` を見つけ、その `activeTabId` に一致する tab の
 アクティブな pane の `handle` を base として控える。
-
-```bash
-# 現在の作業ツリーで開いているタブ(activeTabId)のアクティブ pane handle を取り出す
-orca terminal list --json | jq -r --arg wt "$PWD" '
-  .result.visualLayouts[] | select(.worktreePath == $wt) as $l
-  | $l.root.tabs[]? // $l.root
-  | select(.tabId == $l.root.activeTabId)
-  | (.panes.handle // .activeLeafId)'
-```
-
-`jq` の構造が環境で違う場合は `orca terminal list --json` を読み、`visualLayouts` 内で現在の
-`worktreePath` を持つレイアウトの `activeTabId` と一致する tab の pane handle を目視で1つ選ぶ。
 **この base handle で行う split はすべて同じタブ内に積まれる**ので、毎回同じ base を使ってよい。
 
 ## 2. 完了済み change を判定する
@@ -246,33 +234,3 @@ worktree status の設定（worktree 方式の `orca worktree set`）は **不�
   への同期）。コミット／push したい場合はそれが別作業である旨。
 - `/opsx:archive` の成果物チェックで未完了警告が出た change があれば、その内容（黙ってアーカイブしない）。
 
----
-
-## やってはいけないこと
-
-- 親セッションで change を直接アーカイブする（並行性が失われ、pane を作る意味が無い）。
-- worktree やブランチを作る（この skill は意図的に worktree を使わない）。
-- 新しいタブを作る／別タブの端末を base に split する（pane は **現在開いているタブの中** に作る。
-  base handle は §1 で控えた現在アクティブなタブのアクティブ端末を使う）。
-- 同じ capability のメイン仕様を同期する change を無確認で同時に走らせる（共有チェックアウトの
-  `openspec/specs/<capability>/spec.md` を同時編集して取りこぼす）。
-- 各 pane の Claude に git commit / branch 切り替え / stash をさせる（他 pane を巻き込む）。
-- task spec で **change 名の指定**と **同期確認を自分で進める指示**を省く（pane が
-  AskUserQuestion の入力待ちで固まる）。
-- `check --wait` のタイムアウトや `{count:0}` を worker 失敗と見なして pane を kill / 再 dispatch する
-  （checkpoint として扱い、worker_done / escalation が来るまで rolling に待ち直す）。
-- `worker_done` を受けただけで pane を閉じる（worker_done は完了報告であって最終確認ではない。閉じてよいのは
-  `archive/` への移動を確認できた pane だけ＝§7）。
-- `dispatch --inject` を bare shell の pane に対して使う（agent CLI が起動し `tui-idle` を確認した pane
-  のみ。inject 不可なら §0 のフォールバックへ退避する）。
-- `dispatch --to` で `terminal split` の戻り handle を使わず active 任せにする（狙った pane に届かない
-  ことがある）。
-- `terminal read` の tail だけ見て「Claude が起動していない／終わった」と判断する（TUI は別バッファ。
-  完了は `archive/` 配下の存在で確認する）。
-- アーカイブ完了（`archive/` への移動）を確認できていない pane を `terminal close` で閉じる（同期途中で
-  kill すると取りこぼす）。移動を確認できた pane だけ閉じる（§7）。
-- 自分（オーケストレーター）の pane・他セッションの Claude・無関係な既存 pane を閉じる（閉じてよいのは
-  この skill が `split` で作った pane の handle のみ）。
-- アーカイブ完了後も pane を開きっぱなしで放置する（完了 pane は §7 で閉じて後片付けする）。
-- 完了判定を LLM の主観でやる（grep と terminal list の title で決定論的に判定する）。
-- 失敗した change や成果物未完了の警告を黙って飛ばす。アーカイブできなかったもの・警告は明示的に報告する。
