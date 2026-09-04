@@ -12,9 +12,10 @@ issue:  （なし）→ stage:propose → stage:apply → stage:archive → clos
         修飾: wip（作業中ロック。open PR 無しで 3 時間超なら失効）
 
 PR:     propose / apply / archive / docs   ← 次段階の Routine のトリガー条件そのもの
+        修飾: question（人へ問うている未確定の判断が残っている。merge してはいけない）
 ```
 
-段階ラベルは同時に 1 つだけ、前にしか進まない。仕様を詰めている途中かどうかは PR 本文 1 行目の `未確定の判断: N 件` で表す。詳しい規則は `skills/routine-common/SKILL.md` を参照。
+段階ラベルは同時に 1 つだけ、前にしか進まない。`question` は段階ラベルと直交するので重ねて付ける。仕様を詰めている途中かどうかは PR 本文 1 行目の `未確定の判断: N 件` と `question` ラベル（N > 0 ⇔ 付いている）の両方で表す。詳しい規則は `skills/routine-common/SKILL.md` を参照。
 
 ## スキル
 
@@ -56,7 +57,7 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 
 ## 導入手順
 
-1. ラベル 8 個を作る（コマンドは `skills/routine-common/SKILL.md` の「ラベル作成コマンド」参照）
+1. ラベル 9 個を作る（コマンドは `skills/routine-common/SKILL.md` の「ラベル作成コマンド」参照）
 2. `openspec` plugin を前提として導入する
 3. Claude GitHub App をリポジトリに install する（webhook 配送に必須。Web セットアップだけでは届かない）
 4. Routine 5 本を上記の設定表どおりに作る。schedule の sweep は Routines の schedule 機能から、イベント起動の 4 本は UI から
@@ -71,12 +72,13 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 規則本体は `skills/routine-common/SKILL.md` に置く。要点だけここに書く。
 
 1. `Closes #n` を書いてよいのは archive PR だけ。propose / apply では `Refs #n`
-2. draft PR は作らない。代わりに PR 本文 1 行目へ `未確定の判断: N 件`
+2. draft PR は作らない。代わりに PR 本文 1 行目へ `未確定の判断: N 件` と、N > 0 のあいだ `question` ラベル。この 2 つは常に一致させる
 3. routine のコメントは必ず `<!-- routine -->` で始める
 4. `tasks.md` に事後の実測・確認節を作らない。archive の判定は全タスク `[x]` のため
 5. Routines の webhook は上限超過で黙って破棄されうるため、`routine-sweep` が後追いで直す
 6. grill を経た PR は自動 merge しない
 7. 1 セッション 1 issue 1 PR。並行性はセッションを複数走らせて出し、`wip` が衝突を防ぐ
+8. Routines の仕様は UI と API 応答で確かめる。公式ドキュメントに無い `Issue: Labeled` トリガーや `autofix_on_pr_create` が UI には存在する
 
 ## パラメータ化する箇所
 

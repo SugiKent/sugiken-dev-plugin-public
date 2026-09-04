@@ -1,33 +1,72 @@
 ---
 name: routine-apply
-description: issue-driven-sdd の apply 段階。propose PR が merge されたら、対応する issue を stage:apply に進め、openspec change を実装して apply PR を作る。Routine のトリガーは PR merged、Filter は Labels contains propose、autofix_on_pr_create は true にする。
+description: propose ラベルの PR が merge されたときに起動し、対応する issue を stage:apply へ進めて openspec change を実装するスキル。実装が済んだら apply ラベルの PR を作って終える。Routine「PR merged = propose」の本体。
 ---
 
-# routine-apply
+まず同じ plugin の `routine-common` skill を読み、そのラベル規約・着手可否・PR の作り方に従う。
 
-まず同じ plugin の `routine-common` を読み、ラベル定義・着手可否・不変条件・PR の作り方に従う。ここではこの段階固有の手順だけを書く。
+# 対象の特定
 
-## 起動条件
+**対象はトリガーとなった PR。起動時の `github-trigger-context` に PR の ID が書かれている。**
+まずそれを読んで対象を確定させる。読み取れない場合は、推測で対象を決めず、何が読めなかったかを
+報告して終える（`routine-sweep` が後追いで拾う）。
 
-`propose` ラベルの付いた PR が merge された。1 回の起動につき、その PR に対応する change・issue を 1 つだけ扱う。
+起動条件は **`propose` ラベルの PR が merge されたこと**。その PR 本文の `Refs #n` から
+対象 issue を引く。**このセッションで作る PR は 1 つ。**
 
-## 実装前の確認
+# 1. merge された PR を検証する
 
-merge された PR の内容を再取得し、次の両方を満たすことを確認する。どちらか一方でも満たさなければ実装せず、対応する issue へ理由をコメントし、issue のラベルを `stage:propose` のままにして（進めずに）終了する。
+- **本文 1 行目の「未確定の判断」が 0 件か。`question` ラベルが外れているか。** どちらか
+  一方でも満たさないなら実装してはならない。
+  issue へ「未確定のまま merge された」とコメントし、`stage:apply` を付けずに
+  `stage:propose` のまま（既に外れていれば付け直して）終える。
+- `Refs #n` が無いなら、PR の title と change の `proposal.md` から issue を探す。
+  1 つの change が複数 issue を束ねることがあるので、`proposal.md` を `grep -a '#'` で全件見る。
+  見つからなければ issue を触らず、PR へコメントして終える。
 
-- PR 本文 1 行目が `未確定の判断: 0 件` である
-- `question` ラベルが外れている
+# 2. issue を進める
 
-満たしている場合だけ次に進む。
+`origin/main` を取り直したうえで、対象 issue のラベルを付け替える。
 
-## 進め方
+```
+stage:propose を外す → stage:apply を付ける（wip は付いたまま。無ければ付ける）
+```
 
-1. 対応する issue を特定する（PR 本文の `Refs #n` から辿る）。
-2. `routine-common` の着手可否を確認し、issue のラベルを `stage:propose` → `stage:apply` に付け替え、`wip` を付ける。
-3. merge された proposal（design・tasks）に従い、openspec plugin の実装系スキルで change を実装する。tasks.md のタスクを順に着手し、完了したものから `[x]` にする。
-4. 実装中に proposal と食い違う判断が必要になった場合は、proposal を書き換えるのではなく PR コメントで問いを立て、`routine-propose` の 4.2〜4.3 と同じ要領で `question` を付けて回答を待つ。
-5. すべてのタスクが完了したら PR を作る。段階ラベルは `apply`。本文 1 行目は `未確定の判断: N 件`。`Refs #<issue番号>`（`Closes` は書かない）。
+複数 issue を束ねた change なら**全件**同じ操作をする。付け替えたら読み直して確認する。
 
-## 完了報告
+着手可否（`routine-common`）を改めて判定する。ここで見送るなら `wip` を外してからコメントする
+（propose と違い、apply は他セッションが拾える状態に戻す）。
 
-最初に issue 番号と PR URL を述べ、実装前の確認結果（満たした／満たさず差し戻した）、完了したタスク数、未確定の判断の件数を簡潔に報告する。
+# 3. 実装する
+
+`openspec-apply-change` の作法に従い、`origin/main` の change の `tasks.md` を上から実装する。
+
+- 規模に応じて `orchestration:apply-backend` / `orchestration:apply-frontend` サブエージェントへ
+  スライスを委譲してよい。実装の正本は各スキル。
+- **完了したタスクだけ `[x]` にする。** 実行できなかった行はチェックしない。
+- リポジトリのゲートを緑にする。型検査・lint・関連ユニットテスト・`openspec validate --strict`。
+  E2E は基盤があれば該当ケースを回す。
+- **`.claude/rules/` の該当ルールを必ず読む。** 触ったファイルに紐づく検査コマンドが
+  ルールに書いてあるなら、触るたびに回す。
+- 実装中に「このセッションでは実行できない」タスク（本番実測・デプロイ後確認）が
+  tasks に残っていると分かったら、**その行を tasks から外し、別 issue として起票する**。
+  段階ラベルは付けない。archive を止めないための措置である。
+
+# 4. PR を作って終える
+
+`routine-common` の「PR の作り方」に従う。
+
+- title: `[apply] #<n> <要約>`
+- 本文に `Refs #n`（`Closes` は書かない）
+- ラベル: `apply`
+- auto-fix を有効化し、レビュー・会話コメントを文脈として扱う
+- 作成直後に `mergeable_state` を確認する
+
+PR を作った時点でセッションは完了。**merge を待たない。** 次は `apply` ラベルの PR が
+merge された時点で `routine-archive` が起動する。
+
+# レビュー指摘への対応
+
+auto-fix により、この PR へのレビューコメントは同じセッションが受け取る。指摘を反映して
+push し、何をどう直したかをスレッドへ返す（`<!-- routine -->` を付ける）。
+設計に関わる曖昧な指摘は、勝手に決めずスレッドで確認する。
