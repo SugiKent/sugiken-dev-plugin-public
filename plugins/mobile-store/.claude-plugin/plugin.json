@@ -1,0 +1,5 @@
+{
+  "name": "mobile-store",
+  "description": "モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消)",
+  "author": { "name": "SugiKent" }
+}
