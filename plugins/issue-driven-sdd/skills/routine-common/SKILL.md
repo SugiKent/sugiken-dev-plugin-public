@@ -66,21 +66,7 @@ gh api -X POST   repos/{owner}/{repo}/issues/<PR番号>/labels -f "labels[]=ques
 gh api -X DELETE repos/{owner}/{repo}/issues/<PR番号>/labels/question
 ```
 
-## ラベル作成コマンド
-
-新しいプロジェクトへこの構成を導入するときに実行する。
-
-```bash
-gh label create "stage:propose" --color 0E8A16 --description "AIが着手開始する。人間が唯一手動でつけるラベル。"
-gh label create "stage:apply"   --color 1D76DB --description "proposal PR が merge されると AI が自動で付ける。ここから実装が始まる。"
-gh label create "stage:archive" --color 5319E7 --description "実装 PR が merge されると AI が自動で付ける。archive PR の merge で issue が閉じる。"
-gh label create "wip"           --color FBCA04 --description "AI が作業中。人間は触らない。open PR が無いまま 3 時間経つと AI が外す。"
-gh label create "propose" --color 0E8A16 --description "AI が付ける PR ラベル。openspec の proposal を追加する PR。merge すると実装が始まる。"
-gh label create "apply"   --color 1D76DB --description "AI が付ける PR ラベル。実装の PR。merge すると archive が始まる。"
-gh label create "archive" --color 5319E7 --description "AI が付ける PR ラベル。openspec archive の PR。merge すると issue が閉じる。"
-gh label create "docs"    --color C5DEF5 --description "AI が付ける PR ラベル。.claude/ と docs/ だけを変える PR。merge しても次の段階は始まらない。"
-gh label create "question" --color D876E3 --description "AI が付ける PR ラベル。人へ問うている未確定の判断が残っている PR。全部の回答が済むと AI が外す。"
-```
+ラベルをまだ作っていない新しいプロジェクトでは、作成コマンドを `routines-setup` skill から実行する（この skill はセットアップの実行を担わない）。
 
 # 1 セッション 1 issue 1 PR
 

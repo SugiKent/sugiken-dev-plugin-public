@@ -28,6 +28,7 @@ PR:     propose / apply / archive / docs   ← 次段階の Routine のトリガ
 | `routine-sweep` | schedule（1 時間以上の間隔） | ラベルと実態の修復・`wip` 失効回収・応答が止まった PR の引き継ぎ・着手可能な issue を 1 つ実行 |
 | `assess-pr-risk` | 手動 / `PR opened` | PR のリスクを評価し、低ければ merge する |
 | `create-github-issues` | 手動 | バックログを issue にする。段階ラベルは付けない |
+| `routines-setup` | 手動 | 新しいプロジェクトへの導入（ラベル作成・GitHub App install・Routine 5 本の設定・最初の 1 件での動作確認） |
 
 Routine 本文は次の 1 行だけにする。判断規則はすべてスキル側に置き、Routine を作り直しても規則が失われないようにする。
 
@@ -57,7 +58,9 @@ Routine 本文は次の 1 行だけにする。判断規則はすべてスキル
 
 ## 導入手順
 
-1. ラベル 9 個を作る（コマンドは `skills/routine-common/SKILL.md` の「ラベル作成コマンド」参照）
+`routines-setup` skill が手順を実行する（ラベル作成・GitHub App install・Routine 5 本の設定・最初の 1 件での動作確認）。概要は次のとおり。
+
+1. ラベル 9 個を作る
 2. `openspec` plugin を前提として導入する
 3. Claude GitHub App をリポジトリに install する（webhook 配送に必須。Web セットアップだけでは届かない）
 4. Routine 5 本を上記の設定表どおりに作る。schedule の sweep は Routines の schedule 機能から、イベント起動の 4 本は UI から
