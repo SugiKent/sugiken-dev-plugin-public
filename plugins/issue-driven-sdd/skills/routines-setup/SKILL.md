@@ -43,6 +43,10 @@ issue-driven-sdd の構成を対象プロジェクトに揃える。**現状を�
 旧構成の Routine（`PR merged` で apply / archive を起動していたもの）は、消さずにトリガーを
 付け替える。
 
+**`retro`（振り返り点検）は issue-driven-sdd の対象外。** 旧構成で `routine-retro` のような
+Routine を運用していた場合、この表に付け替え先が無い。消さずに各プロジェクトが独自に運用を
+続ける。対応する `retro` ラベルも同様に対象外で、このスキルは作成も削除もしない。
+
 | Name | Trigger | Filter | model | autofix_on_pr_create | 本文 |
 | --- | --- | --- | --- | --- | --- |
 | `<project> dispatch` | `Issue: Labeled` / `Issue: Closed` / `PR merged` / `PR merged` | `stage:todo` / なし / `propose` / `apply` | sonnet | false | `routine-dispatch` skill を読み、そのとおりに実行する |
