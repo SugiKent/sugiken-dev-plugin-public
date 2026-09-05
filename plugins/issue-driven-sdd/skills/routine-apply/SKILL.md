@@ -28,6 +28,8 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
   該当ルールを緑にする。E2E とスクリーンショットは `worker.md` の「リポジトリの事情に従う」で決める。
 - このセッションで実行できないタスク（本番実測・デプロイ後確認）が残っていたら、その行を tasks から
   外して別 issue として起票する。archive を止めないための措置。
+- proposal が想定していなかった意思決定に行き当たったら、独断で決めずコードやコメントに書き付けて
+  進めない。`routine-common` の「見送りの書き戻し」で issue へ問い、`blocked-by: human` を経てから続ける。
 
 # 3. PR を作って終える
 
