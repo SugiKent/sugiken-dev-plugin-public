@@ -11,8 +11,8 @@ propose → apply → archive を回す構成。人は issue に `stage:todo` �
 issue の段階は「なし」→ `stage:todo` → `stage:propose` → `stage:apply` → `stage:archive` → closed の順に進む。
 `stage:todo` は人が付け、それ以降は `routine-dispatch` だけが付ける。修飾ラベル `wip` は worker のロック、
 `blocked` は宣言されたブロッカーが解けるまで着手しない印。PR のラベル `propose` / `apply` / `archive` は
-merge を受けた dispatcher がどの段階へ進めるかを決め、`question` は人へ問うている PR に重ねて付けて
-merge を止める。定義と書き手は `skills/routine-common/SKILL.md` が正本。
+merge を受けた dispatcher がどの段階へ進めるかを決める。`question` は issue と PR に共通の「人の入力待ち」で、
+`is:open label:question` の 1 検索で人が見るべきものが全部出る。定義と書き手は `skills/routine-common/SKILL.md` が正本。
 
 ## スキル
 
@@ -38,21 +38,34 @@ PR の自動 merge（`assess-pr-risk`）はこの plugin に含めず、プロ�
 3. propose PR が merge されると dispatcher が `stage:apply` へ進め、apply worker が実装して `apply` PR を作る。
 4. apply PR が merge されると dispatcher が `stage:archive` へ進め、archive worker が archive PR を作る。
    merge で issue が閉じる。
-5. issue が閉じると dispatcher が、それを待っていた `blocked` の issue を放出する。
+5. issue が閉じると dispatcher が、それを待っていた `blocked` の issue を放出する。依存が解けた順に
+   次々と着手が始まる。
 6. worker が利用上限などで途中で死んでも、次のイベントか sweep で dispatcher が段階ラベルを付け直して
-   再起動する。3 回死んだら人に渡す。
+   再起動する。3 回死んだら `question` を付けて人に問う。
+7. worker が人の判断を要すると決めた issue には `blocked` と `question` が付く。人が issue にコメントすると、
+   次の dispatcher（sweep）が worker を起動し直し、worker が全コメントを読んで進む。
 
 worker は調査の結果を必ず `blocked-by:` で書き戻す。調査は 1 回しか払わず、解消の検知は dispatcher が安く行う。
+
+## Routines の制約と設計判断
+
+- **Routines に「Issue のコメント」イベントトリガーは無い。** issue に人がコメントしても routine は
+  起動しない。issue 上で人へ問うても、答えを拾うのは次の sweep になる。
+- **PR のコメントは、その PR を作った worker が同じセッションで受け取る**（`autofix_on_pr_create`）。
+  問いと答えと修正が 1 セッションに閉じ、文脈を失わない。
+- したがって **人との質疑応答（grill）は PR に寄せる**（`routine-propose`）。issue への
+  `blocked-by: human` は、方針の変更・人による却下・worker の連続失敗など、PR が存在しない例外に限り、
+  答えは sweep の間隔で拾われる。
 
 ## 人の役割
 
 1. issue に `stage:todo` を付ける
-2. PR のスレッドで質問に答える
+2. `question` が付いた PR / issue にコメントで答える
 3. PR を merge する
-4. `blocked-by: human` で戻ってきた issue の方針を決める
 
-順番を飛ばして今すぐ着手させたいときは `stage:propose` を直接付ける。死んだ worker をやり直させたいときは
-段階ラベルを外して付け直す。
+人が触るラベルは `stage:todo` だけ。`blocked` / `question` の付け外しと worker の再起動は routine が行う。
+順番を飛ばして今すぐ着手させたいときだけ `stage:propose` を直接付ける。操作の一覧は
+`skills/routine-common/SKILL.md` の「人が持つ操作」。
 
 ## プロジェクトごとの調整
 

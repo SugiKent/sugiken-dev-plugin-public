@@ -9,6 +9,10 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 `worker.md` の「対象の特定」で issue を決め、「着手可否の判定」を上から見る。見送るなら
 `routine-common` の「見送りの書き戻し」で終える。着手するなら「`wip` のロック」を行う。
 
+`origin/main` の `openspec/changes/` 直下に、proposal にこの issue 番号を書いた change が既にあれば、
+それは merge 済みの proposal に未確定の判断が残って `blocked-by: human` で戻され、人が issue に
+答えたあとの再起動である。新しい change を作らず、その change を直す PR を作る。以降の手順は同じ。
+
 # 2. 事実を自分で調べる
 
 環境で分かることを人に聞かない。issue の本文と全コメント、`origin/main` の該当コードと

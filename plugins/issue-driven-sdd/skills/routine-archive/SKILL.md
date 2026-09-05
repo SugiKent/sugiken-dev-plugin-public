@@ -33,7 +33,8 @@ done
 
 起動の原因になった change に未チェックが残る場合、それがこのセッションで実行できないタスク
 （本番実測・デプロイ後確認）なら、その行を tasks から外して別 issue へ起票したうえで archive する。
-それ以外の未チェックなら archive せず、何が残っているかをコメントし `blocked-by: human` で終える。
+それ以外の未チェックなら archive せず、何が残っているかを添えて `blocked-by: human` で書き戻す
+（`routine-common` の「見送りの書き戻し」）。
 open PR が触っている change は、相手の編集を止めて古い設計で spec を上書きするので対象外。
 
 該当が 0 件なら「archive 対象なし」と報告して終える。

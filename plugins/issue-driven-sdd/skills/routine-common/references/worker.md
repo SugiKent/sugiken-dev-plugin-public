@@ -55,13 +55,14 @@ custom に書くのは、たとえば E2E の要否、スクリーンショッ�
 3. 段階ラベルが 2 つ以上ある。何と何が付いているかをコメントして終える。
 4. 依存 issue が閉じていない。issue 本文に `depends on #m` があり `#m` が open。`blocked-by: #m`。
 5. 進行中の作業と同じ場所を触る。「進行中」は open PR と、`openspec/changes/` 直下に残る change。
-   「同じ場所」は、同じ spec の同じ要求を MODIFIED する・同じ画面やルート・同じ service / repository の
+   自分の issue 番号を `Refs #n` に持つ PR と、proposal に自分の issue 番号を書いた change は自分の
+   作業なので除く。「同じ場所」は、同じ spec の同じ要求を MODIFIED する・同じ画面やルート・同じ service / repository の
    ファイル。propose では delta spec を、apply では PR の変更ファイルを読んで判定する。
    相手の issue 番号か change 名で `blocked-by:`。
 6. change の前提が満たされていない。`tasks.md` 冒頭の「先行 change の archive を確認する」のような
    前提条件が `origin/main` で満たされていない。`blocked-by: change <name>`。
 7. その機能が閉じられている。custom や `CLAUDE.md` が「開発を止めた」と宣言している領域。
-   `blocked-by: human`。人が方針を変えない限り解けない。
+   `blocked-by: human`。人が方針の文書を変えて issue にコメントするまで解けない。
 
 4 以降は調査を伴うので、結果は `routine-common` の「見送りの書き戻し」で必ず issue へ残す。
 

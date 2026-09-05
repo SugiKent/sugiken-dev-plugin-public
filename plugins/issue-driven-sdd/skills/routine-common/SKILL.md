@@ -26,7 +26,16 @@ description: issue-driven-sdd の routine 群（routine-dispatch / routine-propo
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
 | `wip` | worker が作業中のロック | 着手した worker | 見送った worker、または失効を回収する `routine-dispatch` |
-| `blocked` | 宣言されたブロッカーが解けるまで着手しない。理由は最新の `blocked-by:` コメント | 見送った worker、または受付時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch`、または人 |
+| `blocked` | 宣言されたブロッカーが解けるまで着手しない。理由は最新の `blocked-by:` コメント | 見送った worker、または受付時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch` |
+
+## issue と PR に共通
+
+| ラベル | 意味 | 付ける | 外す |
+| --- | --- | --- | --- |
+| `question` | 人の入力待ち。issue では `blocked` に重ねて付き、ブロッカーに `human` が含まれる印。PR では `propose` / `apply` に重ねて付き、未確定の判断が残っていて merge してはいけない印 | `blocked-by: human` を書いた routine、PR を作った worker | issue は `routine-dispatch`、PR はその worker |
+
+issue と PR で同じラベルにしているのは、人が `is:open label:question` の 1 つの検索で
+「自分を待っているもの」を全部見られるようにするため。人はラベルを触らず、コメントで答える。
 
 ## PR
 
@@ -36,10 +45,9 @@ description: issue-driven-sdd の routine 群（routine-dispatch / routine-propo
 | `apply` | 実装の PR | issue を `stage:archive` へ |
 | `archive` | `openspec archive` の PR | なし（`Closes #n` で issue が閉じる） |
 | `docs` | `.claude/` `docs/` だけの PR | なし |
-| `question` | 上のラベルに重ねて付ける。人へ問うている未確定の判断が残っており、merge してはいけない | |
 
 PR ラベルは dispatcher が段階を進める条件そのものなので、付け忘れると次の段階が始まらない。
-`question` は本文 1 行目の `未確定の判断: N 件` と常に一致させる。N > 0 なら付いており、
+PR の `question` は本文 1 行目の `未確定の判断: N 件` と常に一致させる。N > 0 なら付いており、
 N = 0 で外す。残り 1 件でも外さない。
 
 # ラベルの書き手
@@ -49,7 +57,8 @@ N = 0 で外す。残り 1 件でも外さない。
 | `stage:todo` | 人 |
 | `stage:propose` / `stage:apply` / `stage:archive` | `routine-dispatch` だけ。人が直接付けるのは「順番を飛ばして今すぐ着手させる」強制操作 |
 | `wip` | worker が付ける。外すのは worker と `routine-dispatch` |
-| `blocked` | worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` と人 |
+| `blocked` | worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
+| issue の `question` | `blocked-by: human` を書いた worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
 | PR のラベル | PR を作った worker |
 
 書き手を 1 つにする理由は、merge・見送り・失効回収が同じラベルを同時に書くと状態が壊れるから。
@@ -60,13 +69,17 @@ worker は段階ラベルを書かない。
 | したいこと | 操作 |
 | --- | --- |
 | 承認して順番待ちに入れる | `stage:todo` を付ける |
+| `question` の PR に答える | PR にコメントする。作った worker が同じセッションで受け取り、続きを進める |
+| `question` の issue に答える | issue にコメントする。ラベルは触らない。次の `routine-dispatch`（sweep）が人のコメントを見て worker を起動し直し、worker が issue の全コメントを読んで進む |
 | 取り下げる・止める | 段階ラベルを外す |
 | 順番を飛ばして今すぐ着手させる | `stage:propose` を直接付ける |
-| ブロックを人の判断で解く | `blocked` を外し、段階ラベルを外して付け直す。閉じた領域のような原因は先に方針の文書を変えておく |
-| 死んだ worker をやり直させる | 段階ラベルを外して付け直す |
 
-PR を merge せずに close すると、dispatcher は「人が却下した」とみなして `blocked-by: human` を書き、
-再起動しない。やり直させたいときは上の操作で明示する。
+通常の運用で人が触るラベルは `stage:todo` だけ。`blocked` / `question` / 段階ラベルの付け直しは
+routine が行い、人はコメントで答えることに集中する。閉じた領域のように方針の文書を変える必要がある
+ときは、変えたうえで「変えた」とコメントすれば worker が再評価する。
+
+PR を merge せずに close すると、dispatcher は「人が却下した」とみなして `blocked-by: human` で問い返す。
+どうしたいかを issue にコメントすれば動き出す。
 
 # ラベルを書くときの作法
 
@@ -107,10 +120,15 @@ routine が着手しないと決めたら、理由を必ず issue へ書き戻�
 同じ調査をもう 1 度払い、dispatcher は解けたかどうかを判定できない。
 
 1. issue へコメントを投稿する。1 行目を `<!-- routine -->` にし、2 行目以降にブロッカーを 1 件 1 行で
-   `blocked-by: #589` のように書き、空行を挟んで人が読める理由を添える。
+   `blocked-by: #589` のように書き、空行を挟んで人が読める理由を添える。`human` を書くときは、
+   **人に何を決めてほしいか**を選択肢と推奨つきで書く。人はこのコメントだけを読んで答える。
 2. `blocked` を付ける。
-3. `wip` を付けていたら外す。
+3. `blocked-by:` に `human` があれば `question` を付ける。`blocked` より後に付けるのは、ラベルの
+   書き込みで再起動した worker が `blocked` を見て黙って終えられるようにするため。
+4. `wip` を付けていたら外す。
 
 `blocked-by:` の形は 3 つだけ。issue か PR の番号 `#m`、`change <change名>`、`human`。
+`human` は「人の判断が要る」の印。人はラベルを触らずコメントで答え、いつ解けたとみなすかは
+`routine-dispatch` の 3 が決める。解けると worker が起動し直して全コメントを読む。
 **`blocked-by:` 行を含む最新のコメントが正本**なので、ブロッカーが増減したら全部書き直す。
 解けたかどうかの判定と放出は `routine-dispatch` が担い、worker はブロッカーの解消を待たない。

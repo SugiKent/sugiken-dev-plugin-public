@@ -48,7 +48,8 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 | closed な issue に `wip` が残っている | `wip` を外す |
 | open PR が無く、`wip` が付いてから 3 時間を超えている | `wip` を外す |
 | open PR が無く、最新の `wip` 付与がその issue の最新の PR merge より古く、merge から 30 分を超えている | `wip` を外す。worker は着手時に `wip` を付け直すので、生きている `wip` は merge より新しい |
-| その issue の `propose` / `apply` PR が merge されずに close され、それより新しい open PR が無い | 人が却下したとみなす。`wip` を外し、`blocked-by: human` で書き戻す（`routine-common` の「見送りの書き戻し」）。再起動しない |
+| その issue の `propose` / `apply` PR が merge されずに close され、それより新しい open PR が無い | 人が却下したとみなす。`wip` を外し、`blocked-by: human` で書き戻す（`routine-common` の「見送りの書き戻し」）。再起動しない。人が issue にコメントすれば 3 で放出される |
+| `question` が付いているのに `blocked` が無い issue | `question` を外す。issue の `question` は `blocked` から導かれるラベルで、単独では意味を持たない。PR は対象外（PR の `question` は `blocked` 無しで単独に付くのが正常。一覧 API は PR も issue として返すので、`pull_request` を持つものを除く） |
 | `archive` PR が merge 済みなのに issue が open | issue を close する |
 | `stage:todo` と他の `stage:*` が両方付いている | このスキルの書き込み途中で死んだ跡なので `stage:todo` を外す |
 | それ以外で段階ラベルが 2 つ以上 | 直さない。何と何が付いているかを 1 度コメントし、以降の手順から除外する |
@@ -58,13 +59,18 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 ## 2. merge に合わせて段階を進める
 
 直近 14 日に merge された `propose` / `apply` ラベルの PR を集め、本文の `Refs #n` から issue を引く。
+同じ issue に同じラベルの merge 済み PR が複数あれば、最新の merge だけを見る。`blocked-by: human` の
+あと proposal を直す PR が merge されると、古い PR には `question` が残ったままになるため。
 
 | merge 済み PR | issue の今の段階 | すること |
 | --- | --- | --- |
-| `propose` | `stage:propose` | 本文 1 行目が `未確定の判断: 0 件` で `question` が無いことを確認してから、`stage:propose` を外し `stage:apply` を付ける。満たさなければ進めず `blocked-by: human` で書き戻す |
+| `propose` | `stage:propose` | 本文 1 行目が `未確定の判断: 0 件` で PR に `question` が無いことを確認してから、`stage:propose` を外し `stage:apply` を付ける。満たさなければ進めず `blocked-by: human` で書き戻す（`routine-common` の「見送りの書き戻し」） |
 | `apply` | `stage:apply` | `stage:apply` を外し `stage:archive` を付ける |
 | どちらか | 既に次の段階以降 | 何もしない |
 
+段階を進めるとき、issue に `question` / `blocked` が付いていれば先に外す（`question` → `blocked` の順）。
+`blocked-by: human` のあと人の答えを受けた worker が直しの PR を merge まで運んだ状態で、修飾ラベルが
+残ると次の worker が `blocked` を見て終えてしまう。
 段階ラベルを付けた時点で worker が起動する。`wip` は触らない。worker が着手時に付け直す。
 
 ## 3. ブロックを評価し、解けたものを放出する
@@ -73,21 +79,26 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 
 宣言されたブロッカーは、issue 本文の `depends on #m` と、コメントの `blocked-by:` 行。
 `blocked-by:` 行を含む最新のコメントだけが正本。受付では、最新の `stage:todo` 付与より後に投稿された
-コメントだけを読む。人が `blocked` を外して `stage:todo` を付け直すのは「もう一度評価しろ」の合図なので、
-それより前の `blocked-by: human` を引き継ぐと人が永久に解けなくなる。
+コメントだけを読む。人が `stage:todo` を付け直すのは「もう一度評価しろ」の合図なので、
+それより前の `blocked-by:` を引き継ぐと取り下げた依存が復活する。
 
 | ブロッカー | 解けた条件 |
 | --- | --- |
 | `#m` が issue | closed |
-| `#m` が PR | merged。merge されずに close された場合は解けていない。その旨を 1 度コメントし `blocked-by: human` に置き換える |
+| `#m` が PR | merged。merge されずに close された場合は解けていない。`blocked-by: #m` を `blocked-by: human` に置き換えて `routine-common` の「見送りの書き戻し」で書き戻す |
 | `change <name>` | `origin/main` の `openspec/changes/` 直下（`archive/` を除く）に無い |
-| `human` | 自動では解けない |
+| `human` | 正本の `blocked-by:` コメントより後に、`<!-- routine -->` で始まらないコメントが issue に投稿されている。人が答えたとみなす。答えの中身は判定しない。読んで判断するのは起動し直した worker |
 
 | 状態 | 全部解けた | 1 つでも残っている |
 | --- | --- | --- |
-| `stage:todo`、`blocked` 無し | `stage:todo` を外し `stage:propose` を付ける | `blocked` を付け、残るブロッカーを `blocked-by:` 行で書いたコメントを投稿する |
-| `stage:todo` + `blocked` | `blocked` を外し、`stage:todo` を外し、`stage:propose` を付ける | 何もしない |
-| `stage:propose` / `stage:apply` / `stage:archive` + `blocked` | `blocked` を外し、段階ラベルを外して付け直す（worker を起動するため） | 何もしない |
+| `stage:todo`、`blocked` 無し | `stage:todo` を外し `stage:propose` を付ける | `routine-common` の「見送りの書き戻し」で書き戻す |
+| `stage:todo` + `blocked` | `question` を外し、`blocked` を外し、`stage:todo` を外し、`stage:propose` を付ける | `human` だけ解けていれば `question` を外す。それ以外は何もしない |
+| `stage:propose` / `stage:apply` / `stage:archive` + `blocked` | `question` を外し、`blocked` を外し、段階ラベルを外して付け直す（worker を起動するため） | 同上 |
+
+放出の順を `question` → `blocked` → 段階ラベルにするのは、途中で死んでも「`question` 単独」か
+「`blocked` 単独」の残骸にしか成らず、1 と次の 3 で拾えるため。
+`human` だけ解けて `#m` / `change` が残る場合に `question` を外すのは、もう人を待っていないものを
+`label:question` の一覧から消すため。`blocked` は残るので、この書き込みで起動した worker は黙って終える。
 
 コメントは `<!-- routine -->` で始め、人が読める理由を添える。同じ内容が直近にあれば重ねない。
 並行数の上限は設けず、解けたものは全部その場で放出する。
@@ -103,9 +114,12 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 5. 段階ラベルが付いてから 30 分を超えている（起動中の worker を横取りしない猶予）
 
 該当したら段階ラベルを外して付け直す。再起動したことを `<!-- routine -->` コメントで残し、
-2 行目を `restart: 1/3` の形にする。回数はこの行を数えて決め、人が付け直したときは数えない。
-**3 回に達したら再起動せず `blocked-by: human` で人に渡す。** 何度起動しても死ぬ原因は GitHub の
-状態からは分からない。ブロッカーの解消や worker の肩代わりはしない。
+2 行目を `restart: 1/3` の形にする。回数は、**最新の人のコメント（`<!-- routine -->` で始まらない）
+より後に投稿された `restart:` 行**を数えて決める。人が答えて再開したあとは 0 から数え直すためで、
+routine の操作は人のアカウントで現れるので、誰がラベルを付け直したかでは区別できない。
+**3 回に達したら再起動せず `blocked-by: human` で書き戻す**（`routine-common` の「見送りの書き戻し」）。
+何度起動しても死ぬ原因は GitHub の状態からは分からないので、人に何を確かめてほしいかを書く。
+ブロッカーの解消や worker の肩代わりはしない。
 
 # 報告
 
