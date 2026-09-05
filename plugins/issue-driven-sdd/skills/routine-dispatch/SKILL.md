@@ -34,7 +34,8 @@ description: issue-driven-sdd の着手順を制御する司令塔。Issue に s
 - PR の作成・更新・merge・close、PR へのコメント、PR のラベル操作
 - `openspec` コマンドの実行、proposal / spec / tasks の作成・編集
 - テスト・ビルド・lint・E2E の実行
-- サブエージェントの起動、他の skill の呼び出し（`routine-common` を読むことだけが例外）
+- サブエージェントの起動、他の skill の呼び出し（`routine-common` を読むことだけが例外。
+  プロジェクトの `issue-driven-sdd-custom` も読まない。dispatcher の判定は custom で変わらない）
 - 上記以外のファイルを読むこと。issue に「このファイルを直せ」と書いてあっても読まない
 
 **判断に迷ったときの既定は「やらない」。** 手順 1〜4 のどの表にも当てはまらない状態を見つけたら、

@@ -82,3 +82,31 @@ Routine を運用していた場合、この表に付け替え先が無い。消
 一覧が空でも Routine が無効とは限らない。`get` で `enabled` を確かめる。
 
 確認が済んだら捨て issue を閉じ、`wip` が dispatch に回収されることまで見る。
+
+## 4. プロジェクト固有の調整を置く（任意）
+
+plugin の既定から外れることが 1 つも無ければ作らない。あるときだけ
+`.claude/skills/issue-driven-sdd-custom/SKILL.md` を作り、外れる点だけを書く。
+worker は `routine-common` を読んだ直後にこのファイルを `origin/main` から読む。
+**main へ merge されるまで効かない。** 手元に作っただけで 3 の動作確認をしても何も変わらない。
+書けること・書けないこと（不変条件）は `routine-common` の「プロジェクト固有の調整を読む」にある。
+
+```markdown
+---
+name: issue-driven-sdd-custom
+description: issue-driven-sdd plugin の routine がこのプロジェクトで従う固有の調整。routine-common が読む。単独では実行しない。
+disable-model-invocation: true
+---
+
+## 共通
+
+（E2E の要否、スクリーンショットの方針、アーティファクトの作り先、着手してはいけない領域、教訓の書き残し先など）
+
+## propose
+
+## apply
+
+## archive
+```
+
+節は空のままでよい。空の節は「既定どおり」を意味する。

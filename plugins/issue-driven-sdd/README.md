@@ -86,12 +86,13 @@ worker は調査の結果を必ず `blocked-by:` で書き戻す。調査は 1 �
 | 項目 | この plugin での扱い |
 | --- | --- |
 | リポジトリ名 `{owner}/{repo}` | `CCR_TRIGGER_REPO`、無ければ GitHub コネクタで解決する |
-| 着手してはいけない領域 | 対象プロジェクトの `CLAUDE.md` に閉じた領域の節があればそれに従う |
+| プロジェクト固有の調整 | `.claude/skills/issue-driven-sdd-custom/SKILL.md`。worker が `routine-common` の直後に `origin/main` から読む。無ければ既定のまま。dispatch は読まない。不変条件は上書きできない |
+| 着手してはいけない領域 | `issue-driven-sdd-custom`、無ければ対象プロジェクトの `CLAUDE.md` の閉じた領域の節に従う |
 | propose / apply / archive の実体 | `openspec` plugin のスキルを参照する |
 | `wip` の失効時間 | 既定 3 時間。`routine-common` と `routine-dispatch` で変える |
 | 再起動の上限 | 既定 3 回。`routine-dispatch` で変える |
 | sweep の間隔 | プロジェクトごとに決める |
-| プロジェクト固有のルール | `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読む |
+| プロジェクト固有のルール | `issue-driven-sdd-custom` を正本にし、無ければ `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読む |
 
 ## スコープ外
 

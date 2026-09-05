@@ -6,6 +6,48 @@ description: Claude Code の Routines で GitHub Issue 駆動 SDD を回すと�
 対象プロジェクトの開発は **GitHub Issue のラベル 1 本で段階が決まる**。
 このファイルは routine スキルが共有する規約を定める。
 
+# プロジェクト固有の調整を読む
+
+この plugin の規約は既定であり、プロジェクトごとの調整は対象リポジトリの
+`.claude/skills/issue-driven-sdd-custom/SKILL.md` に置く。**このファイルを読み終えたら、続けて
+そのファイルを `origin/main` から読む。**
+
+```
+git show origin/main:.claude/skills/issue-driven-sdd-custom/SKILL.md
+```
+
+手元のツリーを `ls` で見ない。**無ければ何もせず既定のまま進む。** コメントも報告も要らない。
+
+読むのは worker（`routine-propose` / `routine-apply` / `routine-archive`）。`routine-sweep` は
+手順 2 で worker を引き継ぐ時点で読み、手順 1 では読まない。**`routine-dispatch` は読まない。**
+dispatcher の判定は custom で変えられない。
+
+## 書けること・書けないこと
+
+custom と既定が食い違ったら custom に従う。ただし次は**不変条件**で、custom に何が書いてあっても
+従わない。
+
+- 段階ラベル（`stage:*`）を書くのは `routine-dispatch` だけ
+- `Closes #n` を書いてよいのは `archive` PR だけ
+- routine のコメントは `<!-- routine -->` で始める
+- draft PR を作らない。本文 1 行目の `未確定の判断: N 件` と `question` ラベルを一致させる
+- 1 セッション 1 issue 1 PR
+- 起動直後に `blocked` と `wip` を見て、付いていれば黙って終える。ラベルは 1 操作 1 ラベル
+- 見送りの理由は必ず `blocked-by:` で issue へ書き戻す。dispatcher はそれ以外の理由を知らない
+- `tasks.md` に事後の実測・確認節を作らない。archive の判定は全タスク `[x]` のため
+- grill を経た PR は自動 merge しない
+- `wip` の失効時間と再起動の上限。dispatcher が custom を読まないので、custom で変えると worker と
+  dispatcher の判定がずれる。変えるなら plugin 側を変える
+
+custom に書くのは、たとえば E2E の要否、スクリーンショットの方針、アーティファクトの作り先、
+着手してはいけない領域、教訓の書き残し先、PR 本文に加える項目、各段階で追加する手順（通すべき
+lint など）。
+
+## 形
+
+`## 共通` と `## propose` / `## apply` / `## archive` の見出しで分ける。worker は `## 共通` と
+自分の段階の節だけに従う。雛形は `routines-setup` にある。
+
 # ラベル
 
 ## issue（段階。同時に 1 つだけ付く。前にしか進まない）
@@ -251,7 +293,8 @@ grill のラウンドごとに更新する。N が 0 でない `propose` PR が 
 
 # リポジトリの事情に従う
 
-E2E の要否や成果物の伝え方は、リポジトリごとに違う。propose / apply のどちらでも、
+E2E の要否や成果物の伝え方は、リポジトリごとに違う。正本は「プロジェクト固有の調整を読む」の
+`issue-driven-sdd-custom`。それが無い、または触れていない事柄は、propose / apply のどちらでも、
 対象リポジトリの `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読み、そこに書かれた
 やり方に合わせる。E2E の要否と成果物の伝え方については、この plugin の既定よりリポジトリ側の規約を優先する。
 
@@ -280,8 +323,8 @@ E2E の要否や成果物の伝え方は、リポジトリごとに違う。prop
 | 項目 | 扱い |
 | --- | --- |
 | リポジトリ名 `{owner}/{repo}` | `CCR_TRIGGER_REPO`、無ければ GitHub コネクタで解決する |
-| 着手してはいけない領域 | 対象プロジェクトの `CLAUDE.md` に閉じた領域の節があればそれに従う |
+| プロジェクト固有のルール | `.claude/skills/issue-driven-sdd-custom/SKILL.md` を正本にする（E2E の要否・スクリーンショット方針・着手してはいけない領域など）。無ければ `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読む |
+| 着手してはいけない領域 | `issue-driven-sdd-custom`、無ければ対象プロジェクトの `CLAUDE.md` の閉じた領域の節に従う |
 | propose / apply / archive の実体 | `openspec` plugin のスキルを参照する |
-| `wip` の失効時間 | 既定 3 時間。この節と `routine-dispatch` の表を変える |
-| 再起動の上限 | 既定 3 回。`routine-dispatch` の 4 を変える |
-| プロジェクト固有のルール | `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読む（E2E の要否・スクリーンショット方針もここで決まる） |
+| `wip` の失効時間 | 既定 3 時間。この節と `routine-dispatch` の表を変える。custom では変えない |
+| 再起動の上限 | 既定 3 回。`routine-dispatch` の 4 を変える。custom では変えない |

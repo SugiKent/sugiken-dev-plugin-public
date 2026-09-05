@@ -37,7 +37,8 @@ auto-fix はセッションが受け取るので、VM が回収された後も�
 3. そのコメントから 3 時間を超えて routine の返信が無い
 
 見つかったら、PR のスレッド全体と diff を読み、**そのラベルに対応するスキル**
-（`routine-propose` / `routine-apply`）の続きを引き受ける。auto-fix を有効化し直す。
+（`routine-propose` / `routine-apply`）の続きを引き受ける。このとき `routine-common` の
+「プロジェクト固有の調整を読む」に従い、`issue-driven-sdd-custom` を `origin/main` から読む。auto-fix を有効化し直す。
 引き継ぐのは 1 セッションで 1 件まで。
 
 ## 3. 循環ブロックを検出し、1 つ解除する
