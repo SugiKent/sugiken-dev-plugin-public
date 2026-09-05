@@ -50,6 +50,7 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 | open PR が無く、最新の `wip` 付与がその issue の最新の PR merge より古く、merge から 30 分を超えている | `wip` を外す。worker は着手時に `wip` を付け直すので、生きている `wip` は merge より新しい |
 | その issue の `propose` / `apply` PR が merge されずに close され、それより新しい open PR が無い | 人が却下したとみなす。`wip` を外し、`blocked-by: human` で書き戻す（`routine-common` の「見送りの書き戻し」）。再起動しない。人が issue にコメントすれば 3 で放出される |
 | `question` が付いているのに `blocked` が無い issue | `question` を外す。issue の `question` は `blocked` から導かれるラベルで、単独では意味を持たない。PR は対象外（PR の `question` は `blocked` 無しで単独に付くのが正常。一覧 API は PR も issue として返すので、`pull_request` を持つものを除く） |
+| `blocked` が付いていて、最新の `blocked-by:` コメントに `human` を含むのに `question` が無い issue | `question` を付ける。前の行の逆方向で、人の判断待ちを `label:question` から見失わないための対称操作。`human` が解けたかどうかは見ず、最新の `blocked-by:` 行に含まれているかだけを見る |
 | `archive` PR が merge 済みなのに issue が open | issue を close する |
 | `stage:todo` と他の `stage:*` が両方付いている | このスキルの書き込み途中で死んだ跡なので `stage:todo` を外す |
 | それ以外で段階ラベルが 2 つ以上 | 直さない。何と何が付いているかを 1 度コメントし、以降の手順から除外する |
