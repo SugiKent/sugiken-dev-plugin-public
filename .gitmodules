@@ -1,0 +1,3 @@
+[submodule "loop-cli"]
+	path = loop-cli
+	url = https://github.com/SugiKent/loop-cli.git
