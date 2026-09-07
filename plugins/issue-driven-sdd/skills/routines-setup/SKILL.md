@@ -29,6 +29,7 @@ Claude GitHub App がリポジトリに install されていること（無い�
 | `archive` | `5319E7` |
 | `docs` | `C5DEF5` |
 | `question` | `D876E3` |
+| `ai-assess:requested` | `F9D0C4` |
 
 # 2. Routine を揃える
 
@@ -38,11 +39,19 @@ Claude GitHub App がリポジトリに install されていること（無い�
 
 | Name | Trigger | Filter | model | autofix_on_pr_create |
 | --- | --- | --- | --- | --- |
-| `<project> dispatch` | `Issue: Labeled` / `Issue: Closed` / `PR merged` / `PR merged` | `stage:todo` / なし / `propose` / `apply` | sonnet | false |
-| `<project> propose` | `Issue: Labeled` | `stage:propose` | 既定 | **true** |
-| `<project> apply` | `Issue: Labeled` | `stage:apply` | 既定 | **true** |
-| `<project> archive` | `Issue: Labeled` | `stage:archive` | 既定 | false |
+| `<project> dispatch` | `Issue: Labeled` | `issue.labels IN [stage:todo]` かつ `NOT_IN [blocked]` | sonnet | false |
+| 同上 | `Issue: Closed` | なし | | |
+| 同上 | `PR closed` | `pr.merged = true` かつ `pr.labels IN [propose]` | | |
+| 同上 | `PR closed` | `pr.merged = true` かつ `pr.labels IN [apply]` | | |
+| `<project> propose` | `Issue: Labeled` | `issue.labels IN [stage:propose]` かつ `NOT_IN [wip, blocked, question]` | 既定 | **true** |
+| `<project> apply` | `Issue: Labeled` | `issue.labels IN [stage:apply]` かつ `NOT_IN [wip, blocked, question]` | 既定 | **true** |
+| `<project> archive` | `Issue: Labeled` | `issue.labels IN [stage:archive]` かつ `NOT_IN [wip, blocked, question]` | 既定 | false |
 | `<project> sweep` | Schedule | なし | 既定 | false |
+
+**`NOT_IN` は必ず付ける。** `Issue: Labeled` のフィルターは「追加されたラベル」ではなく「操作後の issue の
+ラベル集合」で判定される（2026-09-07 実測）。`NOT_IN` が無いと、worker が自分で `wip` を付けた瞬間に
+同じ段階の worker がもう 1 本起動し、1 日の worker の半分が無駄になる。`NOT_IN` があれば、`wip` /
+`blocked` / `question` を付ける書き込みは何も起動しない。
 
 本文は `` `routine-<役割>` skill を読み、そのとおりに実行する `` の 1 行だけにする。判断規則をすべて
 skill 側に置けば、Routine を作り直しても規則が失われない。skill のパスは導入方法に応じて読み替える。
@@ -51,20 +60,51 @@ skill 側に置けば、Routine を作り直しても規則が失われない。
   `<project> dispatch (todo)` のように 4 本作る。
 - sweep の間隔は、dispatch が落ちてから拾われるまでの許容時間でプロジェクトごとに決める。
 - `autofix_on_pr_create` が true の Routine が作った PR は、そのセッションがレビューと会話コメントを
-  受け取り続ける。grill の往復はこれに乗る。
-- webhook トリガーの一覧は API で読めない。`list_runs` で起動しているイベントを確認し、足りないものは
-  `create_webhook_trigger` か UI で足す。UI でしか設定できない項目は表にして人へ依頼し、Filter が
-  「なし」の行と「Labels contains」の行を取り違えないよう明示する。
+  受け取り続ける。grill の往復はこれに乗る。archive は PR を作って終わるだけなので false。
+- worker と sweep の Routine には `mcp_connections` に **Claude Code Remote コネクタ**（`Claude_Code_Remote`、
+  `https://api.anthropic.com/v1/code/mcp/meta`）を付ける。worker が自分の session id を着手コメントに書き、
+  sweep が `get_session` で生存を判定するのに要る。GitHub コネクタは Routine に暗黙で付く。
 - `retro`（振り返り点検）はこの plugin の対象外。旧構成の `routine-retro` や `retro` ラベルは触らない。
 
-## PR の自動 merge は任意
+## webhook トリガーを API で作るとき
 
-PR のリスクを評価して低ければ merge する仕組みは、issue-driven の流れを速めるだけで、段階の遷移には
+UI の代わりに `RemoteTrigger create_webhook_trigger` で付ける場合の body。webhook トリガーは `list` /
+`get` で読めないので、既に付いているかは `list_runs` の起動イベントか UI で確かめる。
+
+```json
+{"routine_trigger_id": "trig_…", "hook_type": "app", "source": "github", "scope_id": "owner/repo",
+ "events": ["issues.labeled"],
+ "filter": {"clauses": [
+   {"field": "issue.labels", "op": "FILTER_OP_IN", "values": ["stage:propose"]},
+   {"field": "issue.labels", "op": "FILTER_OP_NOT_IN", "values": ["wip", "blocked", "question"]}]}}
+```
+
+| 項目 | 使えるもの |
+| --- | --- |
+| `events` | `issues.labeled`、`issues.closed`、`pull_request.opened`、`pull_request.closed`、`pull_request.labeled` |
+| `field` | `issue.labels`、`pr.labels`、`pr.merged` の 3 つだけ。「追加されたラベル」を指す field は無い |
+| `op` | `FILTER_OP_IN`（is one of）、`FILTER_OP_NOT_IN`（is not one of）、`FILTER_OP_EQ`（equals） |
+| 複数 clause | AND |
+
+**イベント名は API が検証しない。** typo しても登録は成功し、黙って一度も起動しない。上の表と突き合わせる。
+
+## PR の自動評価は任意
+
+PR のリスクを AI が評価して低ければ merge する仕組みは、issue-driven の流れを速めるだけで、段階の遷移には
 関わらない。routine 群はその存在を前提にしない。欲しければプロジェクトごとに `assess-pr-risk` という
-名前の skill を `.claude/skills/` に作り、`PR opened` ∧ label `apply` または `archive` の Routine から
-呼ぶ。作るときに守らせるのは次の 3 つ。コメントは `<!-- routine -->` で始める（worker がそれを人の
-入力と誤読しないため）。`question` が付いた PR は merge しない。grill を経た `propose` PR は自動 merge
-しない。導入時にこの選択肢があることを利用者へ伝える。
+名前の skill を `.claude/skills/` に作り、次の Routine から呼ぶ。
+
+| Name | Trigger | Filter | autofix_on_pr_create |
+| --- | --- | --- | --- |
+| `<project> assess` | `PR labeled` | `pr.labels IN [ai-assess:requested]` | false |
+
+`PR opened` は使わない。worker は PR を作ってからラベルを付けるので、`PR opened` + ラベル条件は成立しない
+（作成と同時にラベルが付く場合だけ起動し、そのときは `PR labeled` と二重に起動する）。
+
+作るときに守らせるのは次の 4 つ。起動元の PR（`CCR_TRIGGER_PR_NUMBER`、`CCR_TRIGGER_HEAD_SHA`）だけを
+評価し、他の open PR を見に行かない。評価を終えたら `ai-assess:requested` を外す（外すだけの書き込みは
+何も起動しない）。`question` が付いた PR は merge しない。コメントは `<!-- routine -->` で始める。
+導入時にこの選択肢があることを利用者へ伝える。
 
 # 3. 動作を確認する
 
@@ -72,9 +112,11 @@ PR のリスクを評価して低ければ merge する仕組みは、issue-driv
 
 1. dispatch が起動し、issue が `stage:propose` に変わる
 2. propose が起動し、`wip` が付き、propose PR ができる
-3. 同じイベントで propose が 2 本以上起動していないか。起動していれば `references/worker.md` の
-   「`wip` のロック」にある後発撤退が効いているかを run log で見る
+3. **`wip` が付いた時点で propose がもう 1 本起動していない**。起動していれば `NOT_IN` が抜けている
 4. Routine のセッションから GitHub コネクタでラベルを付け外しできる
+5. 各 Routine の本文にある skill 名が、そのセッションで解決する（`Unknown command` で 0 turn 終了していない）
+6. propose PR ができた時点で assess（作っていれば）が **1 本だけ**起動している。2 本なら worker が
+   `[propose, ai-assess:requested]` を 1 回で書いている
 
 起動の有無は `RemoteTrigger list_runs` で見る。発火が拒否された run は一覧に残らないので、一覧が空でも
 Routine が無効とは限らず、`get` で `enabled` を確かめる。確認が済んだら捨て issue を閉じ、`wip` が

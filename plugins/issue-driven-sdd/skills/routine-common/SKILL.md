@@ -1,6 +1,6 @@
 ---
 name: routine-common
-description: issue-driven-sdd の routine 群（routine-dispatch / routine-propose / routine-apply / routine-archive / routine-sweep）が冒頭で読む共通のラベル規約。ラベルの意味・書き手・人の操作・ラベル書き込みの作法・routine コメントの目印を定める。人が直接呼ぶ skill ではなく、ラベルの意味や書き手を確かめたいときの参照先。
+description: issue-driven-sdd の routine 群（routine-dispatch / routine-propose / routine-apply / routine-archive / routine-sweep）が冒頭で読む共通のラベル規約。ラベルの意味・書き手・人の操作・ラベル書き込みが何を起動するか・routine コメントの目印を定める。人が直接呼ぶ skill ではなく、ラベルの意味や書き手を確かめたいときの参照先。
 ---
 
 対象プロジェクトの開発は **GitHub Issue のラベル 1 本で段階が決まる**。このファイルは全 routine が
@@ -25,7 +25,7 @@ description: issue-driven-sdd の routine 群（routine-dispatch / routine-propo
 
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
-| `wip` | worker が作業中のロック | 着手した worker | 見送った worker、または失効を回収する `routine-dispatch` |
+| `wip` | worker が作業中の印。worker の起動を抑える | 着手した worker | 見送った worker、または段階を進める・再起動する `routine-dispatch` |
 | `blocked` | 宣言されたブロッカーが解けるまで着手しない。理由は最新の `blocked-by:` コメント | 見送った worker、または受付時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch` |
 
 ## issue と PR に共通
@@ -44,11 +44,13 @@ issue と PR で同じラベルにしているのは、人が `is:open label:que
 | `propose` | proposal を追加する PR | issue を `stage:apply` へ |
 | `apply` | 実装の PR | issue を `stage:archive` へ |
 | `archive` | `openspec archive` の PR | なし（`Closes #n` で issue が閉じる） |
-| `docs` | `.claude/` `docs/` だけの PR | なし |
+| `docs` | `.claude/` `docs/` だけの PR | なし。issue 自体が docs だけなら `Closes #n` を書き、merge で issue が閉じる |
+| `ai-assess:requested` | AI によるリスク評価（`assess-pr-risk`）を要求する PR | なし。評価を終えた assess が外す |
 
 PR ラベルは dispatcher が段階を進める条件そのものなので、付け忘れると次の段階が始まらない。
 PR の `question` は本文 1 行目の `未確定の判断: N 件` と常に一致させる。N > 0 なら付いており、
-N = 0 で外す。残り 1 件でも外さない。
+N = 0 で外す。残り 1 件でも外さない。`ai-assess:requested` は N = 0 になった時点で付ける。
+grill 中（N > 0）は付けない。人が付け直せば「もう一度評価して」の意味になる。
 
 # ラベルの書き手
 
@@ -59,7 +61,7 @@ N = 0 で外す。残り 1 件でも外さない。
 | `wip` | worker が付ける。外すのは worker と `routine-dispatch` |
 | `blocked` | worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
 | issue の `question` | `blocked-by: human` を書いた worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
-| PR のラベル | PR を作った worker |
+| PR のラベル | PR を作った worker。`ai-assess:requested` を外すのは assess |
 
 書き手を 1 つにする理由は、merge・見送り・失効回収が同じラベルを同時に書くと状態が壊れるから。
 worker は段階ラベルを書かない。
@@ -73,6 +75,8 @@ worker は段階ラベルを書かない。
 | `question` の issue に答える | issue にコメントする。ラベルは触らない。次の `routine-dispatch`（sweep）が人のコメントを見て worker を起動し直し、worker が issue の全コメントを読んで進む |
 | 取り下げる・止める | 段階ラベルを外す |
 | 順番を飛ばして今すぐ着手させる | `stage:propose` を直接付ける |
+| 依存を取り下げて再評価させる | 本文の `depends on #m` なら本文から消す。worker の `blocked-by: #m` なら issue にコメントで「#m は不要」と書く。人のコメントがあれば dispatch は種類を問わず放出し、worker が読み直す。ラベルは触らない（`stage:todo` を付け直しても起動しない） |
+| PR をもう一度 AI に評価させる | `ai-assess:requested` を付ける |
 
 通常の運用で人が触るラベルは `stage:todo` だけ。`blocked` / `question` / 段階ラベルの付け直しは
 routine が行い、人はコメントで答えることに集中する。閉じた領域のように方針の文書を変える必要がある
@@ -81,20 +85,34 @@ routine が行い、人はコメントで答えることに集中する。閉じ
 PR を merge せずに close すると、dispatcher は「人が却下した」とみなして `blocked-by: human` で問い返す。
 どうしたいかを issue にコメントすれば動き出す。
 
-# ラベルを書くときの作法
+# ラベルの書き込みが何を起動するか
 
-**ラベルの書き込みは routine を再起動させる。** `Issue: Labeled` の Filter は issue のラベル集合で
-判定されるので、`stage:propose` の issue に `wip` を付けるだけで propose の routine がもう 1 回起動する。
-したがって次を守る。
+Routine のフィルターは「追加されたラベル」ではなく**書き込み後の issue のラベル集合**で判定される
+（2026-09-07 実測）。GitHub コネクタの `issue_write` は集合置換しかできず、1 回の書き込みで
+増えたラベルの数だけ `labeled` イベントが出る。減っただけの書き込みは何も起動しない。
 
-- 起動された routine は、自分の書き込みで再起動された可能性を前提に動く。worker は最初に `wip` と
-  `blocked` を見て、付いていれば黙って終える。コメントも投稿しない。
-- **1 操作 1 ラベル**で付け外しする。ラベル集合をまとめて置換すると、既に付いているラベルの
-  付与イベントがタイムラインに出ず、時刻に基づく判定が狂う。集合しか書けないツールなら、
-  そのラベルを含まない集合を書いてから、含む集合を書く。
-- 「外して付け直す」は外す操作と付ける操作を別々に行い、付けたあとにタイムラインで最新の付与
-  イベントが今の時刻であることを読み直して確認する。
-- 段階ラベルは同時に 1 つ。次の段階を付けるときは、前の段階を外してから付ける。
+worker の Routine は `stage:X IN` かつ `NOT_IN [wip, blocked, question]`、dispatch は `stage:todo IN`
+かつ `NOT_IN [blocked]` で受ける（`routines-setup`）。この前提で、書き込みは次の表どおりに行う。
+
+| 場面 | 書き手 | 書く集合 | 起動するもの |
+| --- | --- | --- | --- |
+| 受付 | 人 | `stage:todo` を付ける | dispatch |
+| 受付で依存が解けていない | dispatch | `[stage:todo, blocked]` | なし |
+| 着手させる（受付から） | dispatch | `[stage:propose]` | propose worker 1 本 |
+| 着手した | worker | `[stage:X, wip]` | なし |
+| 見送った | worker | コメントのあと `[stage:X, blocked]`（`human` なら `question` も） | なし |
+| propose / apply PR が merge | dispatch | `[stage:apply]` / `[stage:archive]` | 次の worker 1 本。前の `wip` は同時に落ちる |
+| ブロック解除・死んだ worker の再起動 | dispatch / sweep | `[]` を書いてから `[stage:X]` を書く | worker 1 本。減らすだけでは起動しないので 2 回書く |
+| archive PR が merge | GitHub | `Closes #n` で close | dispatch（`Issue: Closed`） |
+
+- **dispatch と sweep は `wip` を書かない。** 段階を進める・再起動する書き込みで `wip` は結果として落ちる。
+  段階ラベルと `wip` を同じ集合に入れると `NOT_IN` に当たって worker が起動しない。
+- **段階は前にしか進めない。** 一覧が古くて前の段階に見えても、今のラベルを読み直して次の段階以降なら書かない。
+- 2 回書く操作は、1 回目のあとで死ぬと段階ラベルの無い issue が残る。書く前に `release:`（ブロック解除）か
+  `restart:`（死亡再起動）のコメントを投稿しておき、sweep が「その行より後に段階ラベルが無い open issue」を
+  拾って続きを書く。
+- 同じ issue を同時に書くのは dispatch（イベント起動）と sweep の 2 者だけにする。sweep は直近 10 分に
+  ラベルイベントのある issue を触らない。これで衝突の窓は数秒に縮むが零にはならない。
 
 # GitHub の操作
 
@@ -114,6 +132,11 @@ routine の GitHub 操作は利用者個人のアカウントとして現れる�
 逆に、この行で始まるコメントは人の入力ではない。auto-fix でそのコメントを受け取っても、
 レビュー指摘や回答として扱わず、何もしない。
 
+コネクタの都合で `&lt;!-- routine --&gt;` のようにエスケープされて届くことがある。GitHub コネクタにコメントを
+編集するツールは無いので、投稿し直さない。代わりに**判定側**が、`<!-- routine -->` と `&lt;!-- routine --&gt;`
+のどちらで始まるコメントも routine のものとして扱う。「人のコメント」とは、この 2 つのどちらでも始まらない
+コメントのこと。dispatch / sweep / auto-fix の判定はすべてこの定義を使う。
+
 # 人への問いはコメントに書く
 
 worker が人に判断を求める経路は 2 つだけ。着手前や続けられなくなったときは issue コメント
@@ -132,14 +155,14 @@ routine が着手しないと決めたら、理由を必ず issue へ書き戻�
 
 1. issue へコメントを投稿する。1 行目を `<!-- routine -->` にし、2 行目以降にブロッカーを 1 件 1 行で
    `blocked-by: #589` のように書き、空行を挟んで人が読める理由を添える。`human` を書くときは、
-   **人に何を決めてほしいか**を選択肢と推奨つきで書く。人はこのコメントだけを読んで答える。
-2. `blocked` を付ける。
-3. `blocked-by:` に `human` があれば `question` を付ける。`blocked` より後に付けるのは、ラベルの
-   書き込みで再起動した worker が `blocked` を見て黙って終えられるようにするため。
-4. `wip` を付けていたら外す。
+   **人に何を決めてほしいか**を選択肢と推奨つきで書き、解除条件を `unblock-when:` の 1 行で明示する
+   （`comment` = 答えのコメントがあれば解ける、`docs` = 方針文書の更新が要る、`#m` = その issue / PR の完了が要る）。
+   人はこのコメントだけを読んで答える。
+2. ラベルを 1 回で書く。`[stage:X, blocked]`、`human` を含むなら `[stage:X, blocked, question]`。
+   `wip` はこの書き込みで落ちる。
 
 `blocked-by:` の形は 3 つだけ。issue か PR の番号 `#m`、`change <change名>`、`human`。
 `human` は「人の判断が要る」の印。人はラベルを触らずコメントで答え、いつ解けたとみなすかは
-`routine-dispatch` の 3 が決める。解けると worker が起動し直して全コメントを読む。
+`unblock-when:` と `routine-dispatch` の手順 D が決める。解けると worker が起動し直して全コメントを読む。
 **`blocked-by:` 行を含む最新のコメントが正本**なので、ブロッカーが増減したら全部書き直す。
 解けたかどうかの判定と放出は `routine-dispatch` が担い、worker はブロッカーの解消を待たない。

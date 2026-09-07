@@ -7,7 +7,7 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 # 1. 対象と着手可否
 
 `worker.md` の「対象の特定」で issue を決め、「着手可否の判定」を上から見る。見送るなら
-`routine-common` の「見送りの書き戻し」で終える。着手するなら「`wip` のロック」を行う。
+`routine-common` の「見送りの書き戻し」で終える。着手するなら「着手の印」を付ける。
 
 `origin/main` の `openspec/changes/` 直下に、proposal にこの issue 番号を書いた change が既にあれば、
 それは merge 済みの proposal に未確定の判断が残って `blocked-by: human` で戻され、人が issue に
@@ -40,7 +40,7 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 ```
 
 この状態で `worker.md` の「PR の作り方」に従って ready の PR を作る。1 行目は
-`未確定の判断: N 件 — merge しないでください`、ラベルは `propose` と `question`。
+`未確定の判断: N 件 — merge しないでください`、ラベルは `[propose, question]`。
 
 問いの投稿は `routine-common` の「人への問いはコメントに書く」に従い、PR コメントとして投稿する。
 `proposal.md` の `## 未確定の判断` に問いを書いただけで済ませ、PR 本文や説明で「proposal.md を
@@ -51,7 +51,7 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 回答が届いたら（auto-fix で同じセッションが受け取る）、確定した分を `## 確定した判断` へ移し、
 1 行目の N を更新して push する。回答が曖昧なら分かったことにせず同じ枝を掘る。未回答のまま
 既定で進めない。N が 0 になったら `## 未確定の判断` を削除し、明示的に延期した判断と残るリスクを
-書き切り、1 行目を `未確定の判断: 0 件 — レビューをお願いします` にして `question` を外す。
+書き切り、1 行目を `未確定の判断: 0 件 — レビューをお願いします` にして `[propose, ai-assess:requested]` を書く（`question` が落ち、AI 評価が起動する）。
 
 # 4. proposal を完成させる
 
@@ -67,9 +67,9 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 - E2E ケースの列挙や画面案の見せ方は `worker.md` の「リポジトリの事情に従う」で決める。
 
 まだ PR が無ければ（grill を経ていない場合）、ここで `worker.md` の「PR の作り方」に従って PR を作る。
-1 行目は `未確定の判断: 0 件 — レビューをお願いします`、ラベルは `propose`。
+1 行目は `未確定の判断: 0 件 — レビューをお願いします`、ラベルは `[propose]` → `[propose, ai-assess:requested]` の 2 回書き。
 
 # 5. 終える
 
-PR を作った（grill なら詰め切った）時点で完了。merge を待たず、`wip` は付けたままにする。
-merge は `routine-dispatch` が受けて `stage:apply` へ進める。
+PR を作った（grill なら詰め切った）時点で完了。merge を待たず、`wip` は付けたままにする（次の段階へ進める
+dispatch の書き込みで落ちる）。merge は `routine-dispatch` が受けて `stage:apply` へ進める。

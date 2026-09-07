@@ -10,7 +10,7 @@ description: Routine「Issue: Labeled = stage:archive」の本文から呼ばれ
 `worker.md` の「対象の特定」で issue を決める。対象 issue を `Refs #n` に持つ**merge 済みの `apply` PR**
 が触った change を起動の原因とする。無ければ issue へコメントして終える。
 
-「着手可否の判定」を上から見て、着手するなら「`wip` のロック」を行う。作る PR は 1 つで、
+「着手可否の判定」を上から見て、着手するなら「着手の印」を付ける。作る PR は 1 つで、
 複数 change をまとめてよい。
 
 # 2. archive 対象を判定する
@@ -32,7 +32,7 @@ done
 ```
 
 起動の原因になった change に未チェックが残る場合、それがこのセッションで実行できないタスク
-（本番実測・デプロイ後確認）なら、その行を tasks から外して別 issue へ起票したうえで archive する。
+（本番実測・デプロイ後確認）なら、その行を tasks から外して別 issue へ起票（`worker.md` の「残作業を別 issue にするとき」）したうえで archive する。
 それ以外の未チェックなら archive せず、何が残っているかを添えて `blocked-by: human` で書き戻す
 （`routine-common` の「見送りの書き戻し」）。
 open PR が触っている change は、相手の編集を止めて古い設計で spec を上書きするので対象外。
@@ -53,5 +53,5 @@ change 1 つにつき 1 つの `chore(openspec)` コミットにし（削除を�
 ステージ）、`git status --short` が空になったことを確認する。
 
 `worker.md` の「PR の作り方」に従う。title は `[archive] #<n> <change名>`、**本文に `Closes #n`**
-（複数 issue なら全件）、ラベルは `archive`。archive した change 名と validate が緑であることを本文に書く。
+（複数 issue なら全件）、ラベルは `[archive]` → `[archive, ai-assess:requested]` の 2 回書き。archive した change 名と validate が緑であることを本文に書く。
 PR を作った時点で完了。merge で issue が閉じ、`wip` ごと役目を終える。

@@ -17,13 +17,13 @@ custom は `## 共通` と `## propose` / `## apply` / `## archive` に分かれ
 custom と既定が食い違ったら custom に従う。ただし次は plugin の骨格なので、custom に何が書いてあっても変えない。
 
 - 段階ラベルを書くのは `routine-dispatch` だけ
-- `Closes #n` を書いてよいのは `archive` PR だけ
+- `Closes #n` を書いてよいのは `archive` PR と、issue 自体が docs だけの `docs` PR
 - routine のコメントは `<!-- routine -->` で始める
-- draft PR を作らない。本文 1 行目の `未確定の判断: N 件` と `question` ラベルを一致させる
+- draft PR を作らない。本文 1 行目の `未確定の判断: N 件` と `question` / `ai-assess:requested` を一致させる
 - 1 セッション 1 issue 1 PR
 - 見送りの理由は `blocked-by:` で書き戻す
 - `tasks.md` に事後の実測・確認節を作らない
-- 時間や回数のしきい値。dispatcher は custom を読まないので、custom で変えると判定がずれる
+- 時間や回数のしきい値。dispatcher と sweep は custom を読まないので、custom で変えると判定がずれる
 
 custom に書くのは、たとえば E2E の要否、スクリーンショットの方針、アーティファクトの作り先、
 着手してはいけない領域、教訓の書き残し先、PR 本文に加える項目、段階ごとに追加する手順。
@@ -31,49 +31,49 @@ custom に書くのは、たとえば E2E の要否、スクリーンショッ�
 # 対象の特定
 
 起動のトリガーになった GitHub イベントは `CCR_TRIGGER_` で始まる環境変数に載る。まず
-`env | grep ^CCR_TRIGGER_` で全部見る。`CCR_TRIGGER_ISSUE_NUMBER` があればそれが対象 issue、
+`env | grep ^CCR_TRIGGER_` で全部見る。`CCR_TRIGGER_ISSUE_NUMBER` が対象 issue、
 `CCR_TRIGGER_REPO` が `owner/repo`。
 
 対象を一意に決められなければ、推測せず、何が読めなかったかを報告して終える。ラベルの状態から
 「たぶんこれだろう」と選ぶと、別セッションが作業中の issue を横取りする。取りこぼしは
-`routine-dispatch` が再起動で拾う。
+`routine-sweep` が再起動で拾う。
 
 # 1 セッション 1 issue 1 PR
 
 扱う issue は 1 つ、作る PR は 1 つ。**PR を作ったらセッションを終え、merge を待たない。** merge は
 `routine-dispatch` が受けて次の段階ラベルを付け、別セッションが起動する。例外は grill
 （`routine-propose`）で、auto-fix によって同じセッションが PR 上のやり取りを続ける。
-並行性はセッションを複数走らせて出し、`wip` が衝突を防ぐ。
 
 # 着手可否の判定
 
 段階ラベルが付いているだけでは着手してよいことにならない。上から順に見て、当たったところで止める。
 
-1. `blocked` が付いている。黙って終える。
-2. `wip` が付いている。黙って終える。ただし open PR が無く、`routine-dispatch` の「1. 残骸を片付ける」の表に
-   当たる `wip` は失効しているので奪ってよい。
-3. 段階ラベルが 2 つ以上ある。何と何が付いているかをコメントして終える。
-4. 依存 issue が閉じていない。issue 本文に `depends on #m` があり `#m` が open。`blocked-by: #m`。
-5. 進行中の作業と同じ場所を触る。「進行中」は open PR と、`openspec/changes/` 直下に残る change。
-   自分の issue 番号を `Refs #n` に持つ PR と、proposal に自分の issue 番号を書いた change は自分の
+1. `blocked` または `wip` が付いている。黙って終える（Routine の `NOT_IN` で普通は起動しないが、
+   sweep の再起動と重なったときの保険）。
+2. 段階ラベルが 2 つ以上ある。何と何が付いているかをコメントして終える。
+3. 依存 issue が閉じていない。issue 本文に `depends on #m` があり `#m` が open。`blocked-by: #m`。
+4. 進行中の作業と同じ場所を触る。「進行中」は open PR と、`openspec/changes/` 直下に残る change。
+   自分の issue 番号を title に持つ PR と、proposal に自分の issue 番号を書いた change は自分の
    作業なので除く。「同じ場所」は、同じ spec の同じ要求を MODIFIED する・同じ画面やルート・同じ service / repository の
    ファイル。propose では delta spec を、apply では PR の変更ファイルを読んで判定する。
    相手の issue 番号か change 名で `blocked-by:`。
-6. change の前提が満たされていない。`tasks.md` 冒頭の「先行 change の archive を確認する」のような
+5. change の前提が満たされていない。`tasks.md` 冒頭の「先行 change の archive を確認する」のような
    前提条件が `origin/main` で満たされていない。`blocked-by: change <name>`。
-7. その機能が閉じられている。custom や `CLAUDE.md` が「開発を止めた」と宣言している領域。
-   `blocked-by: human`。人が方針の文書を変えて issue にコメントするまで解けない。
+6. その機能が閉じられている。custom や `CLAUDE.md` が「開発を止めた」と宣言している領域。
+   `blocked-by: human`、`unblock-when: docs`。
 
-4 以降は調査を伴うので、結果は `routine-common` の「見送りの書き戻し」で必ず issue へ残す。
+3 以降は調査を伴うので、結果は `routine-common` の「見送りの書き戻し」で必ず issue へ残す。
 
-# `wip` のロック
+# 着手の印
 
-着手すると決めたら最初に `wip` を付ける。既に付いていても外してから付け直す。付与時刻を今にするためで、
-`routine-dispatch` は最新の merge より古い `wip` を前段階の残骸として外す。付け直したらタイムラインを読み、
-最新の `wip` 付与が今の時刻であることを確認する。
+着手すると決めたら、まず `mcp__Claude_Code_Remote__get_session` を引数なしで呼び、自分の session id
+（`session_…`）を得る。`set_session_title` で title を `[<段階>] #<issue番号>` にする（人が一覧で見分けるため）。
+次に `<!-- routine -->` コメントを 1 件投稿し、2 行目を `started: <ISO 時刻>`、3 行目を `session: <session id>`
+にする。続けて `[stage:X, wip]` を書く（`NOT_IN` により何も起動しない）。
 
-自分の付与の直後（2 分以内）に別の `wip` 付与イベントがあれば、同じトリガーから 2 つのセッションが
-起動している。後発として黙って終える。
+sweep はこの `session:` を `get_session` に渡し、`session_status` が RUNNING でなければ死亡とみなして再起動する。
+経過時間では判定しないので、長い実装（数時間の apply）でも横取りされない。GitHub コネクタにはコメントを
+編集するツールが無いため、heartbeat のような更新型の印は使わない。
 
 # `origin/main` を正本にする
 
@@ -86,15 +86,21 @@ archive 済みの change が手元にだけ残って見える。
 
 # PR の作り方
 
-- draft PR を作らない。すべて ready for review で作り、merge 可否は本文 1 行目と `question` で示す。
-- title は `[<段階>] #<issue番号> <要約>`。
-- 本文の参照は `Refs #n`。`Closes #n` は `archive` PR だけ。propose / apply で書くと merge 時に issue が
-  閉じ、以降の段階が始まらない。
-- PR ラベル（`propose` / `apply` / `archive` / `docs`）を必ず付ける。
-- auto-fix を有効化し、「CI の失敗と、レビューコメント・会話コメントの両方を文脈として対応する」ことを
-  セッションの方針として明示する。これで PR 上のやり取りを同じセッションが受け取る。
+- **作る直前に、自分の issue 番号を title に持つ open PR を検索する。** あれば別セッションが先に
+  作っている。自分の PR を作らず、その PR 番号を issue にコメントして終える。後発が撤退する方が安い。
+- draft PR を作らない。すべて ready for review で作り、merge 可否は本文 1 行目とラベルで示す。
+- title は `[<段階>] #<issue番号> <要約>`。sweep と dispatch は title の番号で issue を引く。
+- 本文の参照は `Refs #n`。`Closes #n` は `archive` PR と docs-only の `docs` PR だけ。propose / apply で
+  書くと merge 時に issue が閉じ、以降の段階が始まらない。
+- ラベルは `create_pull_request` の後に `issue_write` で書く。N > 0 なら `[<段階>, question]` の 1 回。
+  `未確定の判断: 0 件` なら **`[<段階>]` を書いてから `[<段階>, ai-assess:requested]` を書く**（2 回）。
+  1 回で 2 ラベル足すとイベントが 2 回出て AI 評価（`assess-pr-risk`）が 2 本起動する。
+  `ai-assess:requested` を足す書き込みだけが評価を起動する。
+- propose / apply では auto-fix を有効化し、「CI の失敗と、レビューコメント・会話コメントの両方を文脈として
+  対応する」ことをセッションの方針として明示する。これで PR 上のやり取りを同じセッションが受け取る。
+  archive は PR を作って終わるので有効化しない。
 - 作成直後に `mergeable_state` を確認する。`dirty` なら別セッションが先に同じ場所を変えている。
-  無理に解決せず、先行 PR を名指しして自分の PR を close する。後発が撤退する方が安い。
+  無理に解決せず、先行 PR を名指しして自分の PR を close する。
 - 作ったアーティファクトの URL は PR 本文かコメントに残す。セッションは PR を作った時点で終わるので、
   そこに無ければ人には届かない。
 - description から Claude Code session へのリンクを削除しない。
@@ -106,15 +112,25 @@ archive 済みの change が手元にだけ残って見える。
 未確定の判断: 0 件 — レビューをお願いします
 ```
 
-grill のラウンドごとに更新する。N > 0 の `propose` PR が merge されても、`routine-dispatch` は段階を
+grill のラウンドごとに更新する。N が 0 になったら `[<段階>, ai-assess:requested]` を 1 回書く（`question` が
+落ち `ai-assess:requested` が 1 つ増えるので、AI 評価が 1 本起動する）。N > 0 の `propose` PR が merge されても、`routine-dispatch` は段階を
 進めず `blocked-by: human` で人に戻す。
+
+# 残作業を別 issue にするとき
+
+このセッションで実行できないタスク（本番実測・デプロイ後確認）を別 issue に切り出す前に、
+`search_issues` で `"#<元issue>" in:title is:open` を検索し、同じ種類の残作業 issue が既にあれば
+そこへコメントで追記する。新規に起票するのは無いときだけ。段階ラベルは付けない。
 
 # openspec を通さない変更
 
 `.claude/` と `docs/` と直下の `CLAUDE.md` / `README.md` は、利用者へ提供するものを変えないので
 propose を挟まず `docs` ラベルの PR を作ってよい。`openspec/` と製品の実ファイルが 1 行でも混ざれば
 対象外。判定の正本は実 diff で、push 前に `git diff origin/main --stat` を見る。
-製品の目的地を定めた文書の改訂は issue を起票して人の判断を待つ。
+
+issue 自体が docs だけで完結する（製品の変更を含まない）と判断したら、`docs` PR に `Closes #n` を書く。
+merge で issue が閉じ、`Issue: Closed` で dispatch が依存を解放する。これが docs 経路の終わり方で、
+`stage:propose` のまま open にしておかない。製品の目的地を定めた文書の改訂は issue を起票して人の判断を待つ。
 
 # リポジトリの事情に従う
 
@@ -123,3 +139,6 @@ E2E の要否、スクリーンショットの方針、アーティファクト�
 `CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読み、そこに書かれたやり方に合わせる。
 「基盤があるから回す」ではなく、ルールが求めているかで決める。
 アーティファクトは、接続済みのコネクタに共有やビジュアライズを担うものがあればそちらを使う。
+
+教訓や記録の `docs` PR を、作業のついでに作らない。記録は自分の PR 本文か issue コメントに書き、
+取り込むかは人が決める。

@@ -14,9 +14,9 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 
 - proposal PR の本文 1 行目が `未確定の判断: 0 件` で `question` が外れているか。満たさなければ
   `blocked-by: human`。未確定のまま実装しない。
-- change の `tasks.md` の前提条件と、進行中の作業との衝突（判定 5 と 6）。
+- change の `tasks.md` の前提条件と、進行中の作業との衝突（判定 4 と 5）。
 
-見送るなら「見送りの書き戻し」で終え、着手するなら「`wip` のロック」を行う。
+見送るなら「見送りの書き戻し」で終え、着手するなら「着手の印」を付ける。
 
 # 2. 実装する
 
@@ -27,13 +27,13 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 - リポジトリのゲート（型検査・lint・関連テスト・`openspec validate --strict`）と `.claude/rules/` の
   該当ルールを緑にする。E2E とスクリーンショットは `worker.md` の「リポジトリの事情に従う」で決める。
 - このセッションで実行できないタスク（本番実測・デプロイ後確認）が残っていたら、その行を tasks から
-  外して別 issue として起票する。archive を止めないための措置。
+  外して別 issue として起票する（`worker.md` の「残作業を別 issue にするとき」）。archive を止めないための措置。
 - proposal が想定していなかった意思決定に行き当たったら、独断で決めずコードやコメントに書き付けて
   進めない。`routine-common` の「見送りの書き戻し」で issue へ問い、`blocked-by: human` を経てから続ける。
 
 # 3. PR を作って終える
 
-`worker.md` の「PR の作り方」に従う。title は `[apply] #<n> <要約>`、本文は `Refs #n`、ラベルは `apply`。
+`worker.md` の「PR の作り方」に従う。title は `[apply] #<n> <要約>`、本文は `Refs #n`、ラベルは `[apply]` → `[apply, ai-assess:requested]` の 2 回書き。
 PR を作った時点で完了。merge を待たず、`wip` は付けたままにする。
 
 レビュー指摘は auto-fix で同じセッションが受け取る。反映して push し、何をどう直したかを
