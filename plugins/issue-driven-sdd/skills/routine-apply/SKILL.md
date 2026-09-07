@@ -20,8 +20,9 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 
 # 2. 実装する
 
-`openspec-apply-change` の作法で、`origin/main` の change の `tasks.md` を上から実装する。
-規模に応じて `orchestration:apply-backend` / `orchestration:apply-frontend` へスライスを委譲してよい。
+`openspec-apply-change` Skill を必ず起動し、その手順で `origin/main` の change の `tasks.md` を
+上から実装する。規模に応じて `orchestration:apply-backend` / `orchestration:apply-frontend` へ
+スライスを委譲してよい。
 
 - 完了したタスクだけ `[x]` にする。
 - リポジトリのゲート（型検査・lint・関連テスト・`openspec validate --strict`）と `.claude/rules/` の
@@ -30,6 +31,9 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
   外して別 issue として起票する（`worker.md` の「残作業を別 issue にするとき」）。archive を止めないための措置。
 - proposal が想定していなかった意思決定に行き当たったら、独断で決めずコードやコメントに書き付けて
   進めない。`routine-common` の「見送りの書き戻し」で issue へ問い、`blocked-by: human` を経てから続ける。
+  無人セッションなので、`openspec-apply-change` Skill が一時停止して尋ねる場面（task が不明瞭、
+  実装で設計上の問題が判明、エラーやブロッカー）はすべてこれに置き換える。その場で止めて人の応答を
+  待たない。
 
 # 3. PR を作って終える
 
