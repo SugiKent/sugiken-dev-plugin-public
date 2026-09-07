@@ -1,3 +1,6 @@
 .DS_Store
 .serena
 __pycache__
+
+# docs 配下の "_LocalOnly" 接尾辞ディレクトリは機密を含む可能性があるためコミットしない
+docs/**/*_LocalOnly/
