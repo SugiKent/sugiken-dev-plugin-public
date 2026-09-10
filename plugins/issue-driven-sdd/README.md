@@ -24,7 +24,7 @@ merge を受けた dispatcher がどの段階へ進めるかを決める。`ques
 | `routine-propose` | `Issue: Labeled` = `stage:propose` | proposal を作る。未確定の判断は PR 上で問い、同じセッションで詰め切る |
 | `routine-apply` | `Issue: Labeled` = `stage:apply` | merge 済み proposal、または事後起票で `origin/main` に入っている change を実装し `apply` PR を作る |
 | `routine-archive` | `Issue: Labeled` = `stage:archive` | `openspec archive` を実行し `archive` PR（`Closes #n`）を作る |
-| `routine-sweep` | Schedule | リポジトリ全体を突き合わせ、人の回答・死んだ worker・却下・残骸・循環・孤児を拾う（未着手の孤児 change は起票する） |
+| `routine-sweep` | Schedule | リポジトリ全体を突き合わせ、人の回答・dispatch が受け付けなかった `stage:todo`・死んだ worker・却下・残骸・循環・孤児を拾う（未着手の孤児 change は起票する） |
 | `routines-setup` | 手動 | ラベルと Routine の現状を読み、あるべき状態との差分を直す |
 
 Routine の本文は skill を読んで実行する 1 行だけにし、判断規則は skill 側に置く。設定表は `routines-setup` にある。
@@ -49,6 +49,54 @@ PR の自動評価（`assess-pr-risk`）はこの plugin に含めず、プロ�
    次の sweep が worker を起動し直し、worker が全コメントを読んで進む。
 
 worker は調査の結果を必ず `blocked-by:` で書き戻す。調査は 1 回しか払わず、解消の検知は dispatcher が安く行う。
+
+## イベントが落ちたときの回復
+
+段階の遷移はすべて GitHub のイベント 1 回で起動する。イベントは 1 回きりで、その瞬間に Routine が
+起動しなければ（Routine の停止・利用上限・環境の setup 失敗など）GitHub 側には何も残らず、誰も
+その issue を再評価しない。これが「ゾンビ issue」の正体で、sweep はこれを拾うために存在する。
+
+正常時。sweep の出番は無い。
+
+```
+人が #707 に stage:todo を付ける
+  └→ GitHub が issues.labeled を送る
+       └→ dispatch が 1 本起動
+            └→ 手順 A: depends on を評価
+                 ├ 解けている → [stage:propose] を書く → propose worker 起動
+                 └ 塞がっている → blocked-by: コメント + [stage:todo, blocked]
+```
+
+異常時。dispatch が起動しなかった。
+
+```
+人が #707 に stage:todo を付ける
+  └→ issues.labeled は送られたが、dispatch が起動しない
+  └→ GitHub 側にはもう何のイベントも残っていない
+  └→ #707 は stage:todo のまま放置  ← ゾンビ
+```
+
+sweep（Schedule）が拾う。dispatch の手順 A が完走した issue は「段階が進む」か「`[stage:todo, blocked]` に
+なる」のどちらかなので、`stage:todo` のまま `blocked` も無く一定時間が過ぎた issue は dispatch が受け付けて
+いないと判定できる。
+
+```
+sweep 起動（毎時）
+  ├ 手順 1: 残骸掃除
+  ├ 手順 2: blocked の再評価（人の回答はイベントにならないので、ここが唯一の拾い場所）
+  ├ 手順 3a: dispatch が受け付けなかった stage:todo を、番号順に数件ずつ dispatch 手順 A で受け付ける
+  │          → [stage:propose] を書く → propose worker 起動。残りは「順番待ち」として報告
+  ├ 手順 3b: 死んだ worker を再起動（restart: を数え、3 回で人に戻す）
+  └ 手順 4〜7: 止まった PR の引き継ぎ・循環ブロック・孤児 proposal / change
+```
+
+一斉に放出しないのは、worker が同時に多く起動すると利用上限で全員が途中で死に、3b の再起動に流れ込む
+だけだから。10 件溜まっていれば数時間かけて順に動き出す。しきい値（放置とみなす時間・1 回に受け付ける
+件数）は `skills/routine-sweep/SKILL.md` の手順 3a にある。
+
+sweep の報告に「dispatch が受け付けなかった `stage:todo` の数」が出る。これが毎時 0 でないなら
+dispatch の webhook が届いていないので、人が Routines の画面を確かめる合図になる。sweep 自身が
+止まっている場合はこの仕組みでも拾えない。
 
 ## Routines の制約と設計判断
 
@@ -89,6 +137,6 @@ dispatch と sweep は読まないので、時間や回数のしきい値は plu
 
 - GitHub Actions による遷移。Routines のイベント起動と sweep で足りる
 - 複数リポジトリの横断。1 Routine 1 リポジトリ
-- 同時実行数の上限。解けたものは全部放出する
+- 同時実行数の上限。イベント起動の dispatch は解けたものを全部放出する。件数を絞るのは sweep の回復時だけ
 - フォールバックタスクの自動生成。着手対象が無いときは「無い」と報告して終える
 - PR の AI 評価（`assess-pr-risk`）と retro。プロジェクト側で任意に作る

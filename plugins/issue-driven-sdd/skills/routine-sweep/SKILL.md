@@ -1,6 +1,6 @@
 ---
 name: routine-sweep
-description: Routine「<project> sweep」（Schedule）の本文から呼ばれる skill。リポジトリ全体を定期的に突き合わせ、イベントでは拾えないもの（人の回答・死んだ worker・却下された PR・残骸・循環ブロック・孤児 change）を直す。完全に未着手の孤児 change には issue を起票する。routine-dispatch がイベント 1 件だけを扱うのに対し、こちらが全件の修復を担う。手動で「sweep を回して」「止まっている issue や PR を拾って」と言われたときもこの skill を使う。
+description: Routine「<project> sweep」（Schedule）の本文から呼ばれる skill。リポジトリ全体を定期的に突き合わせ、イベントでは拾えないもの（人の回答・dispatch が受け付けなかった stage:todo・死んだ worker・却下された PR・残骸・循環ブロック・孤児 change）を直す。完全に未着手の孤児 change には issue を起票する。routine-dispatch がイベント 1 件だけを扱うのに対し、こちらが全件の修復を担う。手動で「sweep を回して」「止まっている issue や PR を拾って」と言われたときもこの skill を使う。
 ---
 
 まず同じ plugin の `routine-common` skill と `routine-dispatch` skill を読む。ラベルの書き方と
@@ -23,8 +23,8 @@ description: Routine「<project> sweep」（Schedule）の本文から呼ばれ�
 
 | 実態 | 直し方 |
 | --- | --- |
-| closed な issue に `wip` が残っている | `[]` を書く |
-| open PR が無く、`wip` があり、最新の `started:` コメントの `session:` を `mcp__Claude_Code_Remote__get_session` で引いて、`session_status` が実行中でも人の操作待ち（permission prompt 等）でもない | worker は死んでいる。30 分の猶予を待たずにその場で 3 の手順（`restart:` → `[]` → `[stage:X]`）を行う。**人の操作待ちは生きている扱い**で触らない。通知は Claude Code 側が出す |
+| closed な issue に `wip` / `blocked` / `question` が残っている | それらを除いた集合を書く。段階ラベルは履歴として残す |
+| open PR が無く、`wip` があり、最新の `started:` コメントの `session:` を `mcp__Claude_Code_Remote__get_session` で引いて、`session_status` が実行中でも人の操作待ち（permission prompt 等）でもない | worker は死んでいる。30 分の猶予を待たずにその場で 3b の手順（`restart:` → `[]` → `[stage:X]`）を行う。**人の操作待ちは生きている扱い**で触らない。通知は Claude Code 側が出す |
 | open PR が無く、`wip` があり、`started:` コメントが無い | 旧規約の worker。`wip` が 3 時間より古ければ上と同じ |
 | `question` があるのに `blocked` が無い issue | `question` だけ除いた集合（`wip` があれば残す）を書く。issue の `question` は `blocked` から導かれる。PR は対象外（一覧 API は PR も返すので `pull_request` を持つものを除く） |
 | `blocked` があり最新の `blocked-by:` に `human` があるのに `question` が無い | `[stage:X, blocked, question]` を書く |
@@ -39,7 +39,25 @@ description: Routine「<project> sweep」（Schedule）の本文から呼ばれ�
 `blocked` の付いた open issue のうち「読み方」の条件に当たるものを、`routine-dispatch` の手順 D で
 1 件ずつ評価する。人の回答はイベントにならないので、ここが唯一の拾い場所になる。
 
-# 3. 死んだ worker を再起動する
+# 3. 起動しなかった dispatch と死んだ worker を起動し直す
+
+## 3a. dispatch が受け付けなかった `stage:todo`
+
+`Issue: Labeled` は 1 回きりのイベントで、その瞬間に dispatch が起動しなければ（Routine の停止・
+利用上限・環境の setup 失敗など。拒否された発火は run 一覧にも残らない）、その issue を再評価する
+者はいない。dispatch の手順 A が完走した issue は、段階が進んで `stage:todo` でなくなるか、
+`[stage:todo, blocked]` と `blocked-by:` コメントになる。だから次を**すべて**満たす issue は、
+dispatch が受け付けていない。
+
+1. `stage:todo` が付いていて、`blocked` も他の段階ラベルも無い
+2. 一覧の `updated_at` が 30 分より古い（timeline は読まない）
+
+該当する issue を issue 番号の小さい順に、`routine-dispatch` の手順 A をそのまま実行して受け付ける。
+書くのは 1 回（`[stage:todo]` → 「`stage:todo` から進める先」）で、増えるラベルは 1 つなので worker は
+1 本だけ起動する。**1 回の sweep で受け付けるのは 3 件まで**とし、残りは順番待ちとして報告に数える。
+一度に多くの worker を起動すると利用上限で全員が途中で死に、手順 3b の再起動に流れ込むだけだから。
+
+## 3b. 死んだ worker
 
 次を**すべて**満たす issue は、worker が起動しなかったか途中で死んでいる。
 
@@ -134,5 +152,8 @@ proposal の `#n`、または本文の `change:` でその change を指す open
 
 # 報告
 
-「読んだ issue 数 / 変えたラベル / 投稿したコメント / close した issue / 引き継いだ PR / 起票した issue」を
-数で報告する。起票した issue は番号と change 名も添える。
+「読んだ issue 数 / dispatch が受け付けなかった `stage:todo`（受け付けた数・順番待ちの数）/ 変えたラベル /
+投稿したコメント / close した issue / 引き継いだ PR / 起票した issue」を数で報告する。起票した issue は
+番号と change 名も添える。
+「受け付けなかった `stage:todo`」が続けて 0 でないなら、dispatch の webhook が届いていない。人が Routine を
+確かめる合図なので、報告に 1 行そう書く。

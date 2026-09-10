@@ -93,7 +93,8 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 | `stage:X` + `blocked`（X ≠ todo） | `<!-- routine -->` で `release: stage:X` の形のコメントを投稿し、`[]` を書いてから `[stage:X]` を書く | 同上 |
 
 ブロック解除は再起動ではないので `restart:` を数えない（依存が 3 つ順に解けただけで人に戻さないため）。
-死んだ worker の再起動と `restart:` の数え方は `routine-sweep` の手順 3。
+死んだ worker の再起動と `restart:` の数え方は `routine-sweep` の手順 3b。dispatch 自身が起動しなかった
+`stage:todo` を拾い直すのは手順 3a。
 
 `[]` → `[stage:X]` の 2 回書きは、減らすだけでは worker が起動しないため。1 回目のあとで死んでも、
 `release:` コメントを先に投稿してあるので sweep が拾う。
