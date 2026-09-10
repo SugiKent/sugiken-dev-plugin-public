@@ -1,6 +1,6 @@
 ---
 name: routine-sweep
-description: Routine「<project> sweep」（Schedule）の本文から呼ばれる skill。リポジトリ全体を定期的に突き合わせ、イベントでは拾えないもの（人の回答・死んだ worker・却下された PR・残骸・循環ブロック・孤児 change）を直す。routine-dispatch がイベント 1 件だけを扱うのに対し、こちらが全件の修復を担う。手動で「sweep を回して」「止まっている issue や PR を拾って」と言われたときもこの skill を使う。
+description: Routine「<project> sweep」（Schedule）の本文から呼ばれる skill。リポジトリ全体を定期的に突き合わせ、イベントでは拾えないもの（人の回答・死んだ worker・却下された PR・残骸・循環ブロック・孤児 change）を直す。完全に未着手の孤児 change には issue を起票する。routine-dispatch がイベント 1 件だけを扱うのに対し、こちらが全件の修復を担う。手動で「sweep を回して」「止まっている issue や PR を拾って」と言われたときもこの skill を使う。
 ---
 
 まず同じ plugin の `routine-common` skill と `routine-dispatch` skill を読む。ラベルの書き方と
@@ -97,11 +97,35 @@ proposal の `#n`、または本文の `change:` でその change を指す open
 
 1. `origin/main` の `openspec/changes/` 直下（`archive/` を除く）の change 名を全て集める。
 2. 各 change 名について、その名前を `Refs` する open/merged PR と、対応する issue のどちらも見当たらない
-   ものを孤児として報告する。issue 本文の `change:` は `search_issues` で `"change: <change名>" is:open` を引く。
-3. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
-   `<!-- routine -->` で「ブロッカーの change `<change名>` は routine の中に進める主体がいない。
-   人が change を引き継ぐか取り下げるかを決めてほしい」と書き戻す。直近のコメントに同じ内容があれば重ねない。
-4. **報告と書き戻しに留め、change を消したり `blocked` を外したりしない。**
+   ものを孤児とする。issue 本文の `change:` は `search_issues` で `"change: <change名>" is:open` を引く。
+   closed issue も `is:closed` で引き、見つかれば手順 6 の領分なのでここでは扱わない。
+3. 孤児 change ごとに、**完全に未着手か**を `origin/main` の中身と PR 履歴だけで判定する。次を
+   **すべて**満たすものだけが完全に未着手。
+   - `tasks.md` が無いか、あっても `- [x]` が 1 つも無い（1 つでもあれば人が手を付けている）
+   - その change 名を `Refs` する PR が、closed も含めて一度も存在しない（`search_pull_requests` で
+     `<change名>` を引き、state を問わず 0 件）
+   - change ディレクトリの中身が proposal / design / tasks / specs の delta だけで、実装の痕跡が無い。
+     ここまで見て分からないものは未着手と決めつけない
+4. 完全に未着手の孤児 change には、**issue を 1 件だけ起票する**。change だけが `origin/main` にあって
+   誰も進めない状態を、事後起票（`routine-common` の「人が持つ操作」）と同じ形へ戻す。
+   - title は `<change名>`、本文の 1 行目に `change: <change名>` を書く。これで change → issue の
+     対応が付き、次の sweep はこの change を孤児として数えない。
+   - 本文には、`proposal.md` の Why / What を読んだ要約と、「この change は `origin/main` にあるが
+     対応する issue も PR も無かったので sweep が起票した。着手してよければ `stage:todo` を付けてほしい」
+     の 1 行を書く。
+   - **段階ラベルは付けない。** ラベル無しの issue は `routine-common` のとおり routine が触らない状態で、
+     承認は人の `stage:todo` に残る。sweep が `stage:todo` を付けると、人が一度も承認していない change を
+     dispatch が `stage:apply` まで運んでしまう。
+   - 起票の前に `search_issues` で同じ `change: <change名>` の issue（closed も含む）が無いことを
+     もう一度確かめる。closed のものがあれば起票し直さず、手順 6 と同じく報告に留める。
+5. 完全に未着手でない孤児 change（`- [x]` がある、closed PR がある、中身が上の形に収まらない）は、
+   **報告だけに留める。** 途中まで進んだ change をどう扱うかは人が決める。
+6. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
+   `<!-- routine -->` で書き戻す。起票した change なら「進める主体がいなかったので issue #n を起票した。
+   `stage:todo` を付ければ動き出す」、起票しなかった change なら「routine の中に進める主体がいない。
+   人が change を引き継ぐか取り下げるかを決めてほしい」。直近のコメントに同じ内容があれば重ねない。
+7. **change そのものは触らない。** 消したり書き換えたり、待っている issue の `blocked` を外したりしない。
+8. 起票は 1 セッションで 3 件まで。それを超える孤児 change は数だけ報告する。
 
 # やらないこと
 
@@ -110,4 +134,5 @@ proposal の `#n`、または本文の `change:` でその change を指す open
 
 # 報告
 
-「読んだ issue 数 / 変えたラベル / 投稿したコメント / close した issue / 引き継いだ PR」を数で報告する。
+「読んだ issue 数 / 変えたラベル / 投稿したコメント / close した issue / 引き継いだ PR / 起票した issue」を
+数で報告する。起票した issue は番号と change 名も添える。

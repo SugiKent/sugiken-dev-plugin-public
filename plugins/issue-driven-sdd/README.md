@@ -24,7 +24,7 @@ merge を受けた dispatcher がどの段階へ進めるかを決める。`ques
 | `routine-propose` | `Issue: Labeled` = `stage:propose` | proposal を作る。未確定の判断は PR 上で問い、同じセッションで詰め切る |
 | `routine-apply` | `Issue: Labeled` = `stage:apply` | merge 済み proposal、または事後起票で `origin/main` に入っている change を実装し `apply` PR を作る |
 | `routine-archive` | `Issue: Labeled` = `stage:archive` | `openspec archive` を実行し `archive` PR（`Closes #n`）を作る |
-| `routine-sweep` | Schedule | リポジトリ全体を突き合わせ、人の回答・死んだ worker・却下・残骸・循環・孤児を拾う |
+| `routine-sweep` | Schedule | リポジトリ全体を突き合わせ、人の回答・死んだ worker・却下・残骸・循環・孤児を拾う（未着手の孤児 change は起票する） |
 | `routines-setup` | 手動 | ラベルと Routine の現状を読み、あるべき状態との差分を直す |
 
 Routine の本文は skill を読んで実行する 1 行だけにし、判断規則は skill 側に置く。設定表は `routines-setup` にある。
