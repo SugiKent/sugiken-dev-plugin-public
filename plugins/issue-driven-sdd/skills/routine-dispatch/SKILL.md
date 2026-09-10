@@ -73,7 +73,7 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 | `#m` が PR | merged。merge されずに close されたなら解けていない。`blocked-by: human` に置き換えて書き戻す |
 | `change <name>` | `origin/main` の `openspec/changes/` 直下（`archive/` を除く）に無い |
 | `#m` / `change` | 上の条件に加え、正本の `blocked-by:` コメントより後に人のコメント（`routine-common` の定義）があれば解けたとみなす。人が「#m は不要」等を書いた場合で、中身は判定しない。放出された worker が読み直し、まだ塞がっていれば同じ手順で書き戻す |
-| `human` | 人のコメントがあるだけでは解けない。`unblock-when:` に従う。`comment` = 正本コメントより後に人のコメントがある。`docs` = 同じ条件に加え、そのコメントが文書を変えたと述べている。`#m` = その issue / PR が閉じている・merge されている |
+| `human` | 人のコメントがあるだけでは解けない。`unblock-when:` に従う。`comment` = 正本コメントより後に人のコメントがある。`docs` = 同じ条件に加え、そのコメントが文書を変えたと述べている。`#m` = その issue / PR が閉じている・merge されている。**`unblock-when:` が無ければ `comment` とみなす**（worker が書き忘れた正本に耐える） |
 
 | 状態 | 全部解けた | 残っている |
 | --- | --- | --- |
