@@ -15,8 +15,8 @@ dispatch のものをそのまま使い、ここに独自の判定を置かな�
 - PR 検索は `merged:>=<14 日前>` を付け、`fields` から `body` を外す。issue 番号は title の `#n` から取り、
   完全一致で絞る。
 - **一覧の `updated_at` が直近 10 分の issue は触らない。** イベント起動の dispatch が処理中の可能性がある。
-- `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（コメント・close・merge）があった
-  issue だけ行う。
+- `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（人のコメント・close・merge）があった
+  issue だけ行う。routine のコメントは数えない。数えると sweep 自身のコメントが次の sweep の再評価を呼ぶ。
 
 # 1. 残骸を片付ける
 
@@ -73,4 +73,5 @@ open PR のうち、最新のコメントが人のもの（`routine-common` の�
 
 # 報告
 
-「読んだ issue 数 / 変えたラベル / 投稿したコメント / close した issue / 引き継いだ PR」を数で報告する。
+「読んだ issue 数 / 変えたラベル / 投稿したコメント / 状況が変わらず重ねなかったコメント / close した issue /
+引き継いだ PR」を数で報告する。

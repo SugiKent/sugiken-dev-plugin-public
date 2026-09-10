@@ -16,8 +16,9 @@ description: Routine「<project> sweep」（Schedule）の本文から呼ばれ�
   `[<段階>] #n` から取る。
 - **一覧の `updated_at` が直近 10 分の issue は触らない。** イベント起動の dispatch が処理中の可能性がある。
   timeline を読まずに一覧の値で足切りする。触らない issue が少し増えるだけで、安全側に倒れる。
-- `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（コメント・close・merge）が
-  あった issue だけ行う。無ければ前回と同じ結果になる。
+- `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（人のコメント・close・merge）が
+  あった issue だけ行う。無ければ前回と同じ結果になる。routine のコメントは数えない。数えると sweep 自身の
+  コメントが次の sweep の再評価を呼ぶ。
 
 # 1. 残骸を片付ける
 
@@ -104,7 +105,7 @@ merge 済みの `propose` / `apply` PR が持ち込んだ openspec change は、
    まだ残っているか確認する。無ければ対象外。
 3. 残っていれば、issue へ 1 度だけ `<!-- routine -->` で「merge 済みの PR #<PR番号> に対して issue が
    閉じている。openspec change `<change名>` が残ったまま進める主体がいない。reopen して段階ラベルを
-   付け直すか、change を取り下げるかを人に決めてほしい」と書き戻す。直近のコメントに同じ内容があれば重ねない。
+   付け直すか、change を取り下げるかを人に決めてほしい」と書き戻す。`routine-common` の「状況が変わっていなければコメントしない」に従う。
 4. **sweep は reopen しない。** close は人の意思表示の可能性がある。
 
 # 7. 孤児 change を検出する
@@ -142,7 +143,7 @@ proposal の `#n`、または本文の `change:` でその change を指す open
 6. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
    `<!-- routine -->` で書き戻す。起票した change なら「進める主体がいなかったので issue #n を起票した。
    `stage:todo` を付ければ動き出す」、起票しなかった change なら「routine の中に進める主体がいない。
-   人が change を引き継ぐか取り下げるかを決めてほしい」。直近のコメントに同じ内容があれば重ねない。
+   人が change を引き継ぐか取り下げるかを決めてほしい」。`routine-common` の「状況が変わっていなければコメントしない」に従う。
 7. **change そのものは触らない。** 消したり書き換えたり、待っている issue の `blocked` を外したりしない。
 8. 起票は 1 セッションで 3 件まで。それを超える孤児 change は数だけ報告する。
 
@@ -154,7 +155,7 @@ proposal の `#n`、または本文の `change:` でその change を指す open
 # 報告
 
 「読んだ issue 数 / dispatch が受け付けなかった `stage:todo`（受け付けた数・順番待ちの数）/ 変えたラベル /
-投稿したコメント / close した issue / 引き継いだ PR / 起票した issue」を数で報告する。起票した issue は
+投稿したコメント / 状況が変わらず重ねなかったコメント / close した issue / 引き継いだ PR / 起票した issue」を数で報告する。起票した issue は
 番号と change 名も添える。
 「受け付けなかった `stage:todo`」が続けて 0 でないなら、dispatch の webhook が届いていない。人が Routine を
 確かめる合図なので、報告に 1 行そう書く。
