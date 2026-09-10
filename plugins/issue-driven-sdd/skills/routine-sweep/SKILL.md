@@ -119,7 +119,8 @@ proposal の `#n`、または本文の `change:` でその change を指す open
    closed issue も `is:closed` で引き、見つかれば手順 6 の領分なのでここでは扱わない。
 3. 孤児 change ごとに、**完全に未着手か**を `origin/main` の中身と PR 履歴だけで判定する。次を
    **すべて**満たすものだけが完全に未着手。
-   - `tasks.md` が無いか、あっても `- [x]` が 1 つも無い（1 つでもあれば人が手を付けている）
+   - `tasks.md` があり、`- [x]` が 1 つも無い（1 つでもあれば人が手を付けている）。`tasks.md` が無い change は
+     apply が進められないので、書きかけの proposal とみなして起票しない
    - その change 名を `Refs` する PR が、closed も含めて一度も存在しない（`search_pull_requests` で
      `<change名>` を引き、state を問わず 0 件）
    - change ディレクトリの中身が proposal / design / tasks / specs の delta だけで、実装の痕跡が無い。
@@ -128,15 +129,15 @@ proposal の `#n`、または本文の `change:` でその change を指す open
    誰も進めない状態を、事後起票（`routine-common` の「人が持つ操作」）と同じ形へ戻す。
    - title は `<change名>`、本文の 1 行目に `change: <change名>` を書く。これで change → issue の
      対応が付き、次の sweep はこの change を孤児として数えない。
-   - 本文には、`proposal.md` の Why / What を読んだ要約と、「この change は `origin/main` にあるが
-     対応する issue も PR も無かったので sweep が起票した。着手してよければ `stage:todo` を付けてほしい」
-     の 1 行を書く。
+   - 本文には、`proposal.md` の Why / What を読んだ要約、未着手と判定した根拠（上の 3 条件をどう確かめたか）、
+     「この change は `origin/main` にあるが対応する issue も PR も無かったので sweep が起票した。
+     着手してよければ `stage:todo` を付けてほしい」の 1 行を書く。
    - **段階ラベルは付けない。** ラベル無しの issue は `routine-common` のとおり routine が触らない状態で、
      承認は人の `stage:todo` に残る。sweep が `stage:todo` を付けると、人が一度も承認していない change を
      dispatch が `stage:apply` まで運んでしまう。
    - 起票の前に `search_issues` で同じ `change: <change名>` の issue（closed も含む）が無いことを
      もう一度確かめる。closed のものがあれば起票し直さず、手順 6 と同じく報告に留める。
-5. 完全に未着手でない孤児 change（`- [x]` がある、closed PR がある、中身が上の形に収まらない）は、
+5. 完全に未着手でない孤児 change（`tasks.md` が無い、`- [x]` がある、closed PR がある、中身が上の形に収まらない）は、
    **報告だけに留める。** 途中まで進んだ change をどう扱うかは人が決める。
 6. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
    `<!-- routine -->` で書き戻す。起票した change なら「進める主体がいなかったので issue #n を起票した。
