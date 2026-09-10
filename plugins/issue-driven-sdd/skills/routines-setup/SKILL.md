@@ -66,6 +66,27 @@ skill 側に置けば、Routine を作り直しても規則が失われない。
   sweep が `get_session` で生存を判定するのに要る。GitHub コネクタは Routine に暗黙で付く。
 - `retro`（振り返り点検）はこの plugin の対象外。旧構成の `routine-retro` や `retro` ラベルは触らない。
 
+**このコネクタは `claude.ai/code/routines` の UI から追加できない**（2026-09-07 実測）。UI で編集して保存す
+ると成功したように見えるが、API から読み直しても `mcp_connections` に `Claude_Code_Remote` は増えていない。
+`RemoteTrigger action=update` に `mcp_connections` だけを送って付ける。
+
+```json
+{"mcp_connections": [
+  <その Routine の現在の mcp_connections 全要素>,
+  {"clear_tool_policy_overrides": false,
+   "connector_uuid": "<同じアカウントの既存 Routine から name が Claude_Code_Remote の要素をコピー>",
+   "name": "Claude_Code_Remote",
+   "permitted_tools": [],
+   "tool_policy_overrides": [],
+   "transport_type": "http",
+   "url": "https://api.anthropic.com/v1/code/mcp/meta"}
+]}
+```
+
+現在値を `action=get` で読み、末尾に足した配列全体を送る（部分更新ではなく置換）。このフィールドだけを送れ
+ば `enabled` / model / `autofix_on_pr_create` / トリガー / 本文は巻き込まれない。`connector_uuid` はアカウ
+ントごとに異なるので、同じアカウントの既存 Routine を `action=get` して `mcp_connections` からコピーする。
+
 ## webhook トリガーを API で作るとき
 
 UI の代わりに `RemoteTrigger create_webhook_trigger` で付ける場合の body。webhook トリガーは `list` /
@@ -117,6 +138,8 @@ PR のリスクを AI が評価して低ければ merge する仕組みは、iss
 5. 各 Routine の本文にある skill 名が、そのセッションで解決する（`Unknown command` で 0 turn 終了していない）
 6. propose PR ができた時点で assess（作っていれば）が **1 本だけ**起動している。2 本なら worker が
    `[propose, ai-assess:requested]` を 1 回で書いている
+7. worker と sweep の `mcp_connections` に `Claude_Code_Remote` が入っている。`action=get` で読んで確かめる
+   （UI の見た目では判定できない）
 
 起動の有無は `RemoteTrigger list_runs` で見る。発火が拒否された run は一覧に残らないので、一覧が空でも
 Routine が無効とは限らず、`get` で `enabled` を確かめる。確認が済んだら捨て issue を閉じ、`wip` が
