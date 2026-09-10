@@ -1,0 +1,5 @@
+{
+  "name": "issue-label-driven",
+  "description": "GitHub Issue のラベル To Do / In Progress / Done だけで開発を進める構成一式。Claude Code Routines が To Do を受けて実装 PR を作り、merge で Done に至る。OpenSpec を挟まない issue 1 件 = PR 1 本の非 SDD 版",
+  "author": { "name": "SugiKent" }
+}

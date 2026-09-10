@@ -116,6 +116,12 @@
       "source": "./plugins/issue-driven-sdd",
       "description": "GitHub Issue のラベル 1 本で開発段階を表し、Claude Code Routines が段階ごとに起動して OpenSpec の propose → apply → archive を回す構成 (ラベル定義・Routine 設定表・PR リスク評価・バックログの issue 化)",
       "category": "workflow"
+    },
+    {
+      "name": "issue-label-driven",
+      "source": "./plugins/issue-label-driven",
+      "description": "GitHub Issue のラベル To Do / In Progress / Done だけで開発を進める非 SDD 版 (issue 1 件 = 実装 PR 1 本。ラベル遷移を全部 1 回書きにした Routine 3 本構成)",
+      "category": "workflow"
     }
   ]
 }

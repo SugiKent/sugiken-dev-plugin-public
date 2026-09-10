@@ -44,6 +44,8 @@ description による自動呼び出しは従来どおり機能する。
 | `fastify` | infra | Fastify + pino の dev エラーログ基盤 |
 | `railway` | infra | Railway のデプロイ・運用ガイドとログからのエラー調査 |
 | `workshop` | utility | 勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成まで |
+| `issue-driven-sdd` | workflow | GitHub Issue のラベルで段階を表し、Routines が OpenSpec の propose → apply → archive を回す |
+| `issue-label-driven` | workflow | GitHub Issue の To Do / In Progress / Done だけで回す非 SDD 版 (issue 1 件 = PR 1 本) |
 
 ## 更新の反映
 
