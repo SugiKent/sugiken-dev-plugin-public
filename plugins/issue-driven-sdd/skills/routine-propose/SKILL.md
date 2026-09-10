@@ -26,7 +26,12 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 
 `/grill-me` Skill を用いる
 
-`openspec-propose` で change を作り、`proposal.md` に次の 2 節を置く。
+`openspec-propose` Skill を必ず起動し、その手順で change を作る。無人セッションなので、
+Skill が `AskUserQuestion` で尋ねる場面（入力の明確化、成果物作成時の不明点、マイグレーション設計の
+確認、「徹底的な疑問点の解消」節を含む全て）は、その場で止めずこの節の grill に置き換える。
+疑問はその場で尋ねず `proposal.md` の `## 未確定の判断` に問いとして書き、PR コメントで人に問う。
+
+`proposal.md` には次の 2 節を置く。
 
 ```
 ## 確定した判断
@@ -55,7 +60,7 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 
 # 4. proposal を完成させる
 
-`openspec-propose` の作法で `proposal.md` / `design.md` / `tasks.md` / spec delta を揃え、
+`openspec-propose` Skill の手順で `proposal.md` / `design.md` / `tasks.md` / spec delta を揃え、
 `openspec validate --strict` を緑にする。proposal / design に issue 番号 `#n` を書く。issue と change の
 対応はこれで引く。
 

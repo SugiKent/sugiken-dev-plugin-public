@@ -41,6 +41,10 @@ open PR が触っている change は、相手の編集を止めて古い設計�
 
 # 3. archive して PR を作る
 
+`openspec-archive-change` Skill は起動しない。同 Skill は 1 change ずつ `AskUserQuestion` で
+選ばせ・確認を取る前提で、無人のこの routine には合わない。代わりに次の CLI を直接使い、
+複数 change をまとめて `--yes` で非対話に archive する。
+
 ```bash
 openspec archive "<change名>" --yes
 ```
