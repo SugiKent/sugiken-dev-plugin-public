@@ -30,7 +30,7 @@ description: Routine「<project> sweep」（Schedule）の本文から呼ばれ�
 | `question` があるのに `blocked` が無い issue | `question` だけ除いた集合（`wip` があれば残す）を書く。issue の `question` は `blocked` から導かれる。PR は対象外（一覧 API は PR も返すので `pull_request` を持つものを除く） |
 | `blocked` があり最新の `blocked-by:` に `human` があるのに `question` が無い | `[stage:X, blocked, question]` を書く |
 | `archive` PR、または `Closes #n` を持つ `docs` PR が merge 済みなのに issue が open | issue を close する |
-| `propose` / `apply` PR が merge されずに close され、それより新しい open PR が無い | 人が却下したとみなす。`blocked-by: human`（`unblock-when: comment`）で書き戻し `[stage:X, blocked, question]` |
+| `propose` / `apply` PR が merge されずに close され、それより新しい open PR も、PR の close より新しい routine の `blocked-by:` コメントも無い | 人が却下したとみなす。`blocked-by: human`（`unblock-when: comment`）で書き戻し `[stage:X, blocked, question]`。close より新しい `blocked-by:` があれば、既に問い返したか worker が撤退して書き戻した跡なので触らない。問い返し直すと人の回答が正本より前になり、手順 2 が放出できなくなる |
 | `stage:todo` と他の `stage:*` が両方ある | dispatch の書き込み途中の跡。`stage:todo` を外した集合を書く |
 | 段階ラベルが無く、最新の `<!-- routine -->` コメントが `release:` / `restart:` / `advance:` | 2 回書きの途中で死んだ跡。その行の段階ラベルを書く |
 | それ以外で段階ラベルが 2 つ以上 | 直さない。何と何が付いているかを 1 度コメントし、以降の手順から除外する |
