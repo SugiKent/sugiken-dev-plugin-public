@@ -116,12 +116,6 @@ grill のラウンドごとに更新する。N が 0 になったら `[<段階>,
 落ち `ai-assess:requested` が 1 つ増えるので、AI 評価が 1 本起動する）。N > 0 の `propose` PR が merge されても、`routine-dispatch` は段階を
 進めず `blocked-by: human` で人に戻す。
 
-# 残作業を別 issue にするとき
-
-このセッションで実行できないタスク（本番実測・デプロイ後確認）を別 issue に切り出す前に、
-`search_issues` で `"#<元issue>" in:title is:open` を検索し、同じ種類の残作業 issue が既にあれば
-そこへコメントで追記する。新規に起票するのは無いときだけ。段階ラベルは付けない。
-
 # openspec を通さない変更
 
 `.claude/` と `docs/` と直下の `CLAUDE.md` / `README.md` は、利用者へ提供するものを変えないので

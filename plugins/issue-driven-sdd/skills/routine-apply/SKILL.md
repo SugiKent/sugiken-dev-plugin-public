@@ -28,7 +28,8 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 - リポジトリのゲート（型検査・lint・関連テスト・`openspec validate --strict`）と `.claude/rules/` の
   該当ルールを緑にする。E2E とスクリーンショットは `worker.md` の「リポジトリの事情に従う」で決める。
 - このセッションで実行できないタスク（本番実測・デプロイ後確認）が残っていたら、その行を tasks から
-  外して別 issue として起票する（`worker.md` の「残作業を別 issue にするとき」）。archive を止めないための措置。
+  外して捨てる。別 issue として起票してはならない。apply が回っている時点で、その残りは人が不要と
+  判断したものである。必要になればそのとき人が起票する。
 - proposal が想定していなかった意思決定に行き当たったら、独断で決めずコードやコメントに書き付けて
   進めない。`routine-common` の「見送りの書き戻し」で issue へ問い、`blocked-by: human` を経てから続ける。
   無人セッションなので、`openspec-apply-change` Skill が一時停止して尋ねる場面（task が不明瞭、
