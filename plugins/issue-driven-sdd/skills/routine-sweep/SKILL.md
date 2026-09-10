@@ -81,8 +81,9 @@ merge 済みの `propose` / `apply` PR が持ち込んだ openspec change は、
 主体が誰もいなくなる。
 
 1. 直近 14 日に merge された `propose` / `apply` PR のうち、title の issue 番号が **closed** のものを集める。
-2. 集めた PR ごとに、`origin/main` の `openspec/changes/` 直下（`archive/` を除く）に、proposal /
-   design にその issue 番号 `#n` を書いた change がまだ残っているか確認する。無ければ対象外。
+2. 集めた PR ごとに、`origin/main` の `openspec/changes/` 直下（`archive/` を除く）に、その issue に対応する
+   change（`routine-common` の「issue と change の対応」。proposal の `#n`、または issue 本文の `change:`）が
+   まだ残っているか確認する。無ければ対象外。
 3. 残っていれば、issue へ 1 度だけ `<!-- routine -->` で「merge 済みの PR #<PR番号> に対して issue が
    閉じている。openspec change `<change名>` が残ったまま進める主体がいない。reopen して段階ラベルを
    付け直すか、change を取り下げるかを人に決めてほしい」と書き戻す。直近のコメントに同じ内容があれば重ねない。
@@ -90,13 +91,13 @@ merge 済みの `propose` / `apply` PR が持ち込んだ openspec change は、
 
 # 7. 孤児 change を検出する
 
-`openspec/changes/` 直下の change 名は、proposal / design に issue 番号を書いた issue か、それを
-`Refs` する PR のどちらかが進める。両方とも一度も存在しない change は、routine の中に進める主体が
-原理的にいない。
+`openspec/changes/` 直下の change 名は、対応する issue（`routine-common` の「issue と change の対応」。
+proposal の `#n`、または本文の `change:` でその change を指す open issue）か、それを `Refs` する PR の
+どちらかが進める。両方とも一度も存在しない change は、routine の中に進める主体が原理的にいない。
 
 1. `origin/main` の `openspec/changes/` 直下（`archive/` を除く）の change 名を全て集める。
-2. 各 change 名について、その名前を `Refs` する open/merged PR と、proposal / design に issue 番号を
-   書いた issue のどちらも見当たらないものを孤児として報告する。
+2. 各 change 名について、その名前を `Refs` する open/merged PR と、対応する issue のどちらも見当たらない
+   ものを孤児として報告する。issue 本文の `change:` は `search_issues` で `"change: <change名>" is:open` を引く。
 3. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
    `<!-- routine -->` で「ブロッカーの change `<change名>` は routine の中に進める主体がいない。
    人が change を引き継ぐか取り下げるかを決めてほしい」と書き戻す。直近のコメントに同じ内容があれば重ねない。

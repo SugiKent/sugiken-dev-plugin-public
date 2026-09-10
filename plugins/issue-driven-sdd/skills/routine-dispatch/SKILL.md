@@ -38,8 +38,20 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 
 | 結果 | 書く集合 |
 | --- | --- |
-| 全部解けた | `[stage:propose]` |
+| 全部解けた | 「`stage:todo` から進める先」 |
 | 残っている | `routine-common` の「見送りの書き戻し」でコメントし、`[stage:todo, blocked]`（`human` なら `question` も） |
+
+## `stage:todo` から進める先
+
+人が手元で change を書き切ってから issue を起票する事後起票では proposal が既に `origin/main` にあるので、
+propose を飛ばす。対応の定義は `routine-common` の「issue と change の対応」。`openspec` は実行せず、
+`git show origin/main:` / `git ls-tree` で実在だけを見る。上から当たったところで止める。
+
+| 状態 | 書く集合 |
+| --- | --- |
+| `origin/main` に issue に対応する change が 1 つある（proposal の `#n`、または本文 `change:` の指す実在する change） | `[stage:apply]` |
+| 本文に `change:` があるのに `origin/main` に無い、または対応する change が 2 つ以上ある | `blocked-by: human`（`unblock-when: comment`）。push 漏れか名前違いかを人に確かめてもらい `[stage:todo, blocked, question]`。propose へ流すと人が push しようとしている change と重複する |
+| どちらでもない | `[stage:propose]` |
 
 # 手順 B. merge で段階を進める（`propose` / `apply` PR が merge された）
 
@@ -77,7 +89,7 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 
 | 状態 | 全部解けた | 残っている |
 | --- | --- | --- |
-| `stage:todo` + `blocked` | `[stage:propose]` | `human` だけ解けたなら `[stage:todo, blocked]`。他は何もしない |
+| `stage:todo` + `blocked` | 手順 A の「`stage:todo` から進める先」 | `human` だけ解けたなら `[stage:todo, blocked]`。他は何もしない |
 | `stage:X` + `blocked`（X ≠ todo） | `<!-- routine -->` で `release: stage:X` の形のコメントを投稿し、`[]` を書いてから `[stage:X]` を書く | 同上 |
 
 ブロック解除は再起動ではないので `restart:` を数えない（依存が 3 つ順に解けただけで人に戻さないため）。

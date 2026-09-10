@@ -61,8 +61,8 @@ Skill が `AskUserQuestion` で尋ねる場面（入力の明確化、成果物�
 # 4. proposal を完成させる
 
 `openspec-propose` Skill の手順で `proposal.md` / `design.md` / `tasks.md` / spec delta を揃え、
-`openspec validate --strict` を緑にする。proposal / design に issue 番号 `#n` を書く。issue と change の
-対応はこれで引く。
+`openspec validate --strict` を緑にする。`proposal.md` の冒頭に `issue: #n` を書く（`routine-common` の
+「issue と change の対応」）。issue と change の対応はこれで引く。
 
 - `tasks.md` に「投入後の実測」「本番で確認」「デプロイ後」の節を作らない。archive の判定は
 全タスク `[x]` なので、セッションで完了できない行が 1 本でもあると archive が止まる。実測したい

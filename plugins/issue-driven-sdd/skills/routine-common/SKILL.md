@@ -74,7 +74,8 @@ worker は段階ラベルを書かない。
 | `question` の PR に答える | PR にコメントする。作った worker が同じセッションで受け取り、続きを進める |
 | `question` の issue に答える | issue にコメントする。ラベルは触らない。次の `routine-dispatch`（sweep）が人のコメントを見て worker を起動し直し、worker が issue の全コメントを読んで進む |
 | 取り下げる・止める | 段階ラベルを外す |
-| 順番を飛ばして今すぐ着手させる | `stage:propose` を直接付ける |
+| 順番を飛ばして今すぐ着手させる | `stage:propose`（または `stage:apply`）を直接付ける。`depends on` の評価は飛ぶ |
+| 手元で書き切った change を実装させる（事後起票） | change を `origin/main` に入れ、issue を起票して `stage:todo` を付ける。対応付けは「issue と change の対応」。dispatch が propose を飛ばして `stage:apply` を付ける |
 | 依存を取り下げて再評価させる | 本文の `depends on #m` なら本文から消す。worker の `blocked-by: #m` なら issue にコメントで「#m は不要」と書く。人のコメントがあれば dispatch は種類を問わず放出し、worker が読み直す。ラベルは触らない（`stage:todo` を付け直しても起動しない） |
 | PR をもう一度 AI に評価させる | `ai-assess:requested` を付ける |
 
@@ -98,7 +99,7 @@ worker の Routine は `stage:X IN` かつ `NOT_IN [wip, blocked, question]`、d
 | --- | --- | --- | --- |
 | 受付 | 人 | `stage:todo` を付ける | dispatch |
 | 受付で依存が解けていない | dispatch | `[stage:todo, blocked]` | なし |
-| 着手させる（受付から） | dispatch | `[stage:propose]` | propose worker 1 本 |
+| 着手させる（受付から） | dispatch | `[stage:propose]`、change が既に `origin/main` にあれば `[stage:apply]`（`routine-dispatch` の「`stage:todo` から進める先」） | worker 1 本 |
 | 着手した | worker | `[stage:X, wip]` | なし |
 | 見送った | worker | コメントのあと `[stage:X, blocked]`（`human` なら `question` も） | なし |
 | propose / apply PR が merge | dispatch | `[stage:apply]` / `[stage:archive]` | 次の worker 1 本。前の `wip` は同時に落ちる |
@@ -113,6 +114,17 @@ worker の Routine は `stage:X IN` かつ `NOT_IN [wip, blocked, question]`、d
   拾って続きを書く。
 - 同じ issue を同時に書くのは dispatch（イベント起動）と sweep の 2 者だけにする。sweep は直近 10 分に
   ラベルイベントのある issue を触らない。これで衝突の窓は数秒に縮むが零にはならない。
+
+# issue と change の対応
+
+change が属する issue は `proposal.md` の冒頭に `issue: #n` と書いて表す（`routine-propose` が書く。人が手元で
+書く change も同じ）。判定側は `origin/main` の `openspec/changes/` 直下（`archive/` を除く）で、proposal /
+design が `#n` をその change 自身の issue として書いているものを対応する change とみなす。スコープ外や関連と
+して触れているだけの `#n` は数えない。
+
+proposal に issue 番号を書けないとき（issue 起票前に書いた change をそのまま push した等）は、issue 本文に
+`change: <change名>` の 1 行を書く。`depends on #m` と同じ本文の宣言で、change → issue の向きが無いときの
+補助。両方あれば proposal 側を優先する。1 issue 1 change。
 
 # GitHub の操作
 

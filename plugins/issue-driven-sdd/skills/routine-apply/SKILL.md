@@ -1,19 +1,27 @@
 ---
 name: routine-apply
-description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれる skill。merge 済み proposal に対応する openspec change を実装し、apply ラベルの PR を作って終える。手動で「issue #n を実装して」「#n の change を apply して」と言われたときもこの skill を使う。段階ラベルは書かない。
+description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれる skill。merge 済み proposal、または人が手元で書き切って origin/main に入れた proposal（事後起票）に対応する openspec change を実装し、apply ラベルの PR を作って終える。手動で「issue #n を実装して」「#n の change を apply して」と言われたときもこの skill を使う。段階ラベルは書かない。
 ---
 
 まず同じ plugin の `routine-common` skill と、その `references/worker.md` を読む。
 
 # 1. 対象と着手可否
 
-`worker.md` の「対象の特定」で issue を決める。対象 issue を `Refs #n` に持つ**merge 済みの `propose` PR**
-を探し、それを proposal の正本とする。複数あれば最新の merge。無ければ issue へコメントして終える。
+`worker.md` の「対象の特定」で issue を決め、proposal の正本を次の順で 1 つ決める。上から当たったところで止める。
+
+1. 対象 issue を `Refs #n` に持つ **merge 済みの `propose` PR**。複数あれば最新の merge。
+2. `origin/main` で issue に対応する change（`routine-common` の「issue と change の対応」。proposal の `#n`、
+   または issue 本文の `change:`）。事後起票の経路で、`routine-dispatch` が propose を飛ばして `stage:apply` を付けている。
+
+どちらにも無い（push 漏れか `change:` の名前違い）、または 2 で複数当たる（1 issue 1 change）なら、何を探して
+どう見つからなかったかを添えて `blocked-by: human`（`unblock-when: comment`）で書き戻して終える。
 
 「着手可否の判定」を上から見る。この段階で特に見るもの。
 
-- proposal PR の本文 1 行目が `未確定の判断: 0 件` で `question` が外れているか。満たさなければ
-  `blocked-by: human`。未確定のまま実装しない。
+- 未確定の判断が残っていないか。1 なら proposal PR の本文 1 行目が `未確定の判断: 0 件` で `question` が
+  外れていること。2 なら PR 上の grill を通っていないので、代わりにその change で `openspec validate --strict`
+  が緑で、`proposal.md` に中身のある `## 未確定の判断` 節が無いこと（節が無ければ 0 件とみなす）。
+  満たさなければ `blocked-by: human`（`unblock-when: comment`）。未確定のまま実装しない。
 - change の `tasks.md` の前提条件と、進行中の作業との衝突（判定 4 と 5）。
 
 見送るなら「見送りの書き戻し」で終え、着手するなら「着手の印」を付ける。

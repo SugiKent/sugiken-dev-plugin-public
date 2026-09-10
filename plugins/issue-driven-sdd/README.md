@@ -22,7 +22,7 @@ merge を受けた dispatcher がどの段階へ進めるかを決める。`ques
 | `routine-common` | 全 routine が冒頭で読む | ラベル規約と、どの書き込みが何を起動するか。worker 用の手順は `references/worker.md` |
 | `routine-dispatch` | `Issue: Labeled` = `stage:todo`、`Issue: Closed`、`PR merged` = `propose` / `apply` | 起動の原因になった 1 件だけを見て段階を進め、それを待っていた issue を放出する。段階ラベルの唯一の書き手 |
 | `routine-propose` | `Issue: Labeled` = `stage:propose` | proposal を作る。未確定の判断は PR 上で問い、同じセッションで詰め切る |
-| `routine-apply` | `Issue: Labeled` = `stage:apply` | merge 済み proposal の change を実装し `apply` PR を作る |
+| `routine-apply` | `Issue: Labeled` = `stage:apply` | merge 済み proposal、または事後起票で `origin/main` に入っている change を実装し `apply` PR を作る |
 | `routine-archive` | `Issue: Labeled` = `stage:archive` | `openspec archive` を実行し `archive` PR（`Closes #n`）を作る |
 | `routine-sweep` | Schedule | リポジトリ全体を突き合わせ、人の回答・死んだ worker・却下・残骸・循環・孤児を拾う |
 | `routines-setup` | 手動 | ラベルと Routine の現状を読み、あるべき状態との差分を直す |
@@ -33,7 +33,9 @@ PR の自動評価（`assess-pr-risk`）はこの plugin に含めず、プロ�
 ## 動きかた
 
 1. 人が issue に `stage:todo` を付ける。dispatcher が本文の `depends on #m` を見て、解けていれば
-   `stage:propose` を付け、解けていなければ `blocked` を付けて理由をコメントする。
+   `stage:propose` を付け、解けていなければ `blocked` を付けて理由をコメントする。人が手元で change を
+   書き切って `origin/main` に入れてから issue を起票した場合（事後起票）は、proposal の `issue: #n` か
+   issue 本文の `change: <change名>` で対応を引き、propose を飛ばして `stage:apply` を付ける。
 2. propose worker が起動する。進行中の作業と衝突するなら `blocked-by:` を書き戻して終え、着手できるなら
    `wip` を付けて proposal の PR を作る。PR に `ai-assess:requested` を付けると AI 評価が走る。
 3. propose PR が merge されると dispatcher が `stage:apply` へ進め、apply worker が実装して `apply` PR を作る。
@@ -75,7 +77,7 @@ worker は調査の結果を必ず `blocked-by:` で書き戻す。調査は 1 �
 3. PR を merge する
 
 人が触るラベルは `stage:todo` だけ。`blocked` / `question` の付け外しと worker の再起動は routine が行う。
-順番を飛ばして今すぐ着手させたいときだけ `stage:propose` を直接付ける。操作の一覧は
+順番を飛ばして今すぐ着手させたいときだけ `stage:propose` / `stage:apply` を直接付ける。操作の一覧は
 `skills/routine-common/SKILL.md` の「人が持つ操作」。
 
 ## プロジェクトごとの調整
