@@ -51,7 +51,8 @@ propose を飛ばす。対応の定義は `routine-common` の「issue と chang
 | --- | --- |
 | `origin/main` に issue に対応する change が 1 つある（proposal の `#n`、または本文 `change:` の指す実在する change） | `[stage:apply]` |
 | 本文に `change:` があるのに `origin/main` に無い、または対応する change が 2 つ以上ある | `blocked-by: human`（`unblock-when: comment`）。push 漏れか名前違いかを人に確かめてもらい `[stage:todo, blocked, question]`。propose へ流すと人が push しようとしている change と重複する |
-| どちらでもない | `[stage:propose]` |
+| 対応は無いが、本文が `openspec/changes/<name>` の形で `origin/main` に実在する change に言及している | `blocked-by: human`（`unblock-when: comment`）。その change がこの issue のものなら本文 1 行目に `change: <name>` を足してほしい、別物なら「別物」とだけ答えてほしい、と書いて `[stage:todo, blocked, question]`。対応の無い issue を propose へ流すと、既にある change と重複する proposal を worker が書き始める（#811 で実測） |
+| どれでもない | `[stage:propose]` |
 
 # 手順 B. merge で段階を進める（`propose` / `apply` PR が merge された）
 
@@ -70,10 +71,14 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 
 # 手順 C. 依存の解放（issue が閉じた）
 
-閉じた issue `#n` を待っている open issue を探す。本文に `depends on #n` を持つもの、または最新の
-`blocked-by:` コメントに `#n` を含むもの。検索は `search_issues` で `"#n" is:open label:blocked` と
-`"depends on #n" is:open` の 2 回。見つかった issue ごとに手順 D で評価する。
-待つ issue が無ければ「0 件」と報告して終える。
+閉じた issue `#n` を待っている open issue を探す。`list_issues` で open かつ `blocked` の issue を全件取り
+（受付で依存が解けていない issue も worker が見送った issue も、必ず `blocked` が付いている）、1 件ずつ
+最新の `blocked-by:` コメントと本文の `depends on` を読んで `#n` を含むものを対象にする。
+見つかった issue ごとに手順 D で評価する。待つ issue が無ければ「0 件」と報告して終える。
+
+`search_issues` で `"#n"` を引かない。GitHub の検索は `#809` のような番号を一致させず、コメントに
+`blocked-by: #809` が実在しても 0 件を返す（2026-09-11 実測。#809 の close で #811 が放出されなかった）。
+open で `blocked` の issue は常に少数なので、全件読む方が安くて確実。
 
 # 手順 D. ブロックの評価と放出
 

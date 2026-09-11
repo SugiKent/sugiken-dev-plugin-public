@@ -33,7 +33,11 @@ Claude GitHub App がリポジトリに install されていること（無い�
 
 # 2. Routine を揃える
 
-`RemoteTrigger list` で既存の Routine を読み、名前 `<project> <役割>` で次の表と対応付ける。
+既存の Routine は、対象リポジトリの `.claude/skills/issue-driven-sdd-custom/SKILL.md` の `## routines` 節に
+控えた id を `RemoteTrigger get` で読む。控えが無ければ `RemoteTrigger list` を名前 `<project> <役割>` で探すが、
+`list` は 1 ページ目しか返さず（cursor を渡しても同じページが返る。2026-09-11 実測）、worker が自分で作った
+リマインダー等で 1 ページ目が埋まると本物の Routine が出てこない。見つからなければ `claude.ai/code/routines` の
+UI で id を確かめる。**作った・見つけた Routine の id は必ず `## routines` 節に書き戻す**（雛形は `assets/`）。
 無ければ作り、あれば本文・model・`autofix_on_pr_create`・トリガーを表に合わせて直す。
 旧構成の Routine は消さずにトリガーを付け替える。
 
@@ -147,7 +151,7 @@ dispatch に回収されることまで見る。
 
 # 4. プロジェクト固有の調整を置く（任意）
 
-plugin の既定から外れることが 1 つも無ければ作らない。あるときだけ `assets/issue-driven-sdd-custom.SKILL.md`
-を `.claude/skills/issue-driven-sdd-custom/SKILL.md` として置き、外れる点だけを書く。空の節は
-「既定どおり」を意味する。書けること・書けないことは `references/worker.md` の「プロジェクト固有の調整を読む」にある。
+`assets/issue-driven-sdd-custom.SKILL.md` を `.claude/skills/issue-driven-sdd-custom/SKILL.md` として置く。
+`## routines` 節は手順 2 で控えた Routine の id を持つので常に作る。それ以外の節は plugin の既定から
+外れる点だけを書き、空の節は「既定どおり」を意味する。書けること・書けないことは `references/worker.md` の「プロジェクト固有の調整を読む」にある。
 worker は `origin/main` から読むので、**main へ merge されるまで効かない。**

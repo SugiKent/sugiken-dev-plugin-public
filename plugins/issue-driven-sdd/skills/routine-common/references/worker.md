@@ -14,6 +14,7 @@ git show origin/main:.claude/skills/issue-driven-sdd-custom/SKILL.md
 ```
 
 custom は `## 共通` と `## propose` / `## apply` / `## archive` に分かれ、自分の段階の節と `## 共通` に従う。
+`## routines` 節は `routines-setup` が Routine の id を控える場所で、worker は読まない。
 custom と既定が食い違ったら custom に従う。ただし次は plugin の骨格なので、custom に何が書いてあっても変えない。
 
 - 段階ラベルを書くのは `routine-dispatch` だけ
