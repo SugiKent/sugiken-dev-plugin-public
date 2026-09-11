@@ -123,10 +123,22 @@ grill のラウンドごとに更新する。N が 0 になったら `[<段階>,
 したら、`routine-dispatch` はそのまま `stage:apply` へ進め、残った問いは `routine-apply` が推奨案で採る。
 merge は人の判断であり、問いを残したまま merge したことが「推奨案でよい」の回答だから。
 
+# `.claude/rules/` を書き換えない
+
+propose / apply は `.claude/rules/` のファイルを編集しない。propose は `tasks.md` にその編集を置かない。
+Routine のセッションでは `.claude/` 配下の編集が権限確認で止まり、人が承認するまで進まない。sweep は
+人の操作待ちのセッションを生きている扱いにするので再起動もされず、issue とそれに依存する issue が
+止まり続ける。
+
+rule の追記や修正が要ると気づいたら、どの rule をどう変えるべきかを PR 本文か issue コメントに書く。
+今回の変更で rule の中のファイル名や記述が古くなる場合も同じで、自分の PR では直さない。取り込みは、
+この plugin の外にある振り返り（retro）の Routine が作る PR に任せる。
+
 # openspec を通さない変更
 
-`.claude/` と `docs/` と直下の `CLAUDE.md` / `README.md` は、利用者へ提供するものを変えないので
-propose を挟まず `docs` ラベルの PR を作ってよい。`openspec/` と製品の実ファイルが 1 行でも混ざれば
+`.claude/`（`.claude/rules/` を除く。「`.claude/rules/` を書き換えない」）と `docs/` と直下の
+`CLAUDE.md` / `README.md` は、利用者へ提供するものを変えないので propose を挟まず `docs` ラベルの PR を
+作ってよい。`openspec/` と製品の実ファイルが 1 行でも混ざれば
 対象外。判定の正本は実 diff で、push 前に `git diff origin/main --stat` を見る。
 
 issue 自体が docs だけで完結する（製品の変更を含まない）と判断したら、`docs` PR に `Closes #n` を書く。
