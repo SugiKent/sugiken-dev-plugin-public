@@ -134,6 +134,24 @@ PR のリスクを AI が評価して低ければ merge する仕組みは、iss
 何も起動しない）。`question` が付いた PR は merge しない。コメントは `<!-- routine -->` で始める。
 導入時にこの選択肢があることを利用者へ伝える。
 
+**assess の Routine の本文は「skill を読んで実行する」の 1 行にしない。** assess のセッションは PR の
+head branch を checkout するので、`.claude/skills/assess-pr-risk/SKILL.md` を main に置いても、skill を
+足す前に切られた PR branch にはそれが無く、`Skill` ツールが `Unknown skill` で失敗する（2026-09-11 実測）。
+worker の Routine（`Issue: Labeled` で main から始まる）にこの問題は無い。本文で main から読ませる。
+
+```
+手順書は `origin/main` にある。`git fetch origin main` してから
+`git show origin/main:.claude/skills/assess-pr-risk/SKILL.md` を読み、そのとおりに実行する。
+このセッションの作業ツリーは PR の head branch なので、手順書がそこに無いことがある。
+Skill ツールで見つからなくても探し回らず、main から読む。
+
+手順書がどうしても読めない場合だけ、その旨を `<!-- routine -->` 付きで PR にコメントして
+`ai-assess:requested` を外して終わる。ラベルを付けたまま終わらないこと。
+```
+
+最後の 1 文を省かない。skill が読めずに終わったセッションはラベルを外さず、その PR は loop-cli の
+今やるタブから消えたままになる。**assess はどう終わってもラベルを外す。**
+
 **入れないなら、ラベルも skill も Routine も作らない。** worker は `origin/main` に
 `.claude/skills/assess-pr-risk/SKILL.md` があるかだけを見て `ai-assess:requested` を書くかを決める
 （`routine-common/references/worker.md`「assess があるかを確かめる」）。中途半端に skill だけ置くと、
