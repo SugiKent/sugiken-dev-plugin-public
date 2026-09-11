@@ -18,10 +18,13 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 
 「着手可否の判定」を上から見る。この段階で特に見るもの。
 
-- 未確定の判断が残っていないか。1 なら proposal PR の本文 1 行目が `未確定の判断: 0 件` で `question` が
-  外れていること。2 なら PR 上の grill を通っていないので、代わりにその change で `openspec validate --strict`
-  が緑で、`proposal.md` に中身のある `## 未確定の判断` 節が無いこと（節が無ければ 0 件とみなす）。
-  満たさなければ `blocked-by: human`（`unblock-when: comment`）。未確定のまま実装しない。
+- `proposal.md` に中身のある `## 未確定の判断` 節が残っていても着手を止めない。proposal が `origin/main` に
+  あるのは人が merge した（または手元で書いて push した）からで、問いを残したまま入れたなら「推奨案で
+  進めてよい」という判断である。各問いの推奨案を採り、issue と proposal PR のコメントに人の回答が
+  あればそれを優先する。採った判断は `## 確定した判断` へ移して `## 未確定の判断` を消し、apply PR の
+  本文に「推奨案で進めた判断」として 1 件 1 行で書く。推奨が無い問いだけ `blocked-by: human`
+  （`unblock-when: comment`）で書き戻す。
+- `openspec validate --strict` が赤なら直してから実装する。
 - change の `tasks.md` の前提条件と、進行中の作業との衝突（判定 4 と 5）。
 
 見送るなら「見送りの書き戻し」で終え、着手するなら「着手の印」を付ける。

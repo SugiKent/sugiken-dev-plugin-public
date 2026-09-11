@@ -32,7 +32,7 @@ description: issue-driven-sdd の routine 群（routine-dispatch / routine-propo
 
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
-| `question` | 人の入力待ち。issue では `blocked` に重ねて付き、ブロッカーに `human` が含まれる印。PR では `propose` / `apply` に重ねて付き、未確定の判断が残っていて merge してはいけない印 | `blocked-by: human` を書いた routine、PR を作った worker | issue は `routine-dispatch`、PR はその worker |
+| `question` | 人の入力待ち。issue では `blocked` に重ねて付き、ブロッカーに `human` が含まれる印。PR では `propose` / `apply` に重ねて付き、未確定の判断が残っている印。人がそのまま merge すれば「残った問いは推奨案で進めてよい」の意思表示になり、`routine-dispatch` は段階を進める | `blocked-by: human` を書いた routine、PR を作った worker | issue は `routine-dispatch`、PR はその worker |
 
 issue と PR で同じラベルにしているのは、人が `is:open label:question` の 1 つの検索で
 「自分を待っているもの」を全部見られるようにするため。人はラベルを触らず、コメントで答える。

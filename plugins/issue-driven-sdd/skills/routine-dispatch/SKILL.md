@@ -60,7 +60,7 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 
 | merge 済み PR | issue の今の段階 | 書く集合 |
 | --- | --- | --- |
-| `propose` | `stage:propose` | 本文 1 行目が `未確定の判断: 0 件` で PR に `question` が無ければ `[stage:apply]`。満たさなければ `blocked-by: human` で書き戻し `[stage:propose, blocked, question]` |
+| `propose` | `stage:propose` | `[stage:apply]`。本文 1 行目の `未確定の判断: N 件` や PR の `question` は見ない。merge は人の判断で、問いを残したまま merge したなら「残った問いは推奨案で進めてよい」という意思表示である。残った問いの扱いは `routine-apply` が持つ |
 | `apply` | `stage:apply` | `[stage:archive]` |
 | どちらか | 既に次の段階以降 | 何もしない（別の dispatch が先に進めた） |
 | どちらか | 前の段階、または段階ラベル無し | 何もしない。何を見つけたかを issue へ 1 度コメント |

@@ -10,8 +10,7 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 `routine-common` の「見送りの書き戻し」で終える。着手するなら「着手の印」を付ける。
 
 `origin/main` の `openspec/changes/` 直下に、proposal にこの issue 番号を書いた change が既にあれば、
-それは merge 済みの proposal に未確定の判断が残って `blocked-by: human` で戻され、人が issue に
-答えたあとの再起動である。新しい change を作らず、その change を直す PR を作る。以降の手順は同じ。
+新しい change を作らず、その change を直す PR を作る。以降の手順は同じ。
 
 # 2. 事実を自分で調べる
 
@@ -45,7 +44,9 @@ Skill が `AskUserQuestion` で尋ねる場面（入力の明確化、成果物�
 ```
 
 この状態で `worker.md` の「PR の作り方」に従って ready の PR を作る。1 行目は
-`未確定の判断: N 件 — merge しないでください`、ラベルは `[propose, question]`。
+`未確定の判断: N 件 — このまま merge すると worker が推奨案で進めます`、ラベルは `[propose, question]`。
+人がこのまま merge したら、`routine-dispatch` は `stage:apply` へ進め、`routine-apply` が各問いの推奨案を採る。
+だから推奨の無い問いを残さない。
 
 問いの投稿は `routine-common` の「人への問いはコメントに書く」に従い、PR コメントとして投稿する。
 `proposal.md` の `## 未確定の判断` に問いを書いただけで済ませ、PR 本文や説明で「proposal.md を

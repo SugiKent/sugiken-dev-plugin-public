@@ -109,13 +109,14 @@ archive 済みの change が手元にだけ残って見える。
 ## 本文の 1 行目
 
 ```
-未確定の判断: N 件 — merge しないでください
+未確定の判断: N 件 — このまま merge すると worker が推奨案で進めます
 未確定の判断: 0 件 — レビューをお願いします
 ```
 
 grill のラウンドごとに更新する。N が 0 になったら `[<段階>, ai-assess:requested]` を 1 回書く（`question` が
-落ち `ai-assess:requested` が 1 つ増えるので、AI 評価が 1 本起動する）。N > 0 の `propose` PR が merge されても、`routine-dispatch` は段階を
-進めず `blocked-by: human` で人に戻す。
+落ち `ai-assess:requested` が 1 つ増えるので、AI 評価が 1 本起動する）。N > 0 の `propose` PR を人が merge
+したら、`routine-dispatch` はそのまま `stage:apply` へ進め、残った問いは `routine-apply` が推奨案で採る。
+merge は人の判断であり、問いを残したまま merge したことが「推奨案でよい」の回答だから。
 
 # openspec を通さない変更
 
