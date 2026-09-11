@@ -18,6 +18,13 @@ description: Routine「Issue: Labeled = stage:propose」の本文から呼ばれ
 `openspec/specs/` の関連 capability、進行中の `openspec/changes/`、`docs/` の関連ノート、
 プロジェクトの `CLAUDE.md` と製品の目的地を定めた文書を先に読む。
 
+issue 本文に `depends on #m` があれば、`#m` に対応する change（`routine-common` の「issue と change の対応」）の
+proposal / design / delta spec を読み、それを前提にした判断は `## 確定した判断` に change 名とファイルパスを
+添えて書く。依存先は apply の途中で設計が動くことがあり、この issue の apply worker がずれに気づく手掛かりになる。
+このとき、自分の delta が MODIFIED / REMOVED / RENAMED する既存要求を挙げ、それぞれが `origin/main` の
+`openspec/specs/` に実在するかを確かめる（「delta が触れる要求」）。無ければ `worker.md` の判定 4 として見送る。
+判定は着手の印の前に済ませる。PR を作ったあとに分かると、その PR を閉じてから書き戻す手間が要る。
+
 人に聞いてよいのは**複数の選択肢から何を採るかという意思決定だけ**。調べれば決まることや、
 既存の規約・spec が答えているものは含めない。意思決定が残っていなければ 4 へ進む。
 
@@ -71,6 +78,17 @@ Skill が `AskUserQuestion` で尋ねる場面（入力の明確化、成果物�
 - change に読み出し面があるなら、開発用の seed データを作る行を tasks に入れる。手元で表示状態を
 再現できないと、画面を開けないまま完了になる。
 - E2E ケースの列挙や画面案の見せ方は `worker.md` の「リポジトリの事情に従う」で決める。
+
+## delta が触れる要求
+
+delta で MODIFIED / REMOVED / RENAMED できるのは、`origin/main` の `openspec/specs/` に実在する要求だけ。
+依存先など他の change の delta にしか無い要求は触れない。`openspec validate --strict` は change 自身の
+delta しか読まないので PR は緑で通るが、`openspec archive` が `MODIFIED failed ... not found` で失敗し、
+archive の段階で静かに止まる。そういう要求に触る必要が分かったら、`worker.md` の判定 4 として
+`blocked-by: change <name>` で見送る。依存先が archive されて要求が `openspec/specs/` に入れば解ける。
+判定は手順 2 で済ませるのが基本で、PR を作ったあとに分かった場合は、`worker.md` の「PR の作り方」で
+`dirty` のときと同じく自分の PR を閉じてから書き戻す。open PR が残ると、放出後の worker が「別セッションが
+先に作っている」とみなして撤退し、誰も進めない issue になる。
 
 まだ PR が無ければ（grill を経ていない場合）、ここで `worker.md` の「PR の作り方」に従って PR を作る。
 1 行目は `未確定の判断: 0 件 — レビューをお願いします`、ラベルは `[propose]` → `[propose, ai-assess:requested]` の 2 回書き。

@@ -34,12 +34,28 @@ description: Routine「<project> dispatch」の本文から呼ばれる skill。
 対象 issue の今のラベルを読む。`stage:todo` が無い、または `blocked` がある、または他の段階ラベルが
 あるなら何もしない（自分の書き込みや sweep との重複起動）。
 
-宣言されたブロッカーは、issue 本文の `depends on #m`。解けた条件は手順 D の表。
+宣言されたブロッカーは、issue 本文の `depends on #m`。まず「`stage:todo` から進める先」を決め、
+その段階の「依存が解けた条件」で全部評価する。
 
 | 結果 | 書く集合 |
 | --- | --- |
 | 全部解けた | 「`stage:todo` から進める先」 |
 | 残っている | `routine-common` の「見送りの書き戻し」でコメントし、`[stage:todo, blocked]`（`human` なら `question` も） |
+
+## 依存が解けた条件
+
+`depends on #m` は「`#m` の設計を前提にしないと設計できない、`#m` の実装が無いと実装できない」の宣言で、
+設計と実装で要るものが違う。だから解けたかは**進める先の段階**で決める。
+
+| 進める先 | `#m` が解けた条件 |
+| --- | --- |
+| `stage:propose` | `#m` の proposal が `origin/main` にある。`#m` が `stage:apply` / `stage:archive` か closed ならある |
+| `stage:apply` | `#m` が closed |
+
+propose を早く始められるのは、proposal が merge された時点で design と delta spec が `origin/main` の
+`openspec/changes/` にあり、propose worker がそれを読めるから。apply を待たせるのは、実装には依存先の
+コードが要り、archive は依存先の delta が `openspec/specs/` に入った後でないと `openspec archive` が
+失敗するから。`#m` が PR のときは進める先に関わらず手順 D の表。
 
 ## `stage:todo` から進める先
 
@@ -60,14 +76,23 @@ PR title の `[<段階>] #n` から issue を引く。無ければ本文の `Ref
 
 | merge 済み PR | issue の今の段階 | 書く集合 |
 | --- | --- | --- |
-| `propose` | `stage:propose` | `[stage:apply]`。本文 1 行目の `未確定の判断: N 件` や PR の `question` は見ない。merge は人の判断で、問いを残したまま merge したなら「残った問いは推奨案で進めてよい」という意思表示である。残った問いの扱いは `routine-apply` が持つ |
+| `propose` | `stage:propose` | 本文の `depends on #m` を「依存が解けた条件」の `stage:apply` 行で評価する。全部解けていれば `[stage:apply]`。残っていれば `routine-common` の「見送りの書き戻し」で `blocked-by: #m` をコメントし `[stage:apply, blocked]`（apply worker を起動して判定 3 で撤退させると 1 セッション無駄になる）。本文 1 行目の `未確定の判断: N 件` や PR の `question` は見ない。merge は人の判断で、問いを残したまま merge したなら「残った問いは推奨案で進めてよい」という意思表示である。残った問いの扱いは `routine-apply` が持つ |
 | `apply` | `stage:apply` | `[stage:archive]` |
 | どちらか | 既に次の段階以降 | 何もしない（別の dispatch が先に進めた） |
 | どちらか | 前の段階、または段階ラベル無し | 何もしない。何を見つけたかを issue へ 1 度コメント |
 
 **段階は前にしか進めない。** 書く直前にラベルを読み直し、書いた後にも読み直して一致を確かめる。
 進めたら `<!-- routine -->` コメントを 1 件投稿し、2 行目を `advance: stage:apply` の形にする。
-再起動回数（sweep が数える）はこの行より後だけを数える。
+`[stage:apply, blocked]` で進める場合も同じで、`advance:` コメント、`blocked-by:` コメント、ラベルの順に書く。
+再起動回数（sweep が数える）はこの行より後だけを数えるので、`blocked` 付きで進めた場合に省くと
+propose 段階の再起動が apply 段階に持ち越される。
+
+## propose PR の merge で待っている issue を放出する
+
+`#n` の proposal が `origin/main` に入ると、`#n` を待って `[stage:todo, blocked]` で止まっている issue の
+propose が始められる。`propose` PR を処理したら、手順 C と同じ方法で open かつ `blocked` の issue を全件読み、
+`stage:todo` で本文の `depends on` か最新の `blocked-by:` に `#n` を含むものを手順 D で評価する。
+`stage:propose` 以降の issue は対象外（それらの `#n` は closed まで解けない）。
 
 # 手順 C. 依存の解放（issue が閉じた）
 
@@ -86,7 +111,7 @@ open で `blocked` の issue は常に少数なので、全件読む方が安く
 
 | ブロッカー | 解けた条件 |
 | --- | --- |
-| `#m` が issue | closed |
+| `#m` が issue | 待つ側が `stage:todo` なら「依存が解けた条件」の進める先の行（手順 A と同じ評価）。`stage:propose` 以降なら closed。この段階の `#m` は判定 4（進行中の作業と同じ場所）で書かれたものを含み、それは archive まで解けない |
 | `#m` が PR | merged。merge されずに close されたなら解けていない。`blocked-by: human` に置き換えて書き戻す |
 | `change <name>` | `origin/main` の `openspec/changes/` 直下（`archive/` を除く）に無い |
 | `#m` / `change` | 上の条件に加え、正本の `blocked-by:` コメントより後に人のコメント（`routine-common` の定義）があれば解けたとみなす。人が「#m は不要」等を書いた場合で、中身は判定しない。放出された worker が読み直し、まだ塞がっていれば同じ手順で書き戻す |

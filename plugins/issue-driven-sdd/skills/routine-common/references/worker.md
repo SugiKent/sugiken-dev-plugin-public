@@ -52,11 +52,16 @@ custom に書くのは、たとえば E2E の要否、スクリーンショッ�
 1. `blocked` または `wip` が付いている。黙って終える（Routine の `NOT_IN` で普通は起動しないが、
    sweep の再起動と重なったときの保険）。
 2. 段階ラベルが 2 つ以上ある。何と何が付いているかをコメントして終える。
-3. 依存 issue が閉じていない。issue 本文に `depends on #m` があり `#m` が open。`blocked-by: #m`。
+3. 依存が解けていない。worker は issue 本文の `depends on #m` を、`routine-dispatch` の「依存が解けた条件」の
+   表から自分の段階の行を選んで評価する。propose worker は `stage:propose` の行、apply worker は `stage:apply`
+   の行を使う。解けていなければ `blocked-by: #m`。普通は dispatch が評価済みで、ここは sweep の再起動や
+   人の強制操作と重なったときの保険。
 4. 進行中の作業と同じ場所を触る。「進行中」は open PR と、`openspec/changes/` 直下に残る change。
    自分の issue 番号を title に持つ PR と、自分に対応する change（`routine-common` の「issue と change の
    対応」。proposal の `#n`、または issue 本文の `change:` が指すもの）は自分の作業なので除く。
    「同じ場所」は、同じ spec の同じ要求を MODIFIED する・同じ画面やルート・同じ service / repository のファイル。propose では delta spec を、apply では PR の変更ファイルを読んで判定する。
+   propose では、自分が MODIFIED / REMOVED / RENAMED したい要求が `origin/main` の `openspec/specs/` に無く、
+   他の change の delta にしか無い場合も同じ場所とみなす（理由は `routine-propose` の「delta が触れる要求」）。
    相手の issue 番号か change 名で `blocked-by:`。
 5. change の前提が満たされていない。`tasks.md` 冒頭の「先行 change の archive を確認する」のような
    前提条件が `origin/main` で満たされていない。`blocked-by: change <name>`。

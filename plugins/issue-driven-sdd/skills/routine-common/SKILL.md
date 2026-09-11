@@ -26,7 +26,7 @@ description: issue-driven-sdd の routine 群（routine-dispatch / routine-propo
 | ラベル | 意味 | 付ける | 外す |
 | --- | --- | --- | --- |
 | `wip` | worker が作業中の印。worker の起動を抑える | 着手した worker | 見送った worker、または段階を進める・再起動する `routine-dispatch` |
-| `blocked` | 宣言されたブロッカーが解けるまで着手しない。理由は最新の `blocked-by:` コメント | 見送った worker、または受付時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch` |
+| `blocked` | 宣言されたブロッカーが解けるまで着手しない。理由は最新の `blocked-by:` コメント | 見送った worker、または受付時と propose PR merge 時の `routine-dispatch` | ブロッカーが解けたときの `routine-dispatch` |
 
 ## issue と PR に共通
 
@@ -102,7 +102,7 @@ worker の Routine は `stage:X IN` かつ `NOT_IN [wip, blocked, question]`、d
 | 着手させる（受付から） | dispatch | `[stage:propose]`、change が既に `origin/main` にあれば `[stage:apply]`（`routine-dispatch` の「`stage:todo` から進める先」） | worker 1 本 |
 | 着手した | worker | `[stage:X, wip]` | なし |
 | 見送った | worker | コメントのあと `[stage:X, blocked]`（`human` なら `question` も） | なし |
-| propose / apply PR が merge | dispatch | `[stage:apply]` / `[stage:archive]` | 次の worker 1 本。前の `wip` は同時に落ちる |
+| propose / apply PR が merge | dispatch | `[stage:apply]` / `[stage:archive]`。propose の merge で依存先がまだ閉じていなければ `[stage:apply, blocked]` | 次の worker 1 本。前の `wip` は同時に落ちる。`blocked` を含むなら起動しない |
 | ブロック解除・死んだ worker の再起動 | dispatch / sweep | `[]` を書いてから `[stage:X]` を書く | worker 1 本。減らすだけでは起動しないので 2 回書く |
 | archive PR が merge | GitHub | `Closes #n` で close | dispatch（`Issue: Closed`） |
 

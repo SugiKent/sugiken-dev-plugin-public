@@ -33,16 +33,20 @@ PR の自動評価（`assess-pr-risk`）はこの plugin に含めず、プロ�
 ## 動きかた
 
 1. 人が issue に `stage:todo` を付ける。dispatcher が本文の `depends on #m` を見て、解けていれば
-   `stage:propose` を付け、解けていなければ `blocked` を付けて理由をコメントする。人が手元で change を
+   `stage:propose` を付け、解けていなければ `blocked` を付けて理由をコメントする。propose に進むには
+   依存先の proposal が `origin/main` にあれば足り、実装完了は要らない（条件は `routine-dispatch` の
+   「依存が解けた条件」）。人が手元で change を
    書き切って `origin/main` に入れてから issue を起票した場合（事後起票）は、proposal の `issue: #n` か
    issue 本文の `change: <change名>` で対応を引き、propose を飛ばして `stage:apply` を付ける。
 2. propose worker が起動する。進行中の作業と衝突するなら `blocked-by:` を書き戻して終え、着手できるなら
    `wip` を付けて proposal の PR を作る。PR に `ai-assess:requested` を付けると AI 評価が走る。
 3. propose PR が merge されると dispatcher が `stage:apply` へ進め、apply worker が実装して `apply` PR を作る。
+   依存先がまだ閉じていなければ `stage:apply` に `blocked` を重ね、閉じるまで実装は待つ。同時に、この issue を
+   待っていた `stage:todo` の issue を propose へ放出する。
 4. apply PR が merge されると dispatcher が `stage:archive` へ進め、archive worker が archive PR を作る。
    merge で issue が閉じる。
 5. issue が閉じると dispatcher が、それを待っていた `blocked` の issue を放出する。依存が解けた順に
-   次々と着手が始まる。
+   次々と着手が始まる。設計は依存先の proposal merge で、実装は依存先の close で動き出す。
 6. worker が利用上限などで途中で死んでも、sweep が worker の session 状態を見て段階ラベルを付け直し
    再起動する。3 回死んだら `question` を付けて人に問う。
 7. worker が人の判断を要すると決めた issue には `blocked` と `question` が付く。人が issue にコメントすると、

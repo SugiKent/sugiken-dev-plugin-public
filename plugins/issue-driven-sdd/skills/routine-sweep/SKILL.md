@@ -17,8 +17,9 @@ description: Routine「<project> sweep」（Schedule）の本文から呼ばれ�
 - **一覧の `updated_at` が直近 10 分の issue は触らない。** イベント起動の dispatch が処理中の可能性がある。
   timeline を読まずに一覧の値で足切りする。触らない issue が少し増えるだけで、安全側に倒れる。
 - `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（人のコメント・close・merge）が
-  あった issue だけ行う。無ければ前回と同じ結果になる。routine のコメントは数えない。数えると sweep 自身の
-  コメントが次の sweep の再評価を呼ぶ。
+  あった issue だけ行う。merge にはブロッカー `#m` の `propose` PR の merge を含む（`stage:todo` の issue は
+  それで解ける。`routine-dispatch` の「依存が解けた条件」）。無ければ前回と同じ結果になる。routine の
+  コメントは数えない。数えると sweep 自身のコメントが次の sweep の再評価を呼ぶ。
 
 # 1. 残骸を片付ける
 
