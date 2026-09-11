@@ -31,6 +31,9 @@ Claude GitHub App がリポジトリに install されていること（無い�
 | `question` | `D876E3` |
 | `ai-assess:requested` | `F9D0C4` |
 
+`ai-assess:requested` は assess を入れるときだけ作る（「PR の自動評価は任意」）。このラベルを外すのは
+assess だけなので、assess の無いリポジトリにラベルだけ存在すると、誰かが付けたときに外し手がいない。
+
 # 2. Routine を揃える
 
 既存の Routine は、対象リポジトリの `.claude/skills/issue-driven-sdd-custom/SKILL.md` の `## routines` 節に
@@ -130,6 +133,12 @@ PR のリスクを AI が評価して低ければ merge する仕組みは、iss
 評価し、他の open PR を見に行かない。評価を終えたら `ai-assess:requested` を外す（外すだけの書き込みは
 何も起動しない）。`question` が付いた PR は merge しない。コメントは `<!-- routine -->` で始める。
 導入時にこの選択肢があることを利用者へ伝える。
+
+**入れないなら、ラベルも skill も Routine も作らない。** worker は `origin/main` に
+`.claude/skills/assess-pr-risk/SKILL.md` があるかだけを見て `ai-assess:requested` を書くかを決める
+（`routine-common/references/worker.md`「assess があるかを確かめる」）。中途半端に skill だけ置くと、
+worker はラベルを書くのに外す Routine がおらず、merge できる PR が人のキューから消える
+（loop-cli は `ai-assess:requested` の付いた PR を「AI 評価待ち」として今やるタブから外す）。
 
 # 3. 動作を確認する
 

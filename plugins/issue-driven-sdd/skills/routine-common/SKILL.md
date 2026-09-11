@@ -45,12 +45,17 @@ issue と PR で同じラベルにしているのは、人が `is:open label:que
 | `apply` | 実装の PR | issue を `stage:archive` へ |
 | `archive` | `openspec archive` の PR | なし（`Closes #n` で issue が閉じる） |
 | `docs` | `.claude/` `docs/` だけの PR | なし。issue 自体が docs だけなら `Closes #n` を書き、merge で issue が閉じる |
-| `ai-assess:requested` | AI によるリスク評価（`assess-pr-risk`）を要求する PR | なし。評価を終えた assess が外す |
+| `ai-assess:requested` | AI によるリスク評価（`assess-pr-risk`）を要求する PR。assess を持つプロジェクトだけで使う | なし。評価を終えた assess が外す |
 
 PR ラベルは dispatcher が段階を進める条件そのものなので、付け忘れると次の段階が始まらない。
 PR の `question` は本文 1 行目の `未確定の判断: N 件` と常に一致させる。N > 0 なら付いており、
 N = 0 で外す。残り 1 件でも外さない。`ai-assess:requested` は N = 0 になった時点で付ける。
 grill 中（N > 0）は付けない。人が付け直せば「もう一度評価して」の意味になる。
+
+**`ai-assess:requested` を書いてよいのは assess を持つプロジェクトだけ。** 外し手は assess だけなので、
+assess が無いプロジェクトで付けると永久に外れない。判定は `origin/main` に
+`.claude/skills/assess-pr-risk/SKILL.md` があるかで行う（`references/worker.md`「assess があるかを
+確かめる」）。無いプロジェクトでは、このラベルを付けない。
 
 # ラベルの書き手
 
@@ -61,7 +66,7 @@ grill 中（N > 0）は付けない。人が付け直せば「もう一度評価
 | `wip` | worker が付ける。外すのは worker と `routine-dispatch` |
 | `blocked` | worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
 | issue の `question` | `blocked-by: human` を書いた worker と `routine-dispatch` が付ける。外すのは `routine-dispatch` |
-| PR のラベル | PR を作った worker。`ai-assess:requested` を外すのは assess |
+| PR のラベル | PR を作った worker。`ai-assess:requested` を外すのは assess（assess が無いプロジェクトでは誰も付けない） |
 
 書き手を 1 つにする理由は、merge・見送り・失効回収が同じラベルを同時に書くと状態が壊れるから。
 worker は段階ラベルを書かない。
@@ -77,7 +82,7 @@ worker は段階ラベルを書かない。
 | 順番を飛ばして今すぐ着手させる | `stage:propose`（または `stage:apply`）を直接付ける。`depends on` の評価は飛ぶ |
 | 手元で書き切った change を実装させる（事後起票） | change を `origin/main` に入れ、issue を起票して `stage:todo` を付ける。対応付けは「issue と change の対応」。dispatch が propose を飛ばして `stage:apply` を付ける |
 | 依存を取り下げて再評価させる | 本文の `depends on #m` なら本文から消す。worker の `blocked-by: #m` なら issue にコメントで「#m は不要」と書く。人のコメントがあれば dispatch は種類を問わず放出し、worker が読み直す。ラベルは触らない（`stage:todo` を付け直しても起動しない） |
-| PR をもう一度 AI に評価させる | `ai-assess:requested` を付ける |
+| PR をもう一度 AI に評価させる | `ai-assess:requested` を付ける（assess を持つプロジェクトだけ。無いところで付けると外れずに残る） |
 
 通常の運用で人が触るラベルは `stage:todo` だけ。`blocked` / `question` / 段階ラベルの付け直しは
 routine が行い、人はコメントで答えることに集中する。閉じた領域のように方針の文書を変える必要がある

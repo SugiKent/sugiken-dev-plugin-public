@@ -49,7 +49,7 @@ description: Routine「Issue: Labeled = stage:apply」の本文から呼ばれ�
 
 # 3. PR を作って終える
 
-`worker.md` の「PR の作り方」に従う。title は `[apply] #<n> <要約>`、本文は `Refs #n`、ラベルは `[apply]` → `[apply, ai-assess:requested]` の 2 回書き。
+`worker.md` の「PR の作り方」に従う。title は `[apply] #<n> <要約>`、本文は `Refs #n`、ラベルは `[apply]` → `[apply, ai-assess:requested]` の 2 回書き（assess が無いプロジェクトでは `[apply]` の 1 回）。
 PR を作った時点で完了。merge を待たず、`wip` は付けたままにする。
 
 レビュー指摘は auto-fix で同じセッションが受け取る。反映して push し、何をどう直したかを

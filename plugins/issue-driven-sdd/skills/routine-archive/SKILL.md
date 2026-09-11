@@ -58,5 +58,5 @@ change 1 つにつき 1 つの `chore(openspec)` コミットにし（削除を�
 ステージ）、`git status --short` が空になったことを確認する。
 
 `worker.md` の「PR の作り方」に従う。title は `[archive] #<n> <change名>`、**本文に `Closes #n`**
-（複数 issue なら全件）、ラベルは `[archive]` → `[archive, ai-assess:requested]` の 2 回書き。archive した change 名と validate が緑であることを本文に書く。
+（複数 issue なら全件）、ラベルは `[archive]` → `[archive, ai-assess:requested]` の 2 回書き（assess が無いプロジェクトでは `[archive]` の 1 回）。archive した change 名と validate が緑であることを本文に書く。
 PR を作った時点で完了。merge で issue が閉じ、`wip` ごと役目を終える。

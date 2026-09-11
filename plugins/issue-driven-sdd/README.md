@@ -13,7 +13,7 @@ issue の段階は「なし」→ `stage:todo` → `stage:propose` → `stage:ap
 `blocked` は宣言されたブロッカーが解けるまで着手しない印。PR のラベル `propose` / `apply` / `archive` は
 merge を受けた dispatcher がどの段階へ進めるかを決める。`question` は issue と PR に共通の「人の入力待ち」で、
 `is:open label:question` の 1 検索で人が見るべきものが全部出る。`ai-assess:requested` は PR の AI 評価を
-要求する印。定義と書き手は `skills/routine-common/SKILL.md` が正本。
+要求する印で、assess を入れたプロジェクトでだけ使う。定義と書き手は `skills/routine-common/SKILL.md` が正本。
 
 ## スキル
 
@@ -39,7 +39,8 @@ PR の自動評価（`assess-pr-risk`）はこの plugin に含めず、プロ�
    書き切って `origin/main` に入れてから issue を起票した場合（事後起票）は、proposal の `issue: #n` か
    issue 本文の `change: <change名>` で対応を引き、propose を飛ばして `stage:apply` を付ける。
 2. propose worker が起動する。進行中の作業と衝突するなら `blocked-by:` を書き戻して終え、着手できるなら
-   `wip` を付けて proposal の PR を作る。PR に `ai-assess:requested` を付けると AI 評価が走る。
+   `wip` を付けて proposal の PR を作る。assess を入れたプロジェクトなら、PR に `ai-assess:requested` を
+   付けて AI 評価を走らせる。
 3. propose PR が merge されると dispatcher が `stage:apply` へ進め、apply worker が実装して `apply` PR を作る。
    依存先がまだ閉じていなければ `stage:apply` に `blocked` を重ね、閉じるまで実装は待つ。同時に、この issue を
    待っていた `stage:todo` の issue を propose へ放出する。

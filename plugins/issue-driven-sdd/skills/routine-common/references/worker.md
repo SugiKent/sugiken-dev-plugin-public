@@ -99,9 +99,11 @@ archive 済みの change が手元にだけ残って見える。
 - 本文の参照は `Refs #n`。`Closes #n` は `archive` PR と docs-only の `docs` PR だけ。propose / apply で
   書くと merge 時に issue が閉じ、以降の段階が始まらない。
 - ラベルは `create_pull_request` の後に `issue_write` で書く。N > 0 なら `[<段階>, question]` の 1 回。
-  `未確定の判断: 0 件` なら **`[<段階>]` を書いてから `[<段階>, ai-assess:requested]` を書く**（2 回）。
+  `未確定の判断: 0 件` で、かつ**このプロジェクトに assess がある**なら
+  **`[<段階>]` を書いてから `[<段階>, ai-assess:requested]` を書く**（2 回）。
   1 回で 2 ラベル足すとイベントが 2 回出て AI 評価（`assess-pr-risk`）が 2 本起動する。
   `ai-assess:requested` を足す書き込みだけが評価を起動する。
+  assess が無いプロジェクトでは `[<段階>]` の 1 回だけ書く（次の節）。
 - propose / apply では auto-fix を有効化し、「CI の失敗と、レビューコメント・会話コメントの両方を文脈として
   対応する」ことをセッションの方針として明示する。これで PR 上のやり取りを同じセッションが受け取る。
   archive は PR を作って終わるので有効化しない。
@@ -111,6 +113,26 @@ archive 済みの change が手元にだけ残って見える。
   そこに無ければ人には届かない。
 - description から Claude Code session へのリンクを削除しない。
 
+## assess があるかを確かめる
+
+`ai-assess:requested` を外せるのは `assess-pr-risk` を実行する Routine（assess）だけで、これは
+プロジェクトごとの任意の仕組みである（`routines-setup`「PR の自動評価は任意」）。**外し手のいない
+プロジェクトでこのラベルを書くと、永久に外れないラベルが残る。** loop-cli のような「人の出番」を
+集める道具はこのラベルを「AI 評価待ち」と読むので、merge できる PR が人のキューから消える。
+
+判定は clone した `origin/main` のファイルの有無だけで行う。Routine の一覧は見ない。
+
+```
+origin/main に .claude/skills/assess-pr-risk/SKILL.md がある → assess がある
+無い                                                          → assess が無い
+```
+
+`ai-assess:requested` を書くのは「ある」のときだけ。無いプロジェクトでは、このラベルを
+**付けない・外さない・言及しない**。段階ラベルと `question` の付け外しだけで運用は成立する。
+
+skill はあるが Routine を作っていない、という設定漏れはこの判定では検出できない。導入時の確認は
+`routines-setup`「3. 動作を確認する」の項目 6 が受け持つ。
+
 ## 本文の 1 行目
 
 ```
@@ -118,8 +140,10 @@ archive 済みの change が手元にだけ残って見える。
 未確定の判断: 0 件 — レビューをお願いします
 ```
 
-grill のラウンドごとに更新する。N が 0 になったら `[<段階>, ai-assess:requested]` を 1 回書く（`question` が
-落ち `ai-assess:requested` が 1 つ増えるので、AI 評価が 1 本起動する）。N > 0 の `propose` PR を人が merge
+grill のラウンドごとに更新する。N が 0 になったら、assess があるプロジェクトでは
+`[<段階>, ai-assess:requested]` を 1 回書く（`question` が落ち `ai-assess:requested` が 1 つ増えるので、
+AI 評価が 1 本起動する）。assess が無いなら `[<段階>]` を 1 回書く（`question` が落ちるだけ）。
+N > 0 の `propose` PR を人が merge
 したら、`routine-dispatch` はそのまま `stage:apply` へ進め、残った問いは `routine-apply` が推奨案で採る。
 merge は人の判断であり、問いを残したまま merge したことが「推奨案でよい」の回答だから。
 
