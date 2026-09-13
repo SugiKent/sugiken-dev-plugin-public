@@ -1,62 +1,34 @@
 ---
 name: routine-archive
-description: Routine「Issue: Labeled = stage:archive」の本文から呼ばれる skill。tasks 完了済みの openspec change を archive し、validate --strict を緑にして、Closes #n を持つ archive PR を作る。手動で「change を archive して」「#n を archive して」と言われたときもこの skill を使う。段階ラベルは書かない。
+description: '`stage:archive` の issue に対応する完了済み OpenSpec change を archive し、`Closes #n` の archive PR を作る。「#n を archive して」でも使う。'
 ---
 
-まず同じ plugin の `routine-common` skill と、その `references/worker.md` を読む。
+`routine-common` と `routine-common/references/worker.md` を読む。
 
-# 1. 対象と着手可否
+# 1. 対象を決める
 
-`worker.md` の「対象の特定」で issue を決める。対象 issue を `Refs #n` に持つ**merge 済みの `apply` PR**
-が触った change を起動の原因とする。無ければ issue へコメントして終える。
+worker の「対象の特定」に従う。issue を `Refs #n` に持つ merge 済み `apply` PR が触った change を起点にし、
+無ければコメントして終える。worker の「着手可否の判定」を通ったら「着手の印」を付ける。
 
-「着手可否の判定」を上から見て、着手するなら「着手の印」を付ける。作る PR は 1 つで、
-複数 change をまとめてよい。
+`origin/main:openspec/changes/` 直下の changes を対象に、`tasks.md` があり、`- [ ]` が 0、`- [x]` が 1 以上の
+ものだけを archive 候補とする。open PR が触る change は除く。起点 change に未完 task があれば、session 外 task は
+worker の「変更範囲」に従い、それ以外は `blocked-by: human` で見送る。候補が無ければ報告して終える。
 
-# 2. archive 対象を判定する
+# 2. archive する
 
-`origin/main` の `openspec/changes/` 直下（`archive/` を除く）の各 change について `tasks.md` を数える。
-判定はこのコマンドで決定論的に行い、「終わっていそう」と主観で決めない。
-
-```bash
-for d in openspec/changes/*/; do
-  name="$(basename "$d")"
-  [ "$name" = "archive" ] && continue
-  [ -f "$d/tasks.md" ] || continue
-  unchecked="$(grep -c '^- \[ \]' "$d/tasks.md")"
-  checked="$(grep -c '^- \[x\]' "$d/tasks.md")"
-  if [ "$unchecked" -eq 0 ] && [ "$checked" -ge 1 ]; then
-    echo "ARCHIVABLE: $name"
-  fi
-done
-```
-
-起動の原因になった change に未チェックが残る場合、それがこのセッションで実行できないタスク
-（本番実測・デプロイ後確認）なら、その行を tasks から外して捨てたうえで archive する。別 issue として
-起票してはならない。
-それ以外の未チェックなら archive せず、何が残っているかを添えて `blocked-by: human` で書き戻す
-（`routine-common` の「見送りの書き戻し」）。
-open PR が触っている change は、相手の編集を止めて古い設計で spec を上書きするので対象外。
-
-該当が 0 件なら「archive 対象なし」と報告して終える。
-
-# 3. archive して PR を作る
-
-`openspec-archive-change` Skill は起動しない。同 Skill は 1 change ずつ `AskUserQuestion` で
-選ばせ・確認を取る前提で、無人のこの routine には合わない。代わりに次の CLI を直接使い、
-複数 change をまとめて `--yes` で非対話に archive する。
+無人処理なので対話型 skill ではなく、候補ごとに次を実行する。
 
 ```bash
 openspec archive "<change名>" --yes
 ```
 
-`--skip-specs` は tooling-only の変更でない限り使わない。`openspec/specs/` は進行中 change の delta を
-持ちやすいので、直前に本文を読み直して delta を取り直す。失敗した change はスキップして報告し、
-他は続行する。全対象を archive したら `openspec validate --strict` を緑にする。
+`--skip-specs` は tooling-only の change だけに使う。直前に main specs と delta を読み直す。失敗した change は
+報告して飛ばし、他を続ける。最後に `openspec validate --strict` を通す。
 
-change 1 つにつき 1 つの `chore(openspec)` コミットにし（削除を含むので `git add -A` で対象パスを
-ステージ）、`git status --short` が空になったことを確認する。
+change ごとに `chore(openspec)` commit を作り、削除を含む対象パスを `git add -A` で stage する。
+全候補の処理後、`git status --short` が空であることを確認してから PR を作る。
 
-`worker.md` の「PR の作り方」に従う。title は `[archive] #<n> <change名>`、**本文に `Closes #n`**
-（複数 issue なら全件）、ラベルは `[archive]` → `[archive, ai-assess:requested]` の 2 回書き（assess が無いプロジェクトでは `[archive]` の 1 回）。archive した change 名と validate が緑であることを本文に書く。
-PR を作った時点で完了。merge で issue が閉じ、`wip` ごと役目を終える。
+# 3. PR を作る
+
+worker の「PR の作り方」に従い、archive した changes と validation 結果、全対象 issue の `Closes #n` を本文に
+持つ archive PR を 1 件作る。PR を作ったら終了する。

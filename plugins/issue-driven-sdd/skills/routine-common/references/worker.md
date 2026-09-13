@@ -1,181 +1,85 @@
 # worker の共通手順
 
-`routine-propose` / `routine-apply` / `routine-archive` が `routine-common` の次に読む。
-`routine-sweep` は止まった PR を引き継ぐ時点で読む。`routine-dispatch` は読まない。
+`routine-propose` / `routine-apply` / `routine-archive` が読む。`routine-sweep` は止まった PR を引き継ぐときだけ読む。
 
 # プロジェクト固有の調整を読む
 
-plugin の規約は既定であり、プロジェクトごとの調整は対象リポジトリの
-`.claude/skills/issue-driven-sdd-custom/SKILL.md` に置かれる。このファイルを読み終えたら、続けて
-それを `origin/main` から読む。手元のツリーは古いので見ない。無ければ既定のまま進み、報告もしない。
+`git show origin/main:.claude/skills/issue-driven-sdd-custom/SKILL.md` で custom skill を読み、`## 共通` と自分の
+段階の節に従う。無ければ既定どおり進む。`## routines` は setup 用なので読まない。
 
-```
-git show origin/main:.claude/skills/issue-driven-sdd-custom/SKILL.md
-```
-
-custom は `## 共通` と `## propose` / `## apply` / `## archive` に分かれ、自分の段階の節と `## 共通` に従う。
-`## routines` 節は `routines-setup` が Routine の id を控える場所で、worker は読まない。
-custom と既定が食い違ったら custom に従う。ただし次は plugin の骨格なので、custom に何が書いてあっても変えない。
-
-- 段階ラベルを書くのは `routine-dispatch` だけ
-- `Closes #n` を書いてよいのは `archive` PR と、issue 自体が docs だけの `docs` PR
-- routine のコメントは `<!-- routine -->` で始める
-- draft PR を作らない。本文 1 行目の `未確定の判断: N 件` と `question` / `ai-assess:requested` を一致させる
-- 1 セッション 1 issue 1 PR
-- 見送りの理由は `blocked-by:` で書き戻す
-- `tasks.md` に事後の実測・確認節を作らない
-- 時間や回数のしきい値。dispatcher と sweep は custom を読まないので、custom で変えると判定がずれる
-
-custom に書くのは、たとえば E2E の要否、スクリーンショットの方針、アーティファクトの作り先、
-着手してはいけない領域、教訓の書き残し先、PR 本文に加える項目、段階ごとに追加する手順。
+custom は検証方法、対象外領域、成果物、記録先、PR 項目などを追加できる。ただし `routine-common` の状態モデル・
+コメント形式、1 セッション 1 issue 1 PR、ready PR、段階の時間 / 回数しきい値は変えない。
 
 # 対象の特定
 
-起動のトリガーになった GitHub イベントは `CCR_TRIGGER_` で始まる環境変数に載る。まず
-`env | grep ^CCR_TRIGGER_` で全部見る。`CCR_TRIGGER_ISSUE_NUMBER` が対象 issue、
-`CCR_TRIGGER_REPO` が `owner/repo`。
-
-対象を一意に決められなければ、推測せず、何が読めなかったかを報告して終える。ラベルの状態から
-「たぶんこれだろう」と選ぶと、別セッションが作業中の issue を横取りする。取りこぼしは
-`routine-sweep` が再起動で拾う。
-
-# 1 セッション 1 issue 1 PR
-
-扱う issue は 1 つ、作る PR は 1 つ。**PR を作ったらセッションを終え、merge を待たない。** merge は
-`routine-dispatch` が受けて次の段階ラベルを付け、別セッションが起動する。例外は grill
-（`routine-propose`）で、auto-fix によって同じセッションが PR 上のやり取りを続ける。
+`env | grep ^CCR_TRIGGER_` を読み、`CCR_TRIGGER_ISSUE_NUMBER` と `CCR_TRIGGER_REPO` から対象を一意に決める。
+決められなければ推測せず、読めなかった情報を報告して終える。
 
 # 着手可否の判定
 
-段階ラベルが付いているだけでは着手してよいことにならない。上から順に見て、当たったところで止める。
+上から評価し、該当したら止める。
 
-1. `blocked` または `wip` が付いている。黙って終える（Routine の `NOT_IN` で普通は起動しないが、
-   sweep の再起動と重なったときの保険）。
-2. 段階ラベルが 2 つ以上ある。何と何が付いているかをコメントして終える。
-3. 依存が解けていない。worker は issue 本文の `depends on #m` を、`routine-dispatch` の「依存が解けた条件」の
-   表から自分の段階の行を選んで評価する。propose worker は `stage:propose` の行、apply worker は `stage:apply`
-   の行を使う。解けていなければ `blocked-by: #m`。普通は dispatch が評価済みで、ここは sweep の再起動や
-   人の強制操作と重なったときの保険。
-4. 進行中の作業と同じ場所を触る。「進行中」は open PR と、`openspec/changes/` 直下に残る change。
-   自分の issue 番号を title に持つ PR と、自分に対応する change（`routine-common` の「issue と change の
-   対応」。proposal の `#n`、または issue 本文の `change:` が指すもの）は自分の作業なので除く。
-   「同じ場所」は、同じ spec の同じ要求を MODIFIED する・同じ画面やルート・同じ service / repository のファイル。propose では delta spec を、apply では PR の変更ファイルを読んで判定する。
-   propose では、自分が MODIFIED / REMOVED / RENAMED したい要求が `origin/main` の `openspec/specs/` に無く、
-   他の change の delta にしか無い場合も同じ場所とみなす（理由は `routine-propose` の「delta が触れる要求」）。
-   相手の issue 番号か change 名で `blocked-by:`。
-5. change の前提が満たされていない。`tasks.md` 冒頭の「先行 change の archive を確認する」のような
-   前提条件が `origin/main` で満たされていない。`blocked-by: change <name>`。
-6. その機能が閉じられている。custom や `CLAUDE.md` が「開発を止めた」と宣言している領域。
-   `blocked-by: human`、`unblock-when: docs`。
+1. `blocked` または `wip` がある: 黙って終える。
+2. 段階ラベルが複数ある: 組み合わせをコメントして終える。
+3. issue の `depends on #m` が未解決: `routine-dispatch` の「依存が解けた条件」で評価し、
+   `blocked-by: #m` を書き戻す。
+4. open PR または進行中 change と同じ要求・画面・route・service / repository を触る: 相手の issue または
+   `change <name>` を blocker にする。自分の issue に対応する PR / change は除く。
+5. `tasks.md` の前提が `origin/main` で未達: `blocked-by: change <name>`。
+6. custom や repo の方針で閉じた領域: `blocked-by: human`、`unblock-when: docs`。
 
-3 以降は調査を伴うので、結果は `routine-common` の「見送りの書き戻し」で必ず issue へ残す。
+3 以降は `routine-common` の「見送りの書き戻し」を使う。propose の MODIFIED / REMOVED / RENAMED は、
+`origin/main` の main spec に要求が無く、別 change の delta にだけある場合も衝突とみなす。
 
 # 着手の印
 
-着手すると決めたら、まず `mcp__Claude_Code_Remote__get_session` を引数なしで呼び、自分の session id
-（`session_…`）を得る。`set_session_title` で title を `[<段階>] #<issue番号>` にする（人が一覧で見分けるため）。
-次に `<!-- routine -->` コメントを 1 件投稿し、2 行目を `started: <ISO 時刻>`、3 行目を `session: <session id>`
-にする。続けて `[stage:X, wip]` を書く（`NOT_IN` により何も起動しない）。
+`mcp__Claude_Code_Remote__get_session` で session id を取得し、`set_session_title` で title を
+`[<段階>] #<issue>` にする。
+issue に次をコメントしてから `[stage:X, wip]` を書く。
 
-sweep はこの `session:` を `get_session` に渡し、`session_status` が RUNNING でなければ死亡とみなして再起動する。
-経過時間では判定しないので、長い実装（数時間の apply）でも横取りされない。GitHub コネクタにはコメントを
-編集するツールが無いため、heartbeat のような更新型の印は使わない。
+```text
+<!-- routine -->
+started: <ISO 時刻>
+session: <session id>
+```
 
-# `origin/main` を正本にする
+sweep は session が RUNNING または人の操作待ちなら生存、それ以外なら死亡と判定する。
 
-コンテナはセッション開始時の main を shallow clone している。その後 merge された分は手元に無く、
-archive 済みの change が手元にだけ残って見える。
+# origin/main を正本にする
 
-- change の一覧と `tasks.md` は `origin/main` のツリーから読む（`git show origin/main:<path>`）。
-- shallow clone では祖先判定（`merge-base --is-ancestor` / `A..B` / `branch --contains`）が正常終了のまま
-  誤った答えを返す。「もう main に入っているか」は `origin/main` のファイルの中身で判定する。
+change と tasks は `git show` / `git ls-tree` で `origin/main` から読む。shallow clone では祖先判定が誤るため、
+main へ入ったかどうかはファイル内容で判定する。
 
 # PR の作り方
 
-- **作る直前に、自分の issue 番号を title に持つ open PR を検索する。** あれば別セッションが先に
-  作っている。自分の PR を作らず、その PR 番号を issue にコメントして終える。後発が撤退する方が安い。
-- draft PR を作らない。すべて ready for review で作り、merge 可否は本文 1 行目とラベルで示す。
-- title は `[<段階>] #<issue番号> <要約>`。sweep と dispatch は title の番号で issue を引く。
-- 本文の参照は `Refs #n`。`Closes #n` は `archive` PR と docs-only の `docs` PR だけ。propose / apply で
-  書くと merge 時に issue が閉じ、以降の段階が始まらない。
-- ラベルは `create_pull_request` の後に `issue_write` で書く。N > 0 なら `[<段階>, question]` の 1 回。
-  `未確定の判断: 0 件` で、かつ**このプロジェクトに assess がある**なら
-  **`[<段階>]` を書いてから `[<段階>, ai-assess:requested]` を書く**（2 回）。
-  1 回で 2 ラベル足すとイベントが 2 回出て AI 評価（`assess-pr-risk`）が 2 本起動する。
-  `ai-assess:requested` を足す書き込みだけが評価を起動する。
-  assess が無いプロジェクトでは `[<段階>]` の 1 回だけ書く（次の節）。
-- propose / apply では auto-fix を有効化し、「CI の失敗と、レビューコメント・会話コメントの両方を文脈として
-  対応する」ことをセッションの方針として明示する。これで PR 上のやり取りを同じセッションが受け取る。
-  archive は PR を作って終わるので有効化しない。
-- 作成直後に `mergeable_state` を確認する。`dirty` なら別セッションが先に同じ場所を変えている。
-  無理に解決せず、先行 PR を名指しして自分の PR を close する。
-- 作ったアーティファクトの URL は PR 本文かコメントに残す。セッションは PR を作った時点で終わるので、
-  そこに無ければ人には届かない。
-- description から Claude Code session へのリンクを削除しない。
+1. 作成直前に、issue 番号を title に持つ open PR を検索する。あれば後発として撤退する。
+2. ready PR を 1 件作る。title は `[<段階>] #<issue> <要約>`、本文は `Refs #n`。
+   `Closes #n` は archive と docs-only だけ。
+3. 本文 1 行目を次のどちらかにする。
 
-## assess があるかを確かめる
-
-`ai-assess:requested` を外せるのは `assess-pr-risk` を実行する Routine（assess）だけで、これは
-プロジェクトごとの任意の仕組みである（`routines-setup`「PR の自動評価は任意」）。**外し手のいない
-プロジェクトでこのラベルを書くと、永久に外れないラベルが残る。** loop-cli のような「人の出番」を
-集める道具はこのラベルを「AI 評価待ち」と読むので、merge できる PR が人のキューから消える。
-
-判定は clone した `origin/main` のファイルの有無だけで行う。Routine の一覧は見ない。
-
-```
-origin/main に .claude/skills/assess-pr-risk/SKILL.md がある → assess がある
-無い                                                          → assess が無い
-```
-
-`ai-assess:requested` を書くのは「ある」のときだけ。無いプロジェクトでは、このラベルを
-**付けない・外さない・言及しない**。段階ラベルと `question` の付け外しだけで運用は成立する。
-
-skill はあるが Routine を作っていない、という設定漏れはこの判定では検出できない。導入時の確認は
-`routines-setup`「3. 動作を確認する」の項目 6 が受け持つ。
-
-## 本文の 1 行目
-
-```
+```text
 未確定の判断: N 件 — このまま merge すると worker が推奨案で進めます
 未確定の判断: 0 件 — レビューをお願いします
 ```
 
-grill のラウンドごとに更新する。N が 0 になったら、assess があるプロジェクトでは
-`[<段階>, ai-assess:requested]` を 1 回書く（`question` が落ち `ai-assess:requested` が 1 つ増えるので、
-AI 評価が 1 本起動する）。assess が無いなら `[<段階>]` を 1 回書く（`question` が落ちるだけ）。
-N > 0 の `propose` PR を人が merge
-したら、`routine-dispatch` はそのまま `stage:apply` へ進め、残った問いは `routine-apply` が推奨案で採る。
-merge は人の判断であり、問いを残したまま merge したことが「推奨案でよい」の回答だから。
+4. N > 0 は `[<段階>, question]` を 1 回で書く。N = 0 は `[<段階>]` を書き、assess があれば続けて
+   `[<段階>, ai-assess:requested]` を書く。2 ラベルを同時に増やすと assess が二重起動する。
+5. propose / apply は auto-fix を有効にし、CI・レビュー・会話コメントへ同じ session で対応する。archive は無効。
+6. `mergeable_state=dirty` なら競合相手を示して自分の PR を close する。artifact URL は PR に残し、
+   Claude Code session のリンクは description から消さない。
 
-# `.claude/rules/` を書き換えない
+PR を作ったら merge を待たず終了し、`wip` は残す。propose の grill だけは同じ session で会話を続ける。
 
-propose / apply は `.claude/rules/` のファイルを編集しない。propose は `tasks.md` にその編集を置かない。
-Routine のセッションでは `.claude/` 配下の編集が権限確認で止まり、人が承認するまで進まない。sweep は
-人の操作待ちのセッションを生きている扱いにするので再起動もされず、issue とそれに依存する issue が
-止まり続ける。
+## assess があるかを確かめる
 
-rule の追記や修正が要ると気づいたら、どの rule をどう変えるべきかを PR 本文か issue コメントに書く。
-今回の変更で rule の中のファイル名や記述が古くなる場合も同じで、自分の PR では直さない。取り込みは、
-この plugin の外にある振り返り（retro）の Routine が作る PR に任せる。
+`origin/main:.claude/skills/assess-pr-risk/SKILL.md` の有無だけで判定する。無ければ
+`ai-assess:requested` を付けず、外さず、言及しない。skill と Routine の対応確認は `routines-setup` が担う。
 
-# openspec を通さない変更
+# 変更範囲
 
-`.claude/`（`.claude/rules/` を除く。「`.claude/rules/` を書き換えない」）と `docs/` と直下の
-`CLAUDE.md` / `README.md` は、利用者へ提供するものを変えないので propose を挟まず `docs` ラベルの PR を
-作ってよい。`openspec/` と製品の実ファイルが 1 行でも混ざれば
-対象外。判定の正本は実 diff で、push 前に `git diff origin/main --stat` を見る。
-
-issue 自体が docs だけで完結する（製品の変更を含まない）と判断したら、`docs` PR に `Closes #n` を書く。
-merge で issue が閉じ、`Issue: Closed` で dispatch が依存を解放する。これが docs 経路の終わり方で、
-`stage:propose` のまま open にしておかない。製品の目的地を定めた文書の改訂は issue を起票して人の判断を待つ。
-
-# リポジトリの事情に従う
-
-E2E の要否、スクリーンショットの方針、アーティファクトの作り先、教訓の書き残し先は、
-リポジトリごとに違う。正本は custom。custom が無い、または触れていない事柄は、対象リポジトリの
-`CLAUDE.md`・`.claude/rules/`・`.claude/skills/` を読み、そこに書かれたやり方に合わせる。
-「基盤があるから回す」ではなく、ルールが求めているかで決める。
-アーティファクトは、接続済みのコネクタに共有やビジュアライズを担うものがあればそちらを使う。
-
-教訓や記録の `docs` PR を、作業のついでに作らない。記録は自分の PR 本文か issue コメントに書き、
-取り込むかは人が決める。
+- `.claude/rules/` は編集しない。必要な変更は PR 本文か issue コメントへ書く。
+- `.claude/`（rules を除く）、`docs/`、直下の `CLAUDE.md` / `README.md` だけの変更は `docs` PR にできる。
+  実 diff に `openspec/` や製品ファイルが混ざれば通常の OpenSpec 経路を使う。docs-only issue は `Closes #n`。
+- proposal の tasks に、同じ session で完了できない本番実測・デプロイ後確認を入れない。apply / archive で既存の
+  その種の task に出会った場合は削除し、別 issue は作らない。
+- E2E、スクリーンショット、artifact、記録先は custom、次に repo のルールへ従う。作業のついでに docs PR は作らない。
