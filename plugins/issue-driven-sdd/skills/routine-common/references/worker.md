@@ -68,7 +68,11 @@ main へ入ったかどうかはファイル内容で判定する。
 6. `mergeable_state=dirty` なら競合相手を示して自分の PR を close する。artifact URL は PR に残し、
    Claude Code session のリンクは description から消さない。
 
-PR を作ったら merge を待たず終了し、`wip` は残す。propose の grill だけは同じ session で会話を続ける。
+PR を作ったら common の「終了前の最終チェック」を通して merge を待たず終了する。
+`wip` を残せるのは、関連 PR に自動処理か人への引継ぎが成立した場合。propose の grill は同じ session で会話を続ける。
+
+auto-fix の返信後、PR 作成失敗・競合 close・重複 PR への撤退を含む早期終了でも同じチェックを行う。
+PR を閉じたら、対応 issue に blocker または代替 PR への引継ぎを残す。PR が存在するだけで引継ぎ済みとしない。
 
 ## assess があるかを確かめる
 

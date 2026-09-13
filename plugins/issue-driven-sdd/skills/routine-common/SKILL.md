@@ -12,9 +12,9 @@ issue は `なし → stage:todo → stage:propose → stage:apply → stage:arc
 | --- | --- | --- |
 | `stage:todo` | 人が着手を承認した | 人 |
 | `stage:propose` / `stage:apply` / `stage:archive` | 各 worker を起動する | `routine-dispatch` |
-| `wip` | worker が作業中 | worker が付け、worker / dispatch が外す |
-| `blocked` | 最新の `blocked-by:` が未解決 | worker / dispatch が付け、dispatch が外す |
-| `question` | 人の回答待ち | issue では routine、PR では worker |
+| `wip` | worker が作業中 | worker が付け、worker / dispatch が外す。sweep は停止確認後の回収時に外す |
+| `blocked` | 最新の `blocked-by:` が未解決 | worker / dispatch が付け、dispatch が外す。sweep は停止回収・dispatch 手順の実行時に操作する |
+| `question` | 人の回答待ち | issue では routine、PR では worker（停止 PR の引継ぎ時は sweep） |
 
 段階ラベルが複数ある issue は組み合わせを一度コメントし、人の判断を待つ。worker は段階ラベルを書かない。
 
@@ -94,3 +94,34 @@ unblock-when: comment | docs | #123
 
 `blocked-by:` は複数行可。最新の `blocked-by:` コメントが正本なので、増減時は全件を書き直す。
 `unblock-when:` は human の解除条件で、省略時は `comment`。解消の判定と再起動は dispatch が担う。
+
+# 終了前の最終チェック
+
+最も避けるのは、未完了の issue / PR に次の担当・再開契機がなく、loop-cli の「今やる」にも出ない
+「ゾンビ状態」。正常終了・見送り・失敗・他 session への引継ぎのすべてで、対象と関連 issue / PR の
+ラベル、最新コメント、open / merged 状態を読み直し、未完了の仕事が次のどちらかにあることを確認する。
+個別手順の「コメントして終える」「何もしない」も、この条件を満たす場合に限る。
+
+- **自動で進む**: 担当 session / CI が動いている、または依存先と解除条件・再評価する dispatch / sweep が特定できる。
+  ラベルや open PR の存在だけを稼働の証拠にしない。event 発火・回答受信・AI 評価を待つ場合も、
+  起動漏れ・停止を回収する経路が必要。時間・再試行の上限は `routine-sweep` が正本。
+- **人が進められる**: 対象自身か、リンクで対応を追える open issue / PR が「今やる」に該当し、
+  誰が何を答える・直す・merge するかをコメントだけで判断できる。「その他」「進行中」にあるだけでは足りない。
+
+人へ戻すときは次を満たす。停止の理由・必要な操作・関連 URL を `<!-- routine -->` コメントに書き、
+ラベルとともに読み戻す。確認中に人の回答が来たら、それを未回答扱いするコメントで上書きせず引継ぎを確認する。
+
+| 対象 | loop-cli で人の番にする条件 |
+| --- | --- |
+| issue | `blocked-by: human` の問いを書き、`blocked` + `question` を付け、停止した担当の `wip` を権限に従って外す。最新コメントはその問い |
+| PR の問い | 未確定判断数 N と問いを更新し、`question` を付け、最新コメントに routine の問いを置く |
+| PR の merge 待ち | ready、段階ラベル、本文先頭の未確定 0 件、競合なし、checks 通過、評価待ちラベルなし。最新が人のコメントなら対応結果を返す |
+
+`question` だけの issue、`wip` が残る人待ち issue、人の回答に誰も応答しない PR、担当のない
+`ai-assess:requested`、失敗 CI / 競合 / draft を放置した PR は完了した引継ぎではない。
+自分の権限で直せなければ、関連する open issue に上記の人待ちを作る。対応 issue が無い / closed なら open PR
+自体で人へ問う。他の生存 worker の印や段階ラベルを奪わず、待つ側の issue に問題を返す。
+既存の問いと状態が正しければ同じコメントは重ねない。
+
+GitHub の読み書きが失敗し人待ちも作れない場合は、「最終チェック未完了」と対象 URL・失敗した操作・
+残った状態を session の最終出力へ明記する。成功扱いせず、強制終了でこのチェックが走らない場合も sweep が回収する。

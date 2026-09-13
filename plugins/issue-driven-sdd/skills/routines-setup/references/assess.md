@@ -10,6 +10,7 @@
 
 assess は起動元の `CCR_TRIGGER_PR_NUMBER` / `CCR_TRIGGER_HEAD_SHA` だけを評価する。完了時は結果にかかわらず
 `ai-assess:requested` を外す。`question` のある PR は merge しない。コメントは `<!-- routine -->` で始める。
+導入する skill に `routine-common` の「終了前の最終チェック」を組み込み、評価失敗・保留時も人へ引き継ぐ。
 
 PR branch に skill が無い場合があるため、Routine 本文には次を書く。
 

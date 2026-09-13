@@ -90,5 +90,17 @@ change 自体と待つ issue の blocker は変更しない。
 
 # 範囲と報告
 
+本 workflow の全 open PR（archive / docs を含む）と着手承認済み / blocked issue、段階書き直し中の issue に
+common の「終了前の最終チェック」を適用し、上の個別条件から
+漏れたゾンビも探す。通常の待機は維持し、担当が停止・不在、解除経路がない状態は修復か人への引継ぎを行う。
+評価待ち、回答済み PR、CI / 競合対応待ちは関連 run と最新の進捗を確認する。稼働を確認できず 3 時間進捗が
+無いものは無期限に待たず、理由を添えて人へ戻す。session 情報を取得できないことを稼働の証拠にしない。
+`ai-assess:requested` は assess が外す規約を維持し、sweep は対応 issue を人待ちにして評価復旧を依頼する。
+archive / docs の人コメントも対象にする。auto-fix が無いことを回答受信の証拠にせず、対応結果か具体的な問いを
+PR に返す。対応 issue が無い / closed なら、停止 PR の引継ぎとして PR 自体に問い・N・`question` を揃える。
+worker の操作待ちも、session 内にしか問いが無ければ GitHub 上の人待ちへ転記する。
+依存先自体が止まっていれば依存待ちを正常扱いせず、その解消を人へ問う。最新の全 blocker は保持する。
+
 sweep は docs PR を作らない。最後に、読んだ issue、dispatch 漏れ（受付 / 順番待ち）、変更ラベル、投稿 / 抑制した
-コメント、close、引継ぎ PR、起票 issue を数で報告する。dispatch 漏れが連続して 0 でなければ webhook 確認を促す。
+コメント、close、引継ぎ PR、起票 issue と、最終チェック未完了の対象 URL を報告する。
+dispatch 漏れが連続して 0 でなければ webhook 確認を促す。
