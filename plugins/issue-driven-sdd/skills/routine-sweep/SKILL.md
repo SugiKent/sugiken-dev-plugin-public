@@ -1,162 +1,106 @@
 ---
 name: routine-sweep
-description: Routine「<project> sweep」（Schedule）の本文から呼ばれる skill。リポジトリ全体を定期的に突き合わせ、イベントでは拾えないもの（人の回答・dispatch が受け付けなかった stage:todo・死んだ worker・却下された PR・残骸・循環ブロック・孤児 change）を直す。完全に未着手の孤児 change には issue を起票する。routine-dispatch がイベント 1 件だけを扱うのに対し、こちらが全件の修復を担う。手動で「sweep を回して」「止まっている issue や PR を拾って」と言われたときもこの skill を使う。
+description: 'Schedule または「sweep を回して」で、イベントから漏れた issue / PR、死んだ worker、循環、孤児 change を全件修復する。'
 ---
 
-まず同じ plugin の `routine-common` skill と `routine-dispatch` skill を読む。ラベルの書き方と
-ブロック評価（手順 D）は dispatch のものをそのまま使い、ここに独自の判定を置かない。
-
-無人で呼ばれ、対話するユーザーはいない。迷ったら着手しない・状態を壊さない側へ倒す。
-直すものが 0 件なら、数え方を報告して終える。それが正しい終わり方で、埋め合わせの作業は作らない。
+`routine-common` と `routine-dispatch` を読む。blocker の判定と放出は dispatch の
+「手順 D. blocker を評価して放出する」を使う。
+無人処理なので、曖昧な状態は変えず人へ返す。代替作業は作らない。
 
 # 読み方
 
-- 一覧は最小の項目（番号・ラベル・title・更新時刻）だけ取り、本文とコメントは判定に要る issue だけ読む。
-- PR 検索は `merged:>=<14 日前>` を付け、`fields` から `body` を外す。issue 番号は title の
-  `[<段階>] #n` から取る。
-- **一覧の `updated_at` が直近 10 分の issue は触らない。** イベント起動の dispatch が処理中の可能性がある。
-  timeline を読まずに一覧の値で足切りする。触らない issue が少し増えるだけで、安全側に倒れる。
-- `blocked` の再評価は、正本の `blocked-by:` コメントより後にイベント（人のコメント・close・merge）が
-  あった issue だけ行う。merge にはブロッカー `#m` の `propose` PR の merge を含む（`stage:todo` の issue は
-  それで解ける。`routine-dispatch` の「依存が解けた条件」）。無ければ前回と同じ結果になる。routine の
-  コメントは数えない。数えると sweep 自身のコメントが次の sweep の再評価を呼ぶ。
+- 一覧は番号、ラベル、title、更新時刻だけ取り、候補の本文・コメントだけを読む。
+- open PR は期間を絞らない。孤児確認に使う merge 済み PR だけ直近 14 日を検索する。
+  issue 番号は title の `[<段階>] #n` から取る。
+- 直近 10 分に更新された issue は dispatch と競合し得るため触らない。
+- blocked は、正本コメント後に人のコメント・close・merge がある場合だけ再評価する。
 
-# 1. 残骸を片付ける
+# 1. 残骸
 
-| 実態 | 直し方 |
+| 状態 | 修復 |
 | --- | --- |
-| closed な issue に `wip` / `blocked` / `question` が残っている | それらを除いた集合を書く。段階ラベルは履歴として残す |
-| open PR が無く、`wip` があり、最新の `started:` コメントの `session:` を `mcp__Claude_Code_Remote__get_session` で引いて、`session_status` が実行中でも人の操作待ち（permission prompt 等）でもない | worker は死んでいる。30 分の猶予を待たずにその場で 3b の手順（`restart:` → `[]` → `[stage:X]`）を行う。**人の操作待ちは生きている扱い**で触らない。通知は Claude Code 側が出す |
-| open PR が無く、`wip` があり、`started:` コメントが無い | 旧規約の worker。`wip` が 3 時間より古ければ上と同じ |
-| `question` があるのに `blocked` が無い issue | `question` だけ除いた集合（`wip` があれば残す）を書く。issue の `question` は `blocked` から導かれる。PR は対象外（一覧 API は PR も返すので `pull_request` を持つものを除く） |
-| `blocked` があり最新の `blocked-by:` に `human` があるのに `question` が無い | `[stage:X, blocked, question]` を書く |
-| `archive` PR、または `Closes #n` を持つ `docs` PR が merge 済みなのに issue が open | issue を close する |
-| `propose` / `apply` PR が merge されずに close され、それより新しい open PR も、PR の close より新しい routine の `blocked-by:` コメントも無い | 人が却下したとみなす。`blocked-by: human`（`unblock-when: comment`）で書き戻し `[stage:X, blocked, question]`。close より新しい `blocked-by:` があれば、既に問い返したか worker が撤退して書き戻した跡なので触らない。問い返し直すと人の回答が正本より前になり、手順 2 が放出できなくなる |
-| `stage:todo` と他の `stage:*` が両方ある | dispatch の書き込み途中の跡。`stage:todo` を外した集合を書く |
-| 段階ラベルが無く、最新の `<!-- routine -->` コメントが `release:` / `restart:` / `advance:` | 2 回書きの途中で死んだ跡。その行の段階ラベルを書く |
-| それ以外で段階ラベルが 2 つ以上 | 直さない。何と何が付いているかを 1 度コメントし、以降の手順から除外する |
+| closed issue に `wip` / `blocked` / `question` | 修飾ラベルだけ外す |
+| `wip`、open PR 無し、最新 `session:` が実行中でも人の操作待ちでもない | 手順 3b |
+| `wip`、open PR 無し、`started:` 無し、3 時間経過 | 手順 3b |
+| issue に `question`、`blocked` 無し | `question` を外す |
+| `blocked-by: human` なのに `question` 無し | `question` を足す |
+| merge 済み archive PR / closing docs PR に対して issue が open | issue を close |
+| propose / apply PR が未 merge close。以後に代替 PR も blocker コメントも無い | `blocked-by: human` で方針を問い、blocked + question |
+| `stage:todo` と別の段階ラベル | 書き込み途中として todo を外す |
+| 段階無しで最新 routine コメントが `release:` / `restart:` / `advance:` | コメントに記録された段階を書く |
+| その他の複数段階ラベル | 組み合わせを一度コメントし、以後の処理から除外 |
 
-# 2. ブロックを評価し、解けたものを放出する
+# 2. blocker
 
-`blocked` の付いた open issue のうち「読み方」の条件に当たるものを、`routine-dispatch` の手順 D で
-1 件ずつ評価する。人の回答はイベントにならないので、ここが唯一の拾い場所になる。
+「読み方」の条件を満たす open + blocked issue を dispatch の「手順 D. blocker を評価して放出する」で評価する。
 
-# 3. 起動しなかった dispatch と死んだ worker を起動し直す
+# 3. 起動漏れ
 
-## 3a. dispatch が受け付けなかった `stage:todo`
+## 3a. dispatch
 
-`Issue: Labeled` は 1 回きりのイベントで、その瞬間に dispatch が起動しなければ（Routine の停止・
-利用上限・環境の setup 失敗など。拒否された発火は run 一覧にも残らない）、その issue を再評価する
-者はいない。dispatch の手順 A が完走した issue は、段階が進んで `stage:todo` でなくなるか、
-`[stage:todo, blocked]` と `blocked-by:` コメントになる。だから次を**すべて**満たす issue は、
-dispatch が受け付けていない。
+`stage:todo` があり、blocked も他段階も無く、更新から 30 分を超えた issue を番号順に dispatch の
+「手順 A. stage:todo を受け付ける」で扱う。
+1 回の sweep で 3 件まで。残りは順番待ちとして数える。
 
-1. `stage:todo` が付いていて、`blocked` も他の段階ラベルも無い
-2. 一覧の `updated_at` が 30 分より古い（timeline は読まない）
+## 3b. worker
 
-該当する issue を issue 番号の小さい順に、`routine-dispatch` の手順 A をそのまま実行して受け付ける。
-書くのは 1 回（`[stage:todo]` → 「`stage:todo` から進める先」）で、増えるラベルは 1 つなので worker は
-1 本だけ起動する。**1 回の sweep で受け付けるのは 3 件まで**とし、残りは順番待ちとして報告に数える。
-一度に多くの worker を起動すると利用上限で全員が途中で死に、手順 3b の再起動に流れ込むだけだから。
+次を満たす issue は worker が起動しなかったか死亡したものとみなす。
 
-## 3b. 死んだ worker
+1. propose / apply / archive の段階ラベルが 1 つ
+2. wip / blocked が無い
+3. issue 番号を title に持つ open PR が無い
+4. 段階ラベルから 30 分経過
 
-次を**すべて**満たす issue は、worker が起動しなかったか途中で死んでいる。
+最新の `advance:` と人のコメントの新しい方より後にある `restart:` を数える。3 回未満なら
+`restart: N/3` → `[]` → `[stage:X]`。3 回なら再起動せず、確認事項を添えて `blocked-by: human` で戻す。
 
-1. `stage:propose` / `stage:apply` / `stage:archive` のどれかが付いている
-2. `wip` も `blocked` も無い
-3. その issue 番号を title に持つ open PR が無い
-4. 段階ラベルが付いてから 30 分を超えている
+# 4. 止まった PR
 
-`<!-- routine -->` で `restart: 1/3` の形のコメントを投稿し、`[]` を書いてから `[stage:X]` を書く。
-回数は、最新の `advance:` 行と最新の人のコメントのどちらか新しい方より後の `restart:` 行を数える
-（`release:` は数えない）。**3 に達したら再起動せず `blocked-by: human` で書き戻す。**
-何度起動しても死ぬ原因は GitHub の状態からは分からないので、人に何を確かめてほしいかを書く。
+propose / apply の open PR で、最新コメントが人、routine の返信が 3 時間無いものを探す。worker 共通手順と
+対応する phase skill、thread 全体、diff を読み、auto-fix を有効にして 1 件だけ引き継ぐ。
 
-# 4. 応答が止まった PR を引き継ぐ
+# 5. 循環 blocker
 
-open PR のうち、ラベルが `propose` か `apply` で、最新のコメントが人のもの（`routine-common` の定義）で、そこから 3 時間を超えて routine の返信が無いものを探す。auto-fix は通常 VM 回収後も
-再開するので、これは本当に止まったものだけ拾う。
+最新の `blocked-by: #m` から issue 間の有向 graph を作る。閉路ごとに最小番号の issue 1 件だけを
+`release:` → `[]` → `[stage:X]` で進め、検出した輪と未解決依存を越えたことを routine コメントへ書く。
+`change` と `human` は閉路判定に含めない。
 
-見つかったら `routine-common` の `references/worker.md` を読み、PR のスレッド全体と diff を読んで、
-そのラベルに対応する skill（`routine-propose` / `routine-apply`）の続きを引き受ける。auto-fix を
-有効化し直す。引き継ぐのは 1 セッションで 1 件まで。
+# 6. 閉じた issue に残る change
 
-# 5. 循環ブロックを 1 件解く
+直近 14 日の merge 済み propose / apply PR について、対応 issue が closed なのに main に change が残る場合、
+reopen して段階を付け直すか change を取り下げるよう一度だけコメントする。sweep 自身は reopen しない。
 
-手順 2 は個々の `blocked-by:` が解けたかしか見ないので、issue 番号同士が輪になって互いを指す状態は
-自動では永久に解けない。ここで検出して壊す。
+# 7. 孤児 change
 
-1. open issue のうち、最新の `blocked-by:` コメントが issue 番号（`#m`）を指すものを集め、
-   `issue → 相手` を辺とする有向グラフで閉路を探す。`change <name>` と `human` は対象外。
-2. 閉路が無ければ「open issue N 件・issue 番号宛の `blocked-by:` M 件、閉路なし」と報告して終える。
-3. 閉路ごとに、issue 番号が最も小さい 1 件を手順 D の「全部解けた」列と同じ操作（`release:` → 2 回書き）で強制的に進める。
-   issue へ `<!-- routine -->` コメントを投稿し、検出した輪と、ブロッカーは解けていないが循環を
-   断つために進めたことを書く。依存関係が正しいかの判断は人に委ねる。同じ輪の 2 件目以降には触れない。
+main の進行中 change のうち、対応する open issue も、その名前を Refs する PR も無いものを調べる。
+closed issue があれば手順 6 に任せる。
 
-# 6. 孤児 proposal を検出する
+次の全条件を満たすものだけ「完全に未着手」とする。
 
-merge 済みの `propose` / `apply` PR が持ち込んだ openspec change は、対応する issue が open で
-あり続けて初めて次の段階へ進む。issue が merge の後に人の手で close されると、change を進める
-主体が誰もいなくなる。
+- tasks があり、checked task が 0
+- change 名を Refs する PR が closed を含め 0
+- 内容が proposal / design / tasks / delta だけ
 
-1. 直近 14 日に merge された `propose` / `apply` PR のうち、title の issue 番号が **closed** のものを集める。
-2. 集めた PR ごとに、`origin/main` の `openspec/changes/` 直下（`archive/` を除く）に、その issue に対応する
-   change（`routine-common` の「issue と change の対応」。proposal の `#n`、または issue 本文の `change:`）が
-   まだ残っているか確認する。無ければ対象外。
-3. 残っていれば、issue へ 1 度だけ `<!-- routine -->` で「merge 済みの PR #<PR番号> に対して issue が
-   閉じている。openspec change `<change名>` が残ったまま進める主体がいない。reopen して段階ラベルを
-   付け直すか、change を取り下げるかを人に決めてほしい」と書き戻す。`routine-common` の「状況が変わっていなければコメントしない」に従う。
-4. **sweep は reopen しない。** close は人の意思表示の可能性がある。
+完全に未着手なら、重複 issue が無いことを再確認して 1 件起票する。title は change 名、本文先頭は
+`change: <name>`。Why / What の要約、3 条件の確認結果、`stage:todo` を人が付ければ始まる旨を書く。
+ラベルは付けない。1 session 3 件まで。
 
-# 7. 孤児 change を検出する
+条件を満たさない孤児は報告だけにする。孤児を待つ issue には、起票先または人が引き継ぐ必要を一度コメントする。
+change 自体と待つ issue の blocker は変更しない。
 
-`openspec/changes/` 直下の change 名は、対応する issue（`routine-common` の「issue と change の対応」。
-proposal の `#n`、または本文の `change:` でその change を指す open issue）か、それを `Refs` する PR の
-どちらかが進める。両方とも一度も存在しない change は、routine の中に進める主体が原理的にいない。
+# 範囲と報告
 
-1. `origin/main` の `openspec/changes/` 直下（`archive/` を除く）の change 名を全て集める。
-2. 各 change 名について、その名前を `Refs` する open/merged PR と、対応する issue のどちらも見当たらない
-   ものを孤児とする。issue 本文の `change:` は `search_issues` で `"change: <change名>" is:open` を引く。
-   closed issue も `is:closed` で引き、見つかれば手順 6 の領分なのでここでは扱わない。
-3. 孤児 change ごとに、**完全に未着手か**を `origin/main` の中身と PR 履歴だけで判定する。次を
-   **すべて**満たすものだけが完全に未着手。
-   - `tasks.md` があり、`- [x]` が 1 つも無い（1 つでもあれば人が手を付けている）。`tasks.md` が無い change は
-     apply が進められないので、書きかけの proposal とみなして起票しない
-   - その change 名を `Refs` する PR が、closed も含めて一度も存在しない（`search_pull_requests` で
-     `<change名>` を引き、state を問わず 0 件）
-   - change ディレクトリの中身が proposal / design / tasks / specs の delta だけで、実装の痕跡が無い。
-     ここまで見て分からないものは未着手と決めつけない
-4. 完全に未着手の孤児 change には、**issue を 1 件だけ起票する**。change だけが `origin/main` にあって
-   誰も進めない状態を、事後起票（`routine-common` の「人が持つ操作」）と同じ形へ戻す。
-   - title は `<change名>`、本文の 1 行目に `change: <change名>` を書く。これで change → issue の
-     対応が付き、次の sweep はこの change を孤児として数えない。
-   - 本文には、`proposal.md` の Why / What を読んだ要約、未着手と判定した根拠（上の 3 条件をどう確かめたか）、
-     「この change は `origin/main` にあるが対応する issue も PR も無かったので sweep が起票した。
-     着手してよければ `stage:todo` を付けてほしい」の 1 行を書く。
-   - **段階ラベルは付けない。** ラベル無しの issue は `routine-common` のとおり routine が触らない状態で、
-     承認は人の `stage:todo` に残る。sweep が `stage:todo` を付けると、人が一度も承認していない change を
-     dispatch が `stage:apply` まで運んでしまう。
-   - 起票の前に `search_issues` で同じ `change: <change名>` の issue（closed も含む）が無いことを
-     もう一度確かめる。closed のものがあれば起票し直さず、手順 6 と同じく報告に留める。
-5. 完全に未着手でない孤児 change（`tasks.md` が無い、`- [x]` がある、closed PR がある、中身が上の形に収まらない）は、
-   **報告だけに留める。** 途中まで進んだ change をどう扱うかは人が決める。
-6. 孤児 change を `blocked-by: change <change名>` で待っている open issue があれば、その issue へ
-   `<!-- routine -->` で書き戻す。起票した change なら「進める主体がいなかったので issue #n を起票した。
-   `stage:todo` を付ければ動き出す」、起票しなかった change なら「routine の中に進める主体がいない。
-   人が change を引き継ぐか取り下げるかを決めてほしい」。`routine-common` の「状況が変わっていなければコメントしない」に従う。
-7. **change そのものは触らない。** 消したり書き換えたり、待っている issue の `blocked` を外したりしない。
-8. 起票は 1 セッションで 3 件まで。それを超える孤児 change は数だけ報告する。
+本 workflow の全 open PR（archive / docs を含む）と着手承認済み / blocked issue、段階書き直し中の issue に
+common の「終了前の最終チェック」を適用し、上の個別条件から
+漏れたゾンビも探す。通常の待機は維持し、担当が停止・不在、解除経路がない状態は修復か人への引継ぎを行う。
+評価待ち、回答済み PR、CI / 競合対応待ちは関連 run と最新の進捗を確認する。稼働を確認できず 3 時間進捗が
+無いものは無期限に待たず、理由を添えて人へ戻す。session 情報を取得できないことを稼働の証拠にしない。
+`ai-assess:requested` は assess が外す規約を維持し、sweep は対応 issue を人待ちにして評価復旧を依頼する。
+archive / docs の人コメントも対象にする。auto-fix が無いことを回答受信の証拠にせず、対応結果か具体的な問いを
+PR に返す。対応 issue が無い / closed なら、停止 PR の引継ぎとして PR 自体に問い・N・`question` を揃える。
+worker の操作待ちも、session 内にしか問いが無ければ GitHub 上の人待ちへ転記する。
+依存先自体が止まっていれば依存待ちを正常扱いせず、その解消を人へ問う。最新の全 blocker は保持する。
 
-# やらないこと
-
-規約や記録の誤りに気づいても、sweep は `docs` PR を作らない。教訓の PR が別の PR を呼ぶ連鎖を
-止めるため。気づいたことは報告に書き、人が取り込むかを決める。
-
-# 報告
-
-「読んだ issue 数 / dispatch が受け付けなかった `stage:todo`（受け付けた数・順番待ちの数）/ 変えたラベル /
-投稿したコメント / 状況が変わらず重ねなかったコメント / close した issue / 引き継いだ PR / 起票した issue」を数で報告する。起票した issue は
-番号と change 名も添える。
-「受け付けなかった `stage:todo`」が続けて 0 でないなら、dispatch の webhook が届いていない。人が Routine を
-確かめる合図なので、報告に 1 行そう書く。
+sweep は docs PR を作らない。最後に、読んだ issue、dispatch 漏れ（受付 / 順番待ち）、変更ラベル、投稿 / 抑制した
+コメント、close、引継ぎ PR、起票 issue と、最終チェック未完了の対象 URL を報告する。
+dispatch 漏れが連続して 0 でなければ webhook 確認を促す。

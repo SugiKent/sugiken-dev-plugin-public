@@ -4,6 +4,16 @@ description: issue-label-driven plugin の routine がこのプロジェクト�
 disable-model-invocation: true
 ---
 
+## routines
+
+（`routines-setup` が `claude-code-routines:manage-routines` に渡す Routine id の記録先。worker は読まない）
+
+| 役割 | id |
+| --- | --- |
+| work | |
+| dispatch | |
+| sweep | |
+
 ## 共通
 
 （E2E の要否、スクリーンショットの方針、アーティファクトの作り先、着手してはいけない領域、教訓の書き残し先など。空なら既定どおり）
