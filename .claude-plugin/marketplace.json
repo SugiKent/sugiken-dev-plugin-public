@@ -112,6 +112,12 @@
       "category": "workflow"
     },
     {
+      "name": "claude-code-routines",
+      "source": "./plugins/claude-code-routines",
+      "description": "Claude Code Routines の検索・作成・更新・起動確認を行う共通操作スキル",
+      "category": "utility"
+    },
+    {
       "name": "issue-driven-sdd",
       "source": "./plugins/issue-driven-sdd",
       "description": "GitHub Issue のラベル 1 本で開発段階を表し、Claude Code Routines が段階ごとに起動して OpenSpec の propose → apply → archive を回す構成 (ラベル定義・Routine 設定表・PR リスク評価・バックログの issue 化)",

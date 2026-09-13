@@ -1,0 +1,5 @@
+{
+  "name": "claude-code-routines",
+  "description": "Claude Code Routines の検索・作成・更新・起動確認を行う共通操作スキル",
+  "author": { "name": "SugiKent" }
+}

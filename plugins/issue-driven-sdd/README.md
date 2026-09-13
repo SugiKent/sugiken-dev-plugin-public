@@ -1,7 +1,11 @@
 # issue-driven-sdd
 
 GitHub Issue のラベルを状態として、Claude Code Routines が OpenSpec の propose → apply → archive を進める plugin。
-対象プロジェクトには `openspec` plugin も必要。
+対象プロジェクトには `openspec` plugin も必要。setup は `claude-code-routines` plugin の共通操作 skill を使う。
+
+```bash
+claude plugin install claude-code-routines@sugiken-dev-public
+```
 
 ```text
 人: stage:todo
