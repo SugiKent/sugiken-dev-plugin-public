@@ -10,6 +10,8 @@ const PAGE = 6;
 const LINES = 16;
 const MODEL = 'haiku';
 const NOTES = 8;
+// Keep in sync with .claude-plugin/plugin.json "version".
+export const VERSION = '0.5.0';
 
 type Doc = { path: string; text: string; capability?: string; change?: string; kind: string };
 type Rule = { files: string[]; specs?: string[]; changes?: string[] };
@@ -388,6 +390,7 @@ export function register(on: any) {
         button('next-lines', '次の本文', () => { line = Math.min(Math.max(0, rows.length - LINES), line + LINES); redraw($); }),
       ] }));
     }
+    children.push(text('openspec mod v' + VERSION, true));
     return Box({ flexDirection: 'column', children });
   });
 }
