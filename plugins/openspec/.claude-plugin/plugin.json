@@ -1,8 +1,17 @@
 {
   "name": "openspec",
-  "description": "OpenSpec の日本語化ワークフロースキルと、関連 spec・change と change の影響・意外な発見を自動表示する右ペイン mod",
-  "version": "0.7.0",
+  "description": "OpenSpec の日本語化ワークフロースキルと、作業中のステップとターン終了時に Haiku の要約を表示する右ペイン mod",
+  "version": "0.8.0",
   "author": {
     "name": "SugiKent"
+  },
+  "userConfig": {
+    "summaryEverySteps": {
+      "type": "number",
+      "title": "Haiku の要約を出すステップ間隔",
+      "description": "ターン中のステップ（モデルへのリクエスト）がこの回数進むごとに Haiku で要約します。0 でターン終了時のみ。",
+      "default": 10,
+      "min": 0
+    }
   }
 }
