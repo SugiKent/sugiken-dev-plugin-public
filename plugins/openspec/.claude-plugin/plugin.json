@@ -1,7 +1,7 @@
 {
   "name": "openspec",
-  "description": "OpenSpec の日本語化ワークフロースキルと、関連 spec・change を自動表示する右ペイン mod",
-  "version": "0.3.0",
+  "description": "OpenSpec の日本語化ワークフロースキルと、関連 spec・change と change の影響・意外な発見を自動表示する右ペイン mod",
+  "version": "0.4.0",
   "author": {
     "name": "SugiKent"
   }

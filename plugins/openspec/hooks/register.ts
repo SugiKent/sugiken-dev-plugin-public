@@ -1,10 +1,15 @@
-// All I/O goes through the mods API. No process, network, or model calls.
+// All I/O goes through the mods API. No process or network calls; the only
+// model call is the impact analysis below, through the session's own client.
+import { currentChange, findings, material, SYSTEM } from './impact';
+
 const PANE = 'openspec-impact';
 const MAX_DOCS = 200;
 const MAX_FILE = 256 * 1024;
 const MAX_TEXT = 4 * 1024 * 1024;
 const PAGE = 6;
 const LINES = 16;
+const MODEL = 'haiku';
+const NOTES = 8;
 
 type Doc = { path: string; text: string; capability?: string; change?: string; kind: string };
 type Rule = { files: string[]; specs?: string[]; changes?: string[] };
@@ -103,6 +108,11 @@ let files: string[] = [], docs: Doc[] = [], rules: Rule[] = [];
 let warnings: string[] = [], selected = '', page = 0, line = 0;
 let enabled = true, opened = false, columns = 0, wanted = 0, revision = 0;
 let queue = Promise.resolve();
+// One analysis at a time; the latest material wins. Cache keyed by prompt.
+type Analysis = { change: string; prompt: string; state: 'running' | 'done' | 'failed';
+  text?: string; reason?: string; truncated: string[]; tokens?: string };
+let analysis: Analysis | undefined;
+const cache = new Map<string, string>();
 const redraw = ($: any) => $.ui.invalidate('ui.render');
 const warn = (text: string) => { if (!warnings.includes(text)) warnings.push(text); };
 const safe = async (fn: () => Promise<any>) => { try { return await fn(); } catch { return undefined; } };
@@ -215,6 +225,38 @@ function refresh($: any) {
   return queue;
 }
 
+function target() {
+  const change = currentChange(files, docs) ??
+    related(docs, files, rules).find(d => d.change)?.change;
+  return change ? { change, notes: findings(docs, change) } : undefined;
+}
+
+async function analyze($: any, force = false) {
+  const t = target();
+  if (!t) return;
+  const { prompt, truncated } = material(docs, t.change, t.notes);
+  if (!force && analysis?.prompt === prompt && analysis.state !== 'failed') return;
+  if (!force && cache.has(prompt)) {
+    analysis = { change: t.change, prompt, state: 'done', text: cache.get(prompt), truncated };
+    redraw($); return;
+  }
+  const mine: Analysis = analysis = { change: t.change, prompt, state: 'running', truncated };
+  redraw($);
+  const r = await safe(() => $.model.complete({ model: MODEL, system: SYSTEM, prompt,
+    maxTokens: 4000, timeoutMs: 90000 }));
+  if (analysis !== mine) return; // Superseded by newer material.
+  if (r?.isAnswered) {
+    cache.set(prompt, r.text);
+    if (cache.size > 8) cache.delete(cache.keys().next().value!);
+    const u = r.usage ?? {};
+    analysis = { ...mine, state: 'done', text: r.text,
+      tokens: `入力 ${(u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0)} / 出力 ${u.output_tokens ?? 0} トークン` };
+  } else {
+    analysis = { ...mine, state: 'failed', reason: r ? r.reason + (r.status ? ' ' + r.status : '') : '呼び出し不可' };
+  }
+  redraw($);
+}
+
 export function register(on: any) {
   on('session.start', async ($: any, e: any, next: any) => {
     interactive = e.isInteractive && (e.surface === 'terminal' || e.surface === 'desktop');
@@ -254,14 +296,18 @@ export function register(on: any) {
 
   on('turn.complete', async ($: any, e: any, next: any) => {
     const result = await next(e);
-    if (enabled && files.length) await safe(() => refresh($));
+    if (enabled && files.length) {
+      await safe(() => refresh($));
+      // Outside this dispatch so the turn never waits on the model.
+      if (interactive && opened) await safe(() => $.clock.after(0, () => { void analyze($); }));
+    }
     return result;
   });
 
   on('classic.SessionStart', async ($: any, e: any, next: any) => {
     if (e.source === 'clear') {
       revision++; files = []; docs = []; rules = []; warnings = []; selected = '';
-      line = page = 0; redraw($);
+      line = page = 0; analysis = undefined; redraw($);
     }
     return next(e);
   });
@@ -288,7 +334,7 @@ export function register(on: any) {
     if (e.viewport?.columns > 0) wanted = Math.max(1, Math.round(e.viewport.columns * 0.3));
     if (e.component !== 'Pane' || e.requestId !== PANE) return next(e);
     if (opened && wanted !== columns) await safe(() => open($));
-    const { Box, Text, Button } = $.ui.resolve(e);
+    const { Box, Text, Button, Markdown } = $.ui.resolve(e);
     const text = (s: string, dim = false) => Text({ children: [s], ...(dim ? { dimColor: true } : {}) });
     const button = (key: string, label: string, fn: () => any) => Button({ key, label, onPress: fn });
     const items = related(docs, files, rules);
@@ -306,6 +352,21 @@ export function register(on: any) {
         button('close', '閉じる', async () => { enabled = false; opened = false; await $.ui.close({ id: PANE }); }),
       ] }),
     ];
+    const t = target();
+    if (t) {
+      const now = analysis?.change === t.change ? analysis : undefined;
+      children.push(text('影響と意外な発見: ' + t.change));
+      for (const n of t.notes.slice(0, NOTES)) children.push(text('! ' + n.text));
+      if (t.notes.length > NOTES) children.push(text(`ほか ${t.notes.length - NOTES} 件`, true));
+      if (!t.notes.length) children.push(text('機械的な照合: 該当なし', true));
+      if (now?.state === 'running') children.push(text('AI（' + MODEL + '）が分析中…', true));
+      if (now?.state === 'failed') children.push(text('AI の分析に失敗: ' + now.reason, true));
+      if (now?.state === 'done') children.push(Markdown({ text: now.text! }),
+        text('AI（' + MODEL + '）の分析。' + (now.tokens ?? '') +
+          (now.truncated.length ? ' 一部の文書は省略して渡した: ' + now.truncated.join(', ') : ''), true));
+      if (!now) children.push(text('AI の分析はターン終了時に行います。', true));
+      children.push(button('analyze', now ? '再分析' : '分析', async () => { await analyze($, true); }));
+    }
     if (!shown.length) children.push(text('関連は不明です。パス記述または対応表を確認してください。', true));
     for (const d of shown.slice(page * PAGE, (page + 1) * PAGE)) {
       children.push(button('doc:' + d.path, d.kind + ': ' + [d.change, d.capability].filter(Boolean).join(' / ') + ' / ' + d.path.split('/').at(-1),
