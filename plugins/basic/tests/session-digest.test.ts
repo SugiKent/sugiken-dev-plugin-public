@@ -1,5 +1,13 @@
 import { expect, mock, test } from 'claude-code/testing';
 
+const HISTORY = [
+  { role: 'user', text: '認証を Cognito から Salesforce 直に変えたい', toolUses: [] },
+  { role: 'assistant', text: '調べたところ、JWT の aud が想定と違っていました。', toolUses: [
+    { tool_use_id: 'u1', tool: 'Read', input: { file_path: 'src/auth.ts' } }] },
+  { role: 'user', text: '', toolUses: [], toolResults: [{ tool_use_id: 'u1', text: 'ファイルの中身', isError: false }] },
+  { role: 'assistant', text: '完了しました', toolUses: [] },
+];
+
 function setup(on, gate?: Promise<void>) {
   const prompts: string[] = [];
   const clock = mock.clock(on);
@@ -7,11 +15,10 @@ function setup(on, gate?: Promise<void>) {
   on('command.register', () => ({ value: undefined }));
   on('ui.open', () => ({ value: { isPlaced: true } }));
   on('ui.invalidate', () => ({ value: undefined }));
+  on('session.messages', () => ({ value: HISTORY }));
   on('turn.complete', () => ({ text: '' }));
   on('turn.step', async function* ($, e) {
-    return { turnId: e.turnId, index: e.index, answer: 'ステップ' + e.index,
-      toolUses: [{ name: 'Read', input: { file_path: 'openspec/specs/a.md' } }],
-      stopReason: 'tool_use', usage: null };
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: null };
   });
   on('model.complete', async ($, e) => {
     prompts.push(String(e.prompt));
@@ -38,12 +45,24 @@ test('Haiku runs every 10 steps and at turn end', async ($, on) => {
   await steps($, 1, 9);
   await clock.settle();
   expect(prompts.length).toBe(1);
-  expect(prompts[0]).toContain('ここまで 10 ステップ');
-  expect(prompts[0]).toContain('ツール: Read');
+  expect(prompts[0]).toContain('ターン途中、10 ステップ時点');
   await complete($);
   await clock.settle();
   expect(prompts.length).toBe(2);
-  expect(prompts[1]).toBe('完了しました');
+  expect(prompts[1]).toContain('ターン終了時');
+});
+
+test('the turn-end digest reads the recent conversation, not the last answer alone', async ($, on) => {
+  const { prompts, clock } = setup(on);
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await complete($);
+  await clock.settle();
+  expect(prompts[0]).toContain('### ユーザー\n認証を Cognito から Salesforce 直に変えたい');
+  expect(prompts[0]).toContain('JWT の aud が想定と違っていました');
+  expect(prompts[0]).toContain('ツール: Read {"file_path":"src/auth.ts"}');
+  expect(prompts[0]).toContain('完了しました');
+  // Tool results stay out of the input.
+  expect(prompts[0]).not.toContain('ファイルの中身');
 });
 
 test('a call never starts while the previous one runs', async ($, on) => {
@@ -59,10 +78,10 @@ test('a call never starts while the previous one runs', async ($, on) => {
   await clock.settle();
   // The 20-step call was replaced by the newer turn-end call while waiting.
   expect(prompts.length).toBe(2);
-  expect(prompts[1]).toBe('完了しました');
+  expect(prompts[1]).toContain('ターン終了時');
 });
 
-test('the interval follows summaryEverySteps', { options: { summaryEverySteps: 3 } }, async ($, on) => {
+test('the interval follows digestEverySteps', { options: { digestEverySteps: 3 } }, async ($, on) => {
   const { prompts, clock } = setup(on);
   await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
   await steps($, 7);
@@ -70,7 +89,7 @@ test('the interval follows summaryEverySteps', { options: { summaryEverySteps: 3
   expect(prompts.length).toBe(2);
 });
 
-test('summaryEverySteps 0 keeps turn end only', { options: { summaryEverySteps: 0 } }, async ($, on) => {
+test('digestEverySteps 0 keeps turn end only', { options: { digestEverySteps: 0 } }, async ($, on) => {
   const { prompts, clock } = setup(on);
   await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
   await steps($, 25);

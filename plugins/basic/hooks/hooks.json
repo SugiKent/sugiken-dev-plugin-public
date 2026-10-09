@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/docs-structure-lint",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/docs-structure-lint\"",
             "timeout": 10,
             "statusMessage": "docs 構成を検査中..."
           }
@@ -17,12 +17,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ja-writing-lint",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ja-writing-lint\"",
             "timeout": 10,
             "statusMessage": "日本語チェック中..."
           }
         ]
       }
     ]
-  }
+  },
+  "modules": [
+    "./session-digest.ts"
+  ]
 }
