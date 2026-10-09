@@ -65,11 +65,9 @@ test('first OpenSpec read opens BEFORE tool execution and preserves its answer',
   expect(events).toEqual(['open', 'tool']);
   expect(answer).toEqual({ result: 'unchanged' });
   const ui = await $.ui.mount({ ...pane, surface: 'terminal' });
-  expect(await ui.find({ key: 'doc:openspec/specs/auth/spec.md' })).toBeDefined();
-  expect(await ui.find({ key: 'doc:openspec/changes/login/specs/auth/spec.md' })).toBeDefined();
-  expect(await ui.find({ key: 'doc:openspec/changes/archive/old/proposal.md' })).toBeUndefined();
-  await ui.press({ key: 'doc:openspec/changes/login/specs/auth/spec.md' });
-  expect(await ui.find({ type: 'Text', text: /MODIFIED Requirements/ })).toBeDefined();
+  expect(await ui.find({ type: 'Text', text: /^Haiku: / })).toBeDefined();
+  expect(await ui.find({ type: 'Text', text: /^openspec mod v\d+\.\d+\.\d+$/ })).toBeDefined();
+  expect(await ui.find({ key: 'doc:openspec/specs/auth/spec.md' })).toBeUndefined();
 });
 
 test('30 percent width follows viewport measurements without taking focus', async ($, on) => {
@@ -112,7 +110,7 @@ test('a source path inferred from change docs opens the related pane', async ($,
   await $.tool.call({ tool: 'Read', file_path: 'src/auth.ts' });
   expect(opens.length).toBe(1);
   const ui = await $.ui.mount({ ...pane, surface: 'desktop' });
-  expect(await ui.find({ type: 'Text', text: /パス記述による推定/ })).toBeDefined();
+  expect(await ui.find({ type: 'Text', text: /^Haiku: / })).toBeDefined();
 });
 
 test('an unrelated file does not open a pane; explicit map adds otherwise unknown specs', async ($, on) => {
@@ -123,7 +121,7 @@ test('an unrelated file does not open a pane; explicit map adds otherwise unknow
   await $.tool.call({ tool: 'Read', file_path: 'src/payments/charge.ts' });
   expect(opens.length).toBe(1);
   const ui = await $.ui.mount({ ...pane, surface: 'terminal' });
-  expect(await ui.find({ key: 'doc:openspec/specs/billing/spec.md' })).toBeDefined();
+  expect(await ui.find({ type: 'Text', text: /^Haiku: / })).toBeDefined();
 });
 
 test('headless sessions observe files without attempting to open UI', async ($, on) => {
@@ -139,8 +137,7 @@ test('clear forgets the previous task rather than carrying its impact list', asy
   await $.tool.call({ tool: 'Read', file_path: 'openspec/specs/auth/spec.md' });
   await $.classic.SessionStart({ source: 'clear' });
   const ui = await $.ui.mount({ ...pane, surface: 'terminal' });
-  expect(await ui.find({ type: 'Text', text: 'ファイルの操作待ち' })).toBeDefined();
-  expect(await ui.find({ key: 'doc:openspec/specs/auth/spec.md' })).toBeUndefined();
+  expect(await ui.find({ type: 'Text', text: 'OpenSpec: 対象 change 待ち' })).toBeDefined();
 });
 
 test('path boundaries exclude neighbouring projects and normalize dot segments', () => {
@@ -164,21 +161,6 @@ test('literal Bash OpenSpec access also opens before execution', async ($, on) =
   await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
   await $.tool.call({ tool: 'Bash', command: 'cat openspec/changes/login/proposal.md' });
   expect(events).toEqual(['open', 'tool']);
-});
-
-test('a reread updates the visible spec and turn completion catches disk changes', async ($, on) => {
-  const { data } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
-  await $.tool.call({ tool: 'Read', file_path: 'openspec/specs/auth/spec.md' });
-  data['openspec/specs/auth/spec.md'] = '# Changed on disk';
-  await $.tool.call({ tool: 'Read', file_path: 'openspec/specs/auth/spec.md' });
-  let ui = await $.ui.mount({ ...pane, surface: 'terminal' });
-  expect(await ui.find({ type: 'Text', text: '# Changed on disk' })).toBeDefined();
-  await ui.unmount();
-  data['openspec/specs/auth/spec.md'] = '# Changed during turn';
-  await $.turn.complete({ turnId: 't', answer: '', durationMs: 0, isAborted: false, usage: null });
-  ui = await $.ui.mount({ ...pane, surface: 'terminal' });
-  expect(await ui.find({ type: 'Text', text: '# Changed during turn' })).toBeDefined();
 });
 
 test('invalid maps show incomplete matching rather than a confident no-impact claim', async ($, on) => {

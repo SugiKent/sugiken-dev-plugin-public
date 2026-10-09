@@ -6,12 +6,11 @@ const PANE = 'openspec-impact';
 const MAX_DOCS = 200;
 const MAX_FILE = 256 * 1024;
 const MAX_TEXT = 4 * 1024 * 1024;
-const PAGE = 6;
-const LINES = 16;
 const MODEL = 'haiku';
-const NOTES = 8;
+// Haiku request status shown at the top of the pane.
+let status = '未実行（ターン終了を待機中）';
 // Keep in sync with .claude-plugin/plugin.json "version".
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';
 
 type Doc = { path: string; text: string; capability?: string; change?: string; kind: string };
 type Rule = { files: string[]; specs?: string[]; changes?: string[] };
@@ -107,7 +106,7 @@ export function related(docs: Doc[], files: string[], rules: Rule[]) {
 // Lifetime is this loaded session only; no shared disk state between agents.
 let root = '', cwd = '', interactive = false;
 let files: string[] = [], docs: Doc[] = [], rules: Rule[] = [];
-let warnings: string[] = [], selected = '', page = 0, line = 0;
+let warnings: string[] = [];
 let enabled = true, opened = false, columns = 0, wanted = 0, revision = 0;
 let queue = Promise.resolve();
 // One analysis at a time; the latest material wins. Cache keyed by prompt.
@@ -235,14 +234,16 @@ function target() {
 
 async function analyze($: any, force = false) {
   const t = target();
-  if (!t) return;
+  if (!t) { status = '対象 change を特定できず、リクエストしていません'; redraw($); return; }
   const { prompt, truncated } = material(docs, t.change, t.notes);
   if (!force && analysis?.prompt === prompt && analysis.state !== 'failed') return;
   if (!force && cache.has(prompt)) {
     analysis = { change: t.change, prompt, state: 'done', text: cache.get(prompt), truncated };
-    redraw($); return;
+    status = 'キャッシュ済みの結果を表示（リクエストなし）'; redraw($); return;
   }
   const mine: Analysis = analysis = { change: t.change, prompt, state: 'running', truncated };
+  const started = Date.now();
+  status = MODEL + ' にリクエスト中…';
   redraw($);
   const r = await safe(() => $.model.complete({ model: MODEL, system: SYSTEM, prompt,
     maxTokens: 4000, timeoutMs: 90000 }));
@@ -251,9 +252,11 @@ async function analyze($: any, force = false) {
     cache.set(prompt, r.text);
     if (cache.size > 8) cache.delete(cache.keys().next().value!);
     const u = r.usage ?? {};
+    status = MODEL + ' 応答あり（' + (Date.now() - started) + ' ms）';
     analysis = { ...mine, state: 'done', text: r.text,
       tokens: `入力 ${(u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0)} / 出力 ${u.output_tokens ?? 0} トークン` };
   } else {
+    status = MODEL + ' 失敗（' + (Date.now() - started) + ' ms）: ' + (r ? r.reason + (r.status ? ' ' + r.status : '') : '呼び出し不可');
     analysis = { ...mine, state: 'failed', reason: r ? r.reason + (r.status ? ' ' + r.status : '') : '呼び出し不可' };
   }
   redraw($);
@@ -276,7 +279,6 @@ export function register(on: any) {
       const base = await locate($);
       if (root !== base) {
         root = base; revision++; files = []; docs = []; rules = []; warnings = [];
-        selected = ''; line = page = 0;
       }
       touched = paths.map(p => relative(p, root, cwd)).filter((p): p is string => !!p);
       files = [...new Set([...touched, ...files])].slice(0, 40);
@@ -302,14 +304,15 @@ export function register(on: any) {
       await safe(() => refresh($));
       // Outside this dispatch so the turn never waits on the model.
       if (interactive && opened) await safe(() => $.clock.after(0, () => { void analyze($); }));
-    }
+      else { status = 'スキップ: ' + (!interactive ? '非対話' : 'pane 未表示'); await safe(async () => redraw($)); }
+    } else if (enabled) { status = 'スキップ: openspec 配下のファイル操作を未検出'; await safe(async () => redraw($)); }
     return result;
   });
 
   on('classic.SessionStart', async ($: any, e: any, next: any) => {
     if (e.source === 'clear') {
-      revision++; files = []; docs = []; rules = []; warnings = []; selected = '';
-      line = page = 0; analysis = undefined; redraw($);
+      revision++; files = []; docs = []; rules = []; warnings = [];
+      analysis = undefined; status = '未実行（ターン終了を待機中）'; redraw($);
     }
     return next(e);
   });
@@ -320,7 +323,7 @@ export function register(on: any) {
     if (arg && !['on', 'refresh'].includes(arg)) return { text: '/openspec-pane [on | off | refresh]' };
     enabled = true;
     const base = await locate($);
-    if (base !== root) { root = base; revision++; files = []; selected = ''; line = page = 0; }
+    if (base !== root) { root = base; revision++; files = []; }
     await refresh($);
     await open($, true);
     return interactive ? {} : { text: 'OpenSpec ペインは対話型 terminal / Desktop で表示できます。' };
@@ -339,57 +342,18 @@ export function register(on: any) {
     const { Box, Text, Button, Markdown } = $.ui.resolve(e);
     const text = (s: string, dim = false) => Text({ children: [s], ...(dim ? { dimColor: true } : {}) });
     const button = (key: string, label: string, fn: () => any) => Button({ key, label, onPress: fn });
-    const items = related(docs, files, rules);
-    // Manual opening shows all docs until any files have been observed.
-    const shown = files.length ? items : docs.map(d => ({ ...d, reasons: ['手動で表示'] }));
-    page = Math.min(page, Math.max(0, Math.ceil(shown.length / PAGE) - 1));
-    const chosen = shown.find(d => d.path === selected) ??
-      shown.find(d => d.path === files[0]) ?? shown[0];
-    selected = chosen?.path ?? '';
-    const children: any[] = [text('関連 spec / 進行中 change'),
-      text(files.length ? '対象: ' + files[0] : 'ファイルの操作待ち', true),
+    const t = target();
+    const now = t && analysis?.change === t.change ? analysis : undefined;
+    const children: any[] = [text('Haiku: ' + status, true),
+      text(t ? 'OpenSpec: ' + t.change : 'OpenSpec: 対象 change 待ち'),
       ...warnings.map(w => text(w, true)),
       Box({ flexDirection: 'row', columnGap: 1, children: [
-        button('refresh', '更新', async () => { await refresh($); }),
+        ...(t ? [button('analyze', now ? '再分析' : '分析', async () => { await analyze($, true); })] : []),
         button('close', '閉じる', async () => { enabled = false; opened = false; await $.ui.close({ id: PANE }); }),
       ] }),
     ];
-    const t = target();
-    if (t) {
-      const now = analysis?.change === t.change ? analysis : undefined;
-      children.push(text('影響と意外な発見: ' + t.change));
-      for (const n of t.notes.slice(0, NOTES)) children.push(text('! ' + n.text));
-      if (t.notes.length > NOTES) children.push(text(`ほか ${t.notes.length - NOTES} 件`, true));
-      if (!t.notes.length) children.push(text('機械的な照合: 該当なし', true));
-      if (now?.state === 'running') children.push(text('AI（' + MODEL + '）が分析中…', true));
-      if (now?.state === 'failed') children.push(text('AI の分析に失敗: ' + now.reason, true));
-      if (now?.state === 'done') children.push(Markdown({ text: now.text! }),
-        text('AI（' + MODEL + '）の分析。' + (now.tokens ?? '') +
-          (now.truncated.length ? ' 一部の文書は省略して渡した: ' + now.truncated.join(', ') : ''), true));
-      if (!now) children.push(text('AI の分析はターン終了時に行います。', true));
-      children.push(button('analyze', now ? '再分析' : '分析', async () => { await analyze($, true); }));
-    }
-    if (!shown.length) children.push(text('関連は不明です。パス記述または対応表を確認してください。', true));
-    for (const d of shown.slice(page * PAGE, (page + 1) * PAGE)) {
-      children.push(button('doc:' + d.path, d.kind + ': ' + [d.change, d.capability].filter(Boolean).join(' / ') + ' / ' + d.path.split('/').at(-1),
-        () => { selected = d.path; line = 0; redraw($); }));
-      children.push(text(d.reasons.join('\n'), true));
-    }
-    if (shown.length > PAGE) children.push(Box({ flexDirection: 'row', children: [
-      button('prev-docs', '前の一覧', () => { page = Math.max(0, page - 1); redraw($); }),
-      text(` ${page + 1}/${Math.ceil(shown.length / PAGE)} `),
-      button('next-docs', '次の一覧', () => { page = Math.min(Math.ceil(shown.length / PAGE) - 1, page + 1); redraw($); }),
-    ] }));
-    if (chosen) {
-      const rows = chosen.text.split('\n');
-      line = Math.min(line, Math.max(0, rows.length - LINES));
-      children.push(text(chosen.path), text(rows.slice(line, line + LINES).join('\n')));
-      children.push(Box({ flexDirection: 'row', children: [
-        button('prev-lines', '前の本文', () => { line = Math.max(0, line - LINES); redraw($); }),
-        text(` ${line + 1}–${Math.min(rows.length, line + LINES)}/${rows.length} `),
-        button('next-lines', '次の本文', () => { line = Math.min(Math.max(0, rows.length - LINES), line + LINES); redraw($); }),
-      ] }));
-    }
+    if (now?.state === 'done') children.push(Markdown({ text: now.text! }),
+      text((now.tokens ?? '') + (now.truncated.length ? ' 省略: ' + now.truncated.join(', ') : ''), true));
     children.push(text('openspec mod v' + VERSION, true));
     return Box({ flexDirection: 'column', children });
   });
