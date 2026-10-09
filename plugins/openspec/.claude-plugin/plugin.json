@@ -1,1 +1,8 @@
-{"name":"openspec","description":"OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集","version":"0.2.0"}
+{
+  "name": "openspec",
+  "description": "OpenSpec の日本語化ワークフロースキルと、関連 spec・change を自動表示する右ペイン mod",
+  "version": "0.3.0",
+  "author": {
+    "name": "SugiKent"
+  }
+}

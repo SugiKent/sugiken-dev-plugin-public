@@ -1,0 +1,4 @@
+{
+  "description": "関連する OpenSpec を表示する右ペイン",
+  "modules": ["./register.ts"]
+}

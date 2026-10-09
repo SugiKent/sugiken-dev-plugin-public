@@ -1,0 +1,82 @@
+# OpenSpec plugin
+
+日本語化した OpenSpec ワークフロースキルに、関連する spec・進行中 change を一覧する Claude Code mod を同梱しています。
+
+## インストールと確認
+
+```sh
+claude plugin install openspec@sugiken-dev-public
+# インストール済みの場合
+claude plugin update openspec@sugiken-dev-public
+```
+
+ローカルのソースを試す場合は、開発対象のプロジェクトルートから起動します。
+
+```sh
+claude --plugin-dir /absolute/path/to/sugiken-dev-plugins-public/plugins/openspec
+```
+
+Claude Code CLI v2.1.287 以降が必要です。起動後、`/plugin` の mod 一覧で `openspec` が読み込まれていることを確認してください。インストール済みのセッションでは `/reload-plugins` または再起動で更新を読み込みます。
+
+## 自動表示
+
+エージェントが `openspec/` 配下のファイルを読み取り・編集し始めると、**ツールの実行前**に OpenSpec ペインを開きます。ファイルの生成も対象です。プロジェクト内のソースファイルから関連する仕様を判定できた場合も、自動表示します。自動表示はプロンプトからキーボードフォーカスを奪いません。
+
+右ペインの希望幅は、測定した画面幅の約30%です。画面幅が変わると指定を更新します。Claude の最低幅・配置ルール、ユーザーがドラッグ等で調整した幅が優先されるため、常に30%になるわけではありません。右側への配置は fullscreen の広い端末で利用できます。狭い端末の自動表示は保留され、手動で開くとプロンプト上側に表示されることがあります。
+
+- `/openspec-pane`：開く。操作用フォーカスをペインへ移します。
+- `/openspec-pane refresh`：文書と対応表を読み直して開きます。
+- `/openspec-pane off`：閉じて、このセッションの自動表示を止めます。
+- `/openspec-pane on`：自動表示を再開して開きます。
+
+ペイン内の「閉じる」や Claude 側の閉じる操作でも自動表示を停止します。Esc はプロンプトにフォーカスを戻します。
+
+一覧には現行 spec、進行中 change の proposal・design・tasks、デルタ仕様を表示します。本文は自動で1件表示し、文書ボタンで切り替えられます。本文にある `ADDED`・`MODIFIED`・`REMOVED` 等の見出しをそのまま確認できます。「前／次の一覧」「前／次の本文」でページを移動します。
+
+ファイル操作後とターン終了時に情報を更新します。履歴はセッション内の直近40パスに限定し、`/clear`・mod の再読み込みで忘れます。同じチェックアウトの別セッションと履歴を共有しません。
+
+## 関連の判定
+
+一覧には、それぞれの判定根拠を表示します。
+
+- **直接**：操作した OpenSpec ファイル、その capability、またはその change の文書。
+- **パス記述による推定**：文書内のソースファイルの完全な相対パス、バッククォートで囲まれたディレクトリや glob。ファイル名だけの一致では判定しません。
+- **対応表**：プロジェクト側で指定したファイルと capability・change の対応。
+- **change の対象仕様**：関連 change のデルタ仕様と同じ capability の現行 spec。
+
+関連 change に属する proposal・design・tasks・デルタ仕様もまとめて表示します。`openspec/changes/archive/` は一覧の対象から除きます。関連が見つからない場合は「関連は不明」と表示し、影響がないとは断定しません。
+
+対応表は開発対象プロジェクトの **`openspec/pane-map.json`** に配列として保存します。mod が作成・変更することはありません。
+
+```json
+[
+  {
+    "files": ["src/auth/**", "server/routes/session.ts"],
+    "specs": ["authentication"],
+    "changes": ["add-session-expiry"]
+  }
+]
+```
+
+`specs` は `openspec/specs/<capability>/` のディレクトリ名、`changes` は `openspec/changes/<change>/` のディレクトリ名です。`files` はプロジェクトルートからの相対パスで、`*`・`?` はパス区切り以外、`**` は区切りを含めて一致します。絶対パス・親ディレクトリへの移動は指定できません。
+
+文書にパス記述がなく対応表もない場合、意味だけからの関連推定は行いません。Bash はコマンドに明示された `openspec/...` 等のリテラルパスのみ検知します。変数・glob・スクリプト内部でアクセスしたファイルは追跡できません。Grep・Glob は明示された検索対象パスを観測し、検索結果の各ファイルを操作履歴には追加しません。
+
+## 読み取りの範囲と表示環境
+
+mod の読み取りは、セッションのプロジェクトルートを境界として見つけた `openspec/` 配下の標準文書と対応表に限定します。対象のコード本文、Git の差分、会話本文は読み込みません。ファイルの書き込み、プロセス起動、ネットワーク通信、モデル呼び出しはありません。シンボリックリンクを経由する文書は索引に含めません。
+
+文書は最大200件、各256KiB、合計4MiB、ディレクトリ取得は最大600回に制限します。取得上限・取得失敗・不正な対応表がある場合は未取得／未判定の表示を出します。表示処理の失敗でも、元のツールの実行や結果を変更しません。
+
+terminal と Desktop の Code タブで描画します。VS Code のチャットパネルや `claude -p` は表示対象ではありません。mods が管理設定等で無効な場合も読み込まれません。
+
+## 検証
+
+```sh
+claude plugin validate plugins/openspec --strict
+claude plugin test plugins/openspec
+```
+
+mod のテストは実セッション・ログイン・通信・モデル呼び出しを使わずに、イベントと描画ツリーを検証します。実画面のレイアウト確認は別途必要です。
+
+API の参照先: [Mods overview](https://code.claude.com/docs/en/plugins/mods/overview)、[Draw in the interface](https://code.claude.com/docs/en/plugins/mods/interface)、[Test a mod](https://code.claude.com/docs/en/plugins/mods/test)。翻訳済みスキルの出典は [NOTICE.md](NOTICE.md) を参照してください。
