@@ -123,3 +123,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## stop-describing-ui
+
+This repository includes an adaptation of the `stop-describing-ui` agent skill
+originally distributed with
+[artouc/stop-describing-ui](https://github.com/artouc/stop-describing-ui).
+
+The derived material is in:
+
+- `plugins/design/skills/stop-describing-ui/SKILL.md`
+  (from `skills/stop-describing-ui/SKILL.md`)
+
+Upstream file was taken from commit
+`c78c9e284d6e923c703295f36a31aca1d891f6bd` of `artouc/stop-describing-ui`.
+
+Changes from upstream:
+
+- Translated into Japanese, including the before/after examples.
+- Added the full-width colon to the list of symbols not to use as separators.
+
+This file is not presented as an official distribution of the upstream project,
+and this repository is not affiliated with or endorsed by its author.
+
+Upstream source and license:
+
+- Project: [artouc/stop-describing-ui](https://github.com/artouc/stop-describing-ui)
+- License: MIT License
+
+The upstream copyright and license notice are reproduced below.
+
+```text
+MIT License
+
+Copyright (c) 2026 Arata Ouchi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
