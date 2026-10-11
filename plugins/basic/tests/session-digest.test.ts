@@ -8,7 +8,7 @@ const HISTORY = [
   { role: 'assistant', text: '完了しました', toolUses: [] },
 ];
 
-function setup(on, gate?: Promise<void>) {
+function setup(on, gate?: Promise<void>, reply = 'まとめ') {
   const prompts: string[] = [];
   const clock = mock.clock(on);
   on('session.start', () => ({ cwd: '/work' }));
@@ -23,7 +23,7 @@ function setup(on, gate?: Promise<void>) {
   on('model.complete', async ($, e) => {
     prompts.push(String(e.prompt));
     if (gate) await gate;
-    return { value: { isAnswered: true, text: 'まとめ', usage: { input_tokens: 1, output_tokens: 1 } } };
+    return { value: { isAnswered: true, text: reply, usage: { input_tokens: 1, output_tokens: 1 } } };
   });
   return { prompts, clock };
 }
@@ -107,4 +107,16 @@ test('subagent steps and turns are not counted', async ($, on) => {
   await $.turn.complete({ answer: 'サブエージェントの報告', durationMs: 1, isAborted: false, turnId: 's1', agentId: 'a1' });
   await clock.settle();
   expect(prompts.length).toBe(0);
+});
+
+test('only the diagram is shown, not prose around it', async ($, on) => {
+  const { clock } = setup(on, undefined, '状況を説明します。\n```\n✓ 調査 ─ ▶ 実装\n```\n以上です。');
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await complete($);
+  await clock.settle();
+  const ui = await $.ui.mount({ plugin: 'basic', component: 'Pane', requestId: 'session-digest', surface: 'terminal',
+    viewport: { columns: 200, rows: 60 },
+    props: { title: 'Session Digest', isFocused: true, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} } });
+  const md = await ui.find({ type: 'Markdown' });
+  expect(md.props.text).toBe('```\n✓ 調査 ─ ▶ 実装\n```');
 });
