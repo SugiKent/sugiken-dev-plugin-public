@@ -6,7 +6,7 @@
     "digestEverySteps": {
       "type": "number",
       "title": "session-digest の要約間隔（ステップ数）",
-      "description": "ターン中のステップ（モデルへのリクエスト）がこの回数進むごとに Haiku で要約します。0 でターン終了時のみ。",
+      "description": "ターン中のステップ（モデルへのリクエスト）がこの回数進むごとに Haiku で要約します。0 にするとプロンプト送信時とターン終了時だけになります。",
       "default": 10,
       "min": 0
     }

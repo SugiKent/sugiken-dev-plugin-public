@@ -17,6 +17,7 @@ function setup(on, gate?: Promise<void>, reply = 'まとめ') {
   on('ui.invalidate', () => ({ value: undefined }));
   on('session.messages', () => ({ value: HISTORY }));
   on('turn.complete', () => ({ text: '' }));
+  on('prompt.submit', ($, e) => ({ text: e.text }));
   on('turn.step', async function* ($, e) {
     return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: null };
   });
@@ -119,4 +120,22 @@ test('only the diagram is shown, not prose around it', async ($, on) => {
     props: { title: 'Session Digest', isFocused: true, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} } });
   const md = await ui.find({ type: 'Markdown' });
   expect(md.props.text).toBe('```\n✓ 調査 ─ ▶ 実装\n```');
+});
+
+test('Haiku also runs when a prompt is submitted, with that prompt in the input', async ($, on) => {
+  const { prompts, clock } = setup(on);
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await $.prompt.submit({ text: '次は E2E を書いて' });
+  await clock.settle();
+  expect(prompts.length).toBe(1);
+  expect(prompts[0]).toContain('ユーザー入力時');
+  expect(prompts[0].endsWith('### ユーザー\n次は E2E を書いて')).toBe(true);
+});
+
+test('a submitted prompt already in the conversation is not added twice', async ($, on) => {
+  const { prompts, clock } = setup(on);
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await $.prompt.submit({ text: '認証を Cognito から Salesforce 直に変えたい' });
+  await clock.settle();
+  expect(prompts[0].split('認証を Cognito から Salesforce 直に変えたい').length).toBe(2);
 });

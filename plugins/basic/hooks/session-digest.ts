@@ -1,15 +1,16 @@
 // session-digest: a right pane with a Haiku digest of the recent conversation,
 // meant to lower what a person has to keep in mind during a long session.
-// Haiku runs every N main-loop steps (turn.step, one model request of the
-// turn) and at turn.complete, each time on the last MAX_INPUT characters of
-// the main conversation, not on the latest answer alone.
+// Haiku runs when a prompt is submitted (prompt.submit), every N main-loop
+// steps (turn.step, one model request of the turn) and at turn.complete, each
+// time on the last MAX_INPUT characters of the main conversation, not on the
+// latest answer alone.
 const PANE = 'session-digest';
 const COMMAND = 'session-digest';
 const MODEL = 'haiku';
 const MAX_INPUT = 20000;
 const MAX_TOOL_INPUT = 200;
 const DEFAULT_EVERY = 10;
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 const FENCE = '```';
 // One few-shot: a short conversation and the diagram for it.
@@ -89,7 +90,9 @@ const SYSTEM = [
   ]),
 ].join('\n');
 
-type Job = { label: string; fallback?: string };
+// `prompt` is a just-submitted prompt, added when the conversation does not
+// hold it yet.
+type Job = { label: string; fallback?: string; prompt?: string };
 
 let interactive = false, enabled = true, opened = false, columns = 0, wanted = 0;
 const IDLE = '未実行（ステップの進行・ターン終了を待機中）';
@@ -133,7 +136,7 @@ async function summarize($: any, job: Job, gen: number) {
   const started = Date.now();
   // Read the conversation now, so a job that waited sees the newest rows.
   const messages = await safe(() => $.session.messages());
-  const body = (Array.isArray(messages) ? transcript(messages) : '') || (job.fallback ?? '').slice(-MAX_INPUT);
+  const body = (Array.isArray(messages) ? transcript(messages, job.prompt) : '') || (job.fallback ?? '').slice(-MAX_INPUT);
   if (!body) { if (gen === generation) { status = 'スキップ: 会話が空'; redraw($); } return; }
   status = MODEL + ' にリクエスト中…（' + job.label + '）';
   redraw($);
@@ -160,11 +163,12 @@ function diagramOnly(text: string) {
 
 // The main conversation as plain text, tool results left out (they are long
 // and the agent's own text says what it learned from them).
-function transcript(messages: readonly any[]) {
+function transcript(messages: readonly any[], prompt?: string) {
   const parts: string[] = [];
+  let lastUser = '';
   for (const m of messages) {
     const text = typeof m.text === 'string' ? m.text.trim() : '';
-    if (m.role === 'user') { if (text) parts.push('### ユーザー\n' + text); continue; }
+    if (m.role === 'user') { if (text) { parts.push('### ユーザー\n' + text); lastUser = text; } continue; }
     const lines = text ? ['### エージェント', text] : [];
     for (const t of m.toolUses ?? []) {
       let input = '';
@@ -173,6 +177,7 @@ function transcript(messages: readonly any[]) {
     }
     if (lines.length) parts.push(lines.join('\n'));
   }
+  if (prompt && prompt !== lastUser) parts.push('### ユーザー\n' + prompt);
   return parts.join('\n\n').slice(-MAX_INPUT);
 }
 
@@ -199,6 +204,16 @@ export function register(on: any, options: any = {}) {
       // Outside this dispatch so the step never waits on the model.
       await safe(() => $.clock.after(0, () => { request($, { label }); }));
     }
+    return result;
+  });
+
+  on('prompt.submit', async ($: any, e: any, next: any) => {
+    const result = await next(e);
+    const prompt = typeof e.text === 'string' ? e.text.trim() : '';
+    if (!enabled || !interactive || !prompt || result?.drop) return result;
+    if (!opened) await safe(() => open($));
+    // Outside this dispatch so the prompt is never held up by the model.
+    await safe(() => $.clock.after(0, () => { request($, { label: 'ユーザー入力時', prompt }); }));
     return result;
   });
 
@@ -252,7 +267,7 @@ export function register(on: any, options: any = {}) {
       ] }),
     ];
     if (summary) children.push(Markdown({ text: summary }), text(tokens, true));
-    children.push(text('要約: ' + (every > 0 ? every + ' ステップごと＋ターン終了時' : 'ターン終了時のみ'), true),
+    children.push(text('要約: 入力時＋' + (every > 0 ? every + ' ステップごと＋ターン終了時' : 'ターン終了時'), true),
       text('session-digest v' + VERSION, true));
     return Box({ flexDirection: 'column', children });
   });
