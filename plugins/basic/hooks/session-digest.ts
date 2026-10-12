@@ -10,7 +10,7 @@ const MODEL = 'haiku';
 const MAX_INPUT = 20000;
 const MAX_TOOL_INPUT = 200;
 const DEFAULT_EVERY = 10;
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 
 const FENCE = '```';
 // One few-shot: a short conversation and the diagram for it.
@@ -110,7 +110,7 @@ type Job = { label: string; fallback?: string; prompt?: string };
 
 let interactive = false, enabled = true, opened = false, columns = 0, wanted = 0;
 const IDLE = '未実行（プロンプト送信、ステップの進行、ターン終了のいずれかで要約します）';
-let status = IDLE, summary = '', tokens = '';
+let status = IDLE, summary = '';
 let every = DEFAULT_EVERY;
 // Haiku calls never overlap: one runs at a time and only the newest waiting
 // job is kept. `generation` drops results from before a /clear.
@@ -159,9 +159,7 @@ async function summarize($: any, job: Job, gen: number) {
   if (gen !== generation) return; // Dropped by /clear.
   const ms = Date.now() - started;
   if (r?.isAnswered) {
-    const u = r.usage ?? {};
     summary = diagramOnly(r.text);
-    tokens = `入力 ${(u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0)} / 出力 ${u.output_tokens ?? 0} トークン`;
     status = MODEL + ' 応答あり（' + job.label + '、' + ms + ' ms）';
   } else {
     status = MODEL + ' 失敗（' + job.label + '、' + ms + ' ms）: ' + (r ? r.reason + (r.status ? ' ' + r.status : '') : '呼び出し不可');
@@ -246,7 +244,7 @@ export function register(on: any, options: any = {}) {
 
   on('classic.SessionStart', async ($: any, e: any, next: any) => {
     if (e.source === 'clear') {
-      generation++; pending = undefined; lastJob = undefined; summary = ''; tokens = '';
+      generation++; pending = undefined; lastJob = undefined; summary = '';
       stepsTotal = 0; stepsSinceCall = 0;
       status = IDLE; redraw($);
     }
@@ -280,9 +278,8 @@ export function register(on: any, options: any = {}) {
         Button({ key: 'close', label: '閉じる', onPress: async () => { enabled = false; opened = false; await $.ui.close({ id: PANE }); } }),
       ] }),
     ];
-    if (summary) children.push(Markdown({ text: summary }), text(tokens, true));
-    children.push(text('要約のタイミング: プロンプト送信時、' + (every > 0 ? every + ' ステップごと、ターン終了時' : 'ターン終了時'), true),
-      text('session-digest v' + VERSION, true));
+    if (summary) children.push(Markdown({ text: summary }));
+    children.push(text('session-digest v' + VERSION, true));
     return Box({ flexDirection: 'column', children });
   });
 }
