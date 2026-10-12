@@ -10,7 +10,7 @@ const MODEL = 'haiku';
 const MAX_INPUT = 20000;
 const MAX_TOOL_INPUT = 200;
 const DEFAULT_EVERY = 10;
-export const VERSION = '1.3.1';
+export const VERSION = '1.3.2';
 
 const FENCE = '```';
 // One few-shot: a short conversation and the diagram for it.
@@ -109,8 +109,8 @@ const SYSTEM = [
 type Job = { label: string; fallback?: string; prompt?: string };
 
 let interactive = false, enabled = true, opened = false, columns = 0, wanted = 0;
-const IDLE = '未実行（プロンプト送信、ステップの進行、ターン終了のいずれかで要約します）';
-let status = IDLE, summary = '';
+// Empty until the first call; the status line is hidden while empty.
+let status = '', summary = '';
 let every = DEFAULT_EVERY;
 // Haiku calls never overlap: one runs at a time and only the newest waiting
 // job is kept. `generation` drops results from before a /clear.
@@ -246,7 +246,7 @@ export function register(on: any, options: any = {}) {
     if (e.source === 'clear') {
       generation++; pending = undefined; lastJob = undefined; summary = '';
       stepsTotal = 0; stepsSinceCall = 0;
-      status = IDLE; redraw($);
+      status = ''; redraw($);
     }
     return next(e);
   });
@@ -272,7 +272,7 @@ export function register(on: any, options: any = {}) {
     if (opened && wanted !== columns) await safe(() => open($));
     const { Box, Text, Button, Markdown } = $.ui.resolve(e);
     const text = (s: string, dim = false) => Text({ children: [s], ...(dim ? { dimColor: true } : {}) });
-    const children: any[] = [text('Haiku: ' + status, true),
+    const children: any[] = [...(status ? [text('Haiku: ' + status, true)] : []),
       Box({ flexDirection: 'row', columnGap: 1, children: [
         ...(lastJob ? [Button({ key: 'analyze', label: '再要約', onPress: async () => { request($, { label: '手動' }); } })] : []),
         Button({ key: 'close', label: '閉じる', onPress: async () => { enabled = false; opened = false; await $.ui.close({ id: PANE }); } }),
