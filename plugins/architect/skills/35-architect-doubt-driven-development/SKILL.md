@@ -31,7 +31,7 @@ description: "自明でない設計判断・実装方針・安全性の主張に
 5. **根拠。** コード、仕様、テスト、計測、一次資料のどれが主張を支えるかを分ける。主張ごとに、下の「確かさの段階」のどこまで下ろせたかを書く。
 6. **代替案と結論。** リスクを下げる案、残余リスク、採用する判断を示す。
 
-同じ前提に立つ修正や設計案が 2 つ以上、同じ関門で失敗しているなら、次の案を検討する前にその前提を書き出して直接確かめる（`35-architect-principle` の `references/pstack-principles/attack-the-premise.md`）。
+同じ前提に立つ修正や設計案が同じ関門で失敗し続けているなら、`35-architect-principle` の `references/pstack-principles/attack-the-premise.md` の止まる条件に従い、次の案を検討する前にその前提を確かめる。
 
 ### 確かさの段階
 

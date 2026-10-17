@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: 計画、設計、アーキテクチャ、意思決定、アイデアについて、共有理解に達するまで人間を徹底的に質問する。ユーザーが「grill me」「徹底的に質問して」「計画を詰めて」「設計をストレステストして」「穴がないか追求して」など、表面的なレビューではなく判断を一つずつ明確にしたいときに使う。openspec-propose・openspec-review-changes のグリリングと、openspec-apply-change で人間に何かを尋ねる前の分類にも使う。
+description: 計画、設計、アーキテクチャ、意思決定、アイデアについて、共有理解に達するまで人間を徹底的に質問する。ユーザーが「grill me」「徹底的に質問して」「計画を詰めて」「設計をストレステストして」「穴がないか追求して」など、表面的なレビューではなく判断を一つずつ明確にしたいときに使う。openspec-propose・openspec-review-changes のグリリングにも使う。
 license: MIT
 metadata:
   author: Matt Pocock
@@ -58,9 +58,9 @@ metadata:
 
 - 委任が覆う判断は自分で決め、実行し、報告する。返答用の合言葉や選択肢の番号を用意しない。
 - ユーザーにしか決められない判断は、既定の選択を当てて進め、その判断と理由を報告する。ユーザーが代わりに何を指示できるかを平易な言葉で書く。ユーザーは自分の言葉で答える。
-- ユーザーが名指しした関門と、取り消せない操作（共有ブランチへの force push、デプロイ、データの削除、顧客へのメッセージ）は、委任があってもユーザーを待つ。
+- ユーザーが名指しした関門と、取り消せない操作（`architect:35-architect-principle` の `references/pstack-principles/never-block-on-the-human.md` が挙げるもの）は、委任があってもユーザーを待つ。
 - 呼び出し元が PR 上の質問と回答の手順を指定しているなら、その経路を使う。回答待ちの判断を合意済みとして扱わない。
-- SDD の propose では、ここで決めた判断を成果物に書き、apply に判断を残さない（`openspec-propose` の「apply に判断を残さない」）。
+- SDD の propose では、ここで決めた判断を成果物に書き、apply に判断を残さない（`openspec-propose` の「apply に判断を残さない」）。SDD の apply にはこの節を当てない。apply は判断せず、判断が要る場面は propose へ戻すため。
 
 ## 終了
 

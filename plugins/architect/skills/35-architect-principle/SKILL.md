@@ -229,7 +229,7 @@ cursor/plugins の pstack にある原則 24 本を日本語化したもの。`o
 - **Laziness Protocol**（`laziness-protocol`）は、リファクタリングするとき、差分の大きさを見極めるとき、抽象・層・引数の受け渡しを足したくなったときに当てる。削除と、問題を解く最小の変更に寄せる。
 - **Foundational Thinking**（`foundational-thinking`）は、ロジックを書く前に当てる。中心の型とデータ構造、足場と機能の順序、並行に動く主体が何を共有するかを決める。
 - **Redesign from First Principles**（`redesign-from-first-principles`）は、新しい要求を既存の設計へ組み込むときに当てる。最初からその要求があった前提で設計し直す。
-- **Attack the Premise**（`attack-the-premise`）は、同じ前提に立つ修正が 2 つ以上、同じ関門で失敗したときに当てる。次の修正を書く前に、その前提を書き出して直接確かめる。
+- **Attack the Premise**（`attack-the-premise`）は、同じ前提に立つ修正が同じ関門で失敗し続けるときに当てる。次の修正を書く前に、その前提を書き出して直接確かめる。
 - **Subtract Before You Add**（`subtract-before-you-add`）は、追加・リファクタリング・書き直しの順序を決めるときに当てる。先に不要なものを消し、単純になった土台に積む。
 - **Minimize Reader Load**（`minimize-reader-load`）は、追いにくいコードをレビュー・整形するときに当てる。層の数と隠れた状態を数え、呼び出し元が 1 つの包みを畳み、書き換え可能な範囲を狭める。
 - **Outcome-Oriented Execution**（`outcome-oriented-execution`）は、段階の区切りを決めた書き直しや移行に当てる。目標の構造へ収束させ、使い捨ての互換状態を守らない。
