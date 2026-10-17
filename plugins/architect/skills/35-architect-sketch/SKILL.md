@@ -24,7 +24,7 @@ metadata:
 4. スケッチに沿って実装する（Phase D）
 5. 誤った設計を捨てる（Phase E）
 
-SDD の propose では Phase A〜C までを行い、結果を design.md に書く。Phase D と E は apply で行う。
+SDD の propose では Phase A〜C までを行い、結果を design.md に書く。apply は判断しないので、apply で行うのは Phase D の照合と Phase E の兆しの検出だけで、設計し直しは propose に戻って行う。
 
 ## Phase A: 足場を固める
 
@@ -97,7 +97,7 @@ Phase B の結果は統合した設計 1 つ。その統合の判断を、根拠
 3. 先に要らないものを引いてから足す（Subtract Before You Add）。新しいスケッチは、育つ前に古いスケッチより小さくなければならない。
 4. Phase B に戻り、競作を走らせ直す。
 
-SDD の apply で捨てると判断したら、実装を止め、何が型として現れたかを添えて design の更新を提案する。
+SDD の apply で Phase E の兆しが型として現れたら、apply の中でスケッチし直さない。実装を止め、何が型として現れたかを添えて `openspec-propose` へ戻り、そこで上の手順で設計し直す。
 
 ## 出力
 
