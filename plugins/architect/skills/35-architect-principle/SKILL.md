@@ -217,6 +217,8 @@ KISS と YAGNI は「拡張性」と衝突する。この衝突は本スキル�
 - **`35-architect-code-review`**: 本スキルはコードレビューの「アーキテクチャ／可読性」軸の判断基準を供給する。レビューで構造の是非を問うとき本スキルを使う。
 - **`35-architect-db-design`**: DB 設計にも同じ思想（変更容易性・正規化=DRY・制約=契約）が流れる。データモデルは本スキルより長命なので、より保守的に原則を適用する。
 - **`35-architect-doubt-driven-development`**: 設計判断が自明でないとき、本スキルで下した結論を敵対的レビューにかける。本スキル＝判断基準、doubt＝その判断の反証。
+- **`35-architect-sketch`**: 関数の境界をまたぐ設計で、構造の異なる案を並べて比べる手順。候補の選別に使う赤旗（浅いモジュール、情報の漏れ、時間順の分割など）は、そのスキルの `references/design-red-flags.md` にある。
+- **`basic:poteto-mode`**: pstack の原則 24 本（Laziness Protocol、Model the Domain、Minimize Reader Load、Boundary Discipline など）を持つ。どれも同じ「変更容易性」を別の切り口で言ったもので、設計判断ではどちらの原則名を挙げてもよい。
 
 ## 検証（Verification）
 
