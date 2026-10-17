@@ -185,8 +185,8 @@ by Lauren Tan (poteto).
 
 The pstack-derived material is in:
 
-- `plugins/architect/skills/35-architect-principle/references/pstack-principles/`
-  and the "pstack の原則" section of
+- `plugins/architect/skills/35-architect-principle/references/principles/`
+  and the "作業の原則" section of
   `plugins/architect/skills/35-architect-principle/SKILL.md` (from the
   `pstack/skills/principle-*` skills and the Principles section of
   `pstack/skills/poteto-mode/SKILL.md`)
@@ -250,7 +250,7 @@ Changes from upstream:
 These files are not presented as an official pstack distribution, and this
 repository is not affiliated with or endorsed by the pstack author or Cursor.
 Copies of the license are in `35-architect-sketch/LICENSE`,
-`35-architect-interrogate/LICENSE`, `35-architect-principle/references/pstack-principles/LICENSE`,
+`35-architect-interrogate/LICENSE`, `35-architect-principle/references/principles/LICENSE`,
 `plugins/openspec/NOTICE.md`, and `plugins/basic/NOTICE.md`.
 
 Upstream source and license:

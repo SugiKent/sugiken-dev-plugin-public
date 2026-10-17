@@ -1,6 +1,6 @@
 ---
 name: 35-architect-principle
-description: "ソフトウェア設計の判断を、確立された設計原則を鉄則として適用しながら下すスキル。変更に強く・理解しやすく・壊れにくい構造を作るための判断基準（KISS / YAGNI / DRY / SOLID / モジュール化 / 関心の分離 / デザイン・バイ・コントラクト / フェイルファスト）を扱う。新しいクラス・モジュール・レイヤーを設計するとき、既存構造をリファクタするとき、抽象を導入するか迷うとき、設計レビューで『この構造は変更に耐えるか』を問いたいときに使用する。「設計原則」「design principle」「SOLID」「単一責任」「SRP」「OCP」「開放閉鎖」「LSP」「リスコフ」「ISP」「インターフェース分離」「DIP」「依存性逆転」「KISS」「YAGNI」「DRY」「関心の分離」「separation of concerns」「モジュール化」「疎結合」「凝集度」「過剰設計」「over-engineering」「抽象化しすぎ」「変更容易性」「フェイルファスト」「デザインバイコントラクト」「設計判断」「設計レビュー」等の発話・タスク要求時に使用。pstack の原則名（Laziness Protocol、Model the Domain、Prove It Works、Fix Root Causes など）が出たときと、openspec-propose / openspec-apply-change から原則を引くときにも使う。"
+description: "ソフトウェア設計の判断を、確立された設計原則を鉄則として適用しながら下すスキル。変更に強く・理解しやすく・壊れにくい構造を作るための判断基準（KISS / YAGNI / DRY / SOLID / モジュール化 / 関心の分離 / デザイン・バイ・コントラクト / フェイルファスト）を扱う。新しいクラス・モジュール・レイヤーを設計するとき、既存構造をリファクタするとき、抽象を導入するか迷うとき、設計レビューで『この構造は変更に耐えるか』を問いたいときに使用する。「設計原則」「design principle」「SOLID」「単一責任」「SRP」「OCP」「開放閉鎖」「LSP」「リスコフ」「ISP」「インターフェース分離」「DIP」「依存性逆転」「KISS」「YAGNI」「DRY」「関心の分離」「separation of concerns」「モジュール化」「疎結合」「凝集度」「過剰設計」「over-engineering」「抽象化しすぎ」「変更容易性」「フェイルファスト」「デザインバイコントラクト」「設計判断」「設計レビュー」等の発話・タスク要求時に使用。作業の原則の名前（Laziness Protocol、Model the Domain、Prove It Works、Fix Root Causes など）が出たときと、openspec-propose / openspec-apply-change から原則を引くときにも使う。"
 ---
 
 # 設計原則（Design Principles）
@@ -218,11 +218,11 @@ KISS と YAGNI は「拡張性」と衝突する。この衝突は本スキル�
 - **`35-architect-db-design`**: DB 設計にも同じ思想（変更容易性・正規化=DRY・制約=契約）が流れる。データモデルは本スキルより長命なので、より保守的に原則を適用する。
 - **`35-architect-doubt-driven-development`**: 設計判断が自明でないとき、本スキルで下した結論を敵対的レビューにかける。本スキル＝判断基準、doubt＝その判断の反証。
 - **`35-architect-sketch`**: 関数の境界をまたぐ設計で、構造の異なる案を並べて比べる手順。候補の選別に使う赤旗（浅いモジュール、情報の漏れ、時間順の分割など）は、そのスキルの `references/design-red-flags.md` にある。
-- **下の「pstack の原則」**: SOLID・KISS・YAGNI・DRY と同じ「変更容易性」を、別の切り口で言ったもの。設計判断ではどちらの原則名を挙げてもよい。
+- **下の「作業の原則」**: SOLID・KISS・YAGNI・DRY と同じ「変更容易性」を、別の切り口で言ったもの。設計判断ではどちらの原則名を挙げてもよい。
 
-## pstack の原則
+## 作業の原則
 
-cursor/plugins の pstack にある原則 24 本を日本語化したもの。`openspec-propose` の設計と `openspec-apply-change` の各手順が、当てどころで名指しして読む。原則を当てるときは `references/pstack-principles/<名前>.md` を最後まで読む。名前は英語のまま持ち、軌道修正に使う（「Prove It Works を当てて、実物の出力を見せて」のように一言で直せる）。報告では、判断を形作った原則と、それで変わった選択を書く。
+`openspec-propose` の設計と `openspec-apply-change` の各手順が、当てどころで名指しして読む。原則を当てるときは `references/principles/<名前>.md` を最後まで読む。名前は英語のまま持ち、軌道修正に使う（「Prove It Works を当てて、実物の出力を見せて」のように一言で直せる）。報告では、判断を形作った原則と、それで変わった選択を書く。
 
 **中核**
 

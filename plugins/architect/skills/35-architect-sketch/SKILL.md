@@ -10,9 +10,9 @@ metadata:
 
 # 設計スケッチ
 
-型、関数のシグネチャ、クラスの形、モジュールの境界を、`not implemented` の本体と擬似コードでスケッチする。複数のモデルの視点から案を作らせて統合し、選んだスケッチに沿ってコードを埋める。pstack の `architect` と `arena` を、Claude Code とこのリポジトリの SDD に合わせて日本語化した。
+型、関数のシグネチャ、クラスの形、モジュールの境界を、`not implemented` の本体と擬似コードでスケッチする。複数のモデルの視点から案を作らせて統合し、選んだスケッチに沿ってコードを埋める。
 
-原則名（Laziness Protocol など）は `35-architect-principle` の「pstack の原則」にあり、当てるときは `references/pstack-principles/` の原則のファイルを読む。
+原則名（Laziness Protocol など）は `35-architect-principle` の「作業の原則」にあり、当てるときは `references/principles/` の原則のファイルを読む。
 
 ## 始め方
 
@@ -34,7 +34,7 @@ SDD の propose では Phase A〜C までを行い、結果を design.md に書�
 
 ## Phase B: スケッチする
 
-同じ課題を複数の候補に解かせ、土台を選び、負けた候補の良い部分を移植する（pstack の `arena`）。
+同じ課題を複数の候補に解かせ、土台を選び、負けた候補の良い部分を移植する。
 
 **枠を決める。** すべての候補が同じ依頼を受けるので、依頼文が約束になる。
 

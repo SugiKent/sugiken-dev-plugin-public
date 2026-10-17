@@ -17,6 +17,6 @@
 - 当てはまるなら、状態の遷移を冪等にする（Make Operations Idempotent）。操作が 2 回動いたら、途中でクラッシュしたら何が起きるかを問う。
 - 呼び出しの連鎖を短くする。流れをたどるのに 3 ファイルより多く要るなら、階層を平らにする（Laziness Protocol、Minimize Reader Load）。
 
-原則名の中身は `35-architect-principle` の `references/pstack-principles/` にある。
+原則名の中身は `35-architect-principle` の `references/principles/` にある。
 
 あなたは並行に走る候補の 1 つで、ほかの候補は別のモデルで走る。あなたのモデルが作れる最良の設計を出す。ほかの候補に保険をかけない。候補同士の違いが、土台を選び移植するための信号になる。無難に見える中間へ寄せると、探索の意味がなくなる。

@@ -17,7 +17,7 @@ OpenSpec の change の tasks を実装する。
 |---|---|
 | 手順 7 の各 task | 性質に応じて `references/task-feature.md`（新しい振る舞い）、`references/task-bug-fix.md`（不具合）、`references/task-refactoring.md`（構造だけ） |
 | 手順 7 のスケッチとの照合 | `architect:35-architect-sketch` の Phase D と Phase E |
-| 実装と確認の拠り所 | `architect:35-architect-principle` の「pstack の原則」（当てる原則のファイルを読む） |
+| 実装と確認の拠り所 | `architect:35-architect-principle` の「作業の原則」（当てる原則のファイルを読む） |
 | 判断が要る場面 | 決めずに一時停止し、`openspec-propose` へ戻す（下の「apply では判断しない」） |
 | 手順 10 の横断レビュー | `architect:35-architect-interrogate`（Codex MCP と `architect:architect-interrogate-reviewer`） |
 | 手順 11 のコメント掃除 | `openspec:comment-sicko` エージェント。design を変える形の変更は `openspec-propose` へ戻す |
@@ -209,7 +209,7 @@ What would you like to do?
 - エラー・ブロッカー・不明瞭な要件では一時停止する - 推測しない
 - CLI 出力の contextFiles を使い、特定のファイル名を仮定しない
 - Never Block on the Human は、決まったことの実行にだけ当てる。決まったことは尋ねずに進め、結果を見せる。判断が要る場面では、尋ねて決めることも自分で決めることもせず、「apply では判断しない」に従う
-- 取り消せない操作（`architect:35-architect-principle` の `references/pstack-principles/never-block-on-the-human.md` が挙げるもの）の前は必ず止まる。組織・プロジェクト・ハーネスの規則が求める確認は、これより優先する
+- 取り消せない操作（`architect:35-architect-principle` の `references/principles/never-block-on-the-human.md` が挙げるもの）の前は必ず止まる。組織・プロジェクト・ハーネスの規則が求める確認は、これより優先する
 - 「止まらないで」「終わるまで回して」が覆うのも、決まったことの実行だけ。その実行では確認を挟まない。判断が要る task は止めて `openspec-propose` へ戻す判断事項にし、それに依存しない残りの task だけを進める。無人実行や長い apply では `references/decision-trail.md` で記録を残す
 - 作業中に壊れた skill を見つけたら、作業は止めず、黙って回避もしない。手順 12 の振り返りで直す提案にする
 
@@ -264,7 +264,7 @@ spec ごとの実装が終わったら、テスト・型チェック・lint な�
 5. 制約コメント（`do not remove`、`文言を変えないで`、`変更前に X に相談` など）のうち、こちらで変えられないものについての残す判定はそのまま残す。それ以外は、その制約を確かめるテストか型で強制できて、強制が design の範囲に収まるなら、強制を入れてからコメントを削除する。強制の形が design の決定（公開 API、データの形、CI の構成）に触れるなら、apply では決めない。コメントを残し、強制の案を完了報告の判断事項に書く。対話の承認は待たない（「apply では判断しない」）。
 6. 削除数、復元したコメント、差し戻し回数、`openspec-propose` へ戻した形の変更、修正内容、強制の提案、実装した強制、強制されていない制約、その他の未解決事項を、手順 8 の完了報告に含める。
 
-この仕組みは [cursor/plugins の pstack `no-comments` スキル](https://github.com/cursor/plugins/blob/main/pstack/skills/no-comments/SKILL.md) と `comment-sicko` エージェントを参考に、このリポジトリの apply フローへ組み込んだもの。
+この仕組みは [cursor/plugins の `no-comments` スキル](https://github.com/cursor/plugins/blob/main/pstack/skills/no-comments/SKILL.md) と `comment-sicko` エージェントを参考に、このリポジトリの apply フローへ組み込んだもの。
 
 # 12. 振り返り
 

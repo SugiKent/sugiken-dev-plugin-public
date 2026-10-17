@@ -1,6 +1,6 @@
 # 足場を固める（仕組みと経緯の調べ方）
 
-`35-architect-sketch` の Phase A と、`openspec-apply-change` のバグ修正・リファクタリングの task が、触る仕組みを掴むときに使う。pstack の `how` と `why` を、手元で使える道具に絞った手順。どちらもコードを変えない。
+`35-architect-sketch` の Phase A と、`openspec-apply-change` のバグ修正・リファクタリングの task が、触る仕組みを掴むときに使う。どちらもコードを変えない。
 
 ## 仕組みを説明する
 

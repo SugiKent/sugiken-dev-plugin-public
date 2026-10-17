@@ -1,6 +1,6 @@
 # 新しい振る舞いの task（機能）
 
-`openspec-apply-change` の手順 7 で、新しい振る舞いや変わる振る舞いを作る task に使う。pstack の poteto-mode の Feature playbook を、apply の中で使う形にしたもの。仕組みの把握（Feature の手順 1）と設計の並行探索（手順 2）は、propose の「設計の形を決める」で済んでいる前提。apply では判断しないので、design に型のスケッチがないまま関数の境界をまたぐ task に来たら、ここでスケッチせず一時停止し、`openspec-propose` へ戻す。
+`openspec-apply-change` の手順 7 で、新しい振る舞いや変わる振る舞いを作る task に使う。仕組みの把握と設計の並行探索は、propose の「設計の形を決める」で済んでいる前提。apply では判断しないので、design に型のスケッチがないまま関数の境界をまたぐ task に来たら、ここでスケッチせず一時停止し、`openspec-propose` へ戻す。
 
 **設計の責任は自分が持つ。計画し、レビューし、確かめる。** 実装は委任してよいが、主導は手放さない。
 
@@ -16,11 +16,11 @@
 
 コードで結合した作業（1 つの機能、1 つの移行）は、点検を内に持った 1 人の持ち主に渡す。その持ち主が、先に塞ぐ段階の後で内部的に並行に広げる。親の段階で並行に広げるのは、独立した成果物を生む断面（監査、サブシステムをまたぐ調査）だけ。形を比べる競作は propose で済んでいるので、apply では行わない。段階の区切りで点検を書き直す。割り込みをつなぐより、新しい持ち主を起動する。
 
-原則名（Separate Before Serializing Shared State など）の中身は `architect:35-architect-principle` の `references/pstack-principles/` にある。
+原則名（Separate Before Serializing Shared State など）の中身は `architect:35-architect-principle` の `references/principles/` にある。
 
 ## サブエージェントに任せるとき
 
-pstack の poteto-mode の「Subagents」を Claude Code に合わせたもの。バグ修正とリファクタリングの task で委任するときもこれに従う。
+バグ修正とリファクタリングの task で委任するときもこれに従う。
 
 - **起動の既定。** Agent ツールで起動し、背景で走らせる。文脈は貼り付けずにファイルのパスで渡す。役割ごとにモデルを選ぶ。最も難しい変更（厄介な並行処理、微妙なアルゴリズム）と文章は `opus`、機械的な編集は `sonnet` か `haiku` に回し、`effort` で推論の深さを調整する。書き込む委任先同士は `isolation: "worktree"` で作業ツリーを分ける。
 - **worktree の起点と取り込み。** worktree はコミット済みの状態から切られ、未コミットの change フォルダや前の task の変更は委任先から見えない。委任の前に、それらをコミットしておく。委任先には作業を自分の worktree でコミットさせ、親が差分をレビューしてから自分のブランチへ取り込む（`git cherry-pick` か `git merge`）。tasks.md のチェックは、取り込んだ後に親が付ける。

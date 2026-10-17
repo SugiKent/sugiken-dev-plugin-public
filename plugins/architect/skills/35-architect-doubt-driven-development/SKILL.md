@@ -31,7 +31,7 @@ description: "自明でない設計判断・実装方針・安全性の主張に
 5. **根拠。** コード、仕様、テスト、計測、一次資料のどれが主張を支えるかを分ける。主張ごとに、下の「確かさの段階」のどこまで下ろせたかを書く。
 6. **代替案と結論。** リスクを下げる案、残余リスク、採用する判断を示す。
 
-同じ前提に立つ修正や設計案が同じ関門で失敗し続けているなら、`35-architect-principle` の `references/pstack-principles/attack-the-premise.md` の止まる条件に従い、次の案を検討する前にその前提を確かめる。
+同じ前提に立つ修正や設計案が同じ関門で失敗し続けているなら、`35-architect-principle` の `references/principles/attack-the-premise.md` の止まる条件に従い、次の案を検討する前にその前提を確かめる。
 
 ### 確かさの段階
 
@@ -82,4 +82,4 @@ description: "自明でない設計判断・実装方針・安全性の主張に
 - `35-architect-db-design` と `35-architect-security` は、それぞれの専門領域で確認すべき前提を供給する。
 - `35-architect-code-review` は依頼された変更の品質を評価する。疑い駆動レビューは、変更前後を問わず判断の根拠を吟味するために使える。
 - `35-architect-interrogate` は、書き上がった差分を複数モデルで敵対的にレビューする。疑い駆動レビューは判断の前提を、interrogate はコードの実行を叩く。
-- 「安全の要になる事実」と「確かさの段階」は、[cursor/plugins の pstack `blast-radius`](https://github.com/cursor/plugins/blob/main/pstack/skills/blast-radius/SKILL.md) を取り込んだもの。
+- 「安全の要になる事実」と「確かさの段階」は、[cursor/plugins の `blast-radius`](https://github.com/cursor/plugins/blob/main/pstack/skills/blast-radius/SKILL.md) を取り込んだもの。

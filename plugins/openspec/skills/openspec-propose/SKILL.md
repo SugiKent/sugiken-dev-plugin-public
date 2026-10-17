@@ -19,7 +19,7 @@ metadata:
 | 場面 | 使うもの |
 |---|---|
 | 要求の言い直しと判断の詰め | `basic:grill-me`（動かせば分かる分岐は、その `references/prototype.md` で試作する） |
-| データの形と設計 | `architect:35-architect-sketch`、`architect:35-architect-principle` の「pstack の原則」 |
+| データの形と設計 | `architect:35-architect-sketch`、`architect:35-architect-principle` の「作業の原則」 |
 | レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の仕分けは `architect:35-architect-interrogate` の「手順 5. リードとして判定する」 |
 | 要約 | `openspec-apply-change` の `references/report-writing.md` |
 | 無人実行・長い作業での判断の記録 | `openspec-apply-change` の `references/decision-trail.md` |

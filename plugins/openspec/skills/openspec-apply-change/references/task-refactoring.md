@@ -1,6 +1,6 @@
 # 構造だけを変える task（リファクタリング）
 
-`openspec-apply-change` の手順 7 で、振る舞いを変えずに構造や形を変える task（改名、抽出、インライン化、重複の除去、移動）に使う。pstack の poteto-mode の Refactoring playbook を、apply の中で使う形にしたもの。
+`openspec-apply-change` の手順 7 で、振る舞いを変えずに構造や形を変える task（改名、抽出、インライン化、重複の除去、移動）に使う。
 
 **約束の責任は自分が持つ。構造は変わり、振る舞いは変わらない。** 振る舞いを足す `task-feature.md` とも、振る舞いを正す `task-bug-fix.md` とも別。
 
@@ -17,4 +17,4 @@
 
 **返答。** 変わった構造、それを照らした固定、等価性の証明、読み手の負荷の差、出荷したものと戻したもの。新しい振る舞いはない。
 
-原則名の中身は `architect:35-architect-principle` の `references/pstack-principles/` にある。
+原則名の中身は `architect:35-architect-principle` の `references/principles/` にある。

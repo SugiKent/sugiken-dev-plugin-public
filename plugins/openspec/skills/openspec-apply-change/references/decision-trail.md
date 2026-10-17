@@ -1,6 +1,6 @@
 # 判断の記録（show-me-your-work）
 
-`openspec-propose` と `openspec-apply-change` を無人実行（Routine など）や長い作業で回すとき、人間が離席して後で確かめる作業で、レビューできる記録を残す。判断は propose で生まれるので、propose では判断とその根拠を、apply では実行して確かめた単位と、判断が要って propose へ戻した箇所を記録する。pstack の `show-me-your-work` に当たる。正本の記録は 1 つにする。
+`openspec-propose` と `openspec-apply-change` を無人実行（Routine など）や長い作業で回すとき、人間が離席して後で確かめる作業で、レビューできる記録を残す。判断は propose で生まれるので、propose では判断とその根拠を、apply では実行して確かめた単位と、判断が要って propose へ戻した箇所を記録する。正本の記録は 1 つにする。
 
 ## 形式
 

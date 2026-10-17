@@ -31,7 +31,7 @@ description による自動呼び出しは従来どおり機能する。
 | `mvp-workflow` | workflow | 個人開発 MVP の構想〜OpenSpec 化までのワークフロー (skill はフェーズ番号順) |
 | `openspec` | workflow | OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集。propose・apply が手順の中で grill-me・architect・retro の各 skill を呼び、試作で分岐を決め、実物で確かめ、多モデルでレビューする |
 | `orchestration` | workflow | openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式) |
-| `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY と pstack の原則 24 本) / 設計スケッチ (構造の異なる案の競作と統合) / コードレビュー / 複数モデルの敵対的レビュー (interrogate) / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査 |
+| `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY と作業の原則 24 本) / 設計スケッチ (構造の異なる案の競作と統合) / コードレビュー / 複数モデルの敵対的レビュー (interrogate) / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査 |
 | `mobile-store` | workflow | モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消) |
 | `marketing` | workflow | 公開済みプロダクトのマーケティング運用 (現状分析・打ち手の優先順位付け) |
 | `e2e` | quality | 網羅的 E2E の 4 フェーズ分解。Web=Playwright, モバイル=Maestro |
@@ -61,4 +61,4 @@ description による自動呼び出しは従来どおり機能する。
 
 ## Third-party notices
 
-`openspec` plugin には、OpenSpec 由来の翻訳・改変済み instruction files が含まれる。`architect` plugin の `35-architect-test-audit` には、OpenClaw 由来の翻訳・改変済み instruction files が含まれる。`design` plugin の `stop-describing-ui` は artouc/stop-describing-ui 由来の翻訳版である。`architect` plugin の `35-architect-sketch`・`35-architect-interrogate`・`35-architect-principle/references/pstack-principles/`、`openspec` plugin の `openspec-apply-change/references/` などには、cursor/plugins の pstack 由来の翻訳・改変済み instruction files が含まれる。対象ファイル、上流リポジトリ、ライセンスは [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照。
+`openspec` plugin には、OpenSpec 由来の翻訳・改変済み instruction files が含まれる。`architect` plugin の `35-architect-test-audit` には、OpenClaw 由来の翻訳・改変済み instruction files が含まれる。`design` plugin の `stop-describing-ui` は artouc/stop-describing-ui 由来の翻訳版である。`architect` plugin の `35-architect-sketch`・`35-architect-interrogate`・`35-architect-principle/references/principles/`、`openspec` plugin の `openspec-apply-change/references/` などには、cursor/plugins 由来の翻訳・改変済み instruction files が含まれる。対象ファイル、上流リポジトリ、ライセンスは [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照。
