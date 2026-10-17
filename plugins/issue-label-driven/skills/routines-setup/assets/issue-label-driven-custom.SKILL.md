@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 ## routines
 
-（`routines-setup` が `claude-code-routines:manage-routines` に渡す Routine id の記録先。worker は読まない）
+（`routines-setup` が `routines:manage-routines` に渡す Routine id の記録先。worker は読まない）
 
 | 役割 | id |
 | --- | --- |

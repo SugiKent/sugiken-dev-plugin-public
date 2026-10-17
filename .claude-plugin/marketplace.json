@@ -24,7 +24,7 @@
     {
       "name": "architect",
       "source": "./plugins/architect",
-      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査の設計・レビュー系スキル",
+      "description": "設計原則 (SOLID/KISS/YAGNI/DRY と作業の原則 24 本) / 設計スケッチ (構造の異なる案の競作と統合) / コードレビュー / 複数モデルの敵対的レビュー (interrogate) / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査の設計・レビュー系スキル",
       "category": "quality"
     },
     {
@@ -112,16 +112,10 @@
       "category": "workflow"
     },
     {
-      "name": "claude-code-routines",
-      "source": "./plugins/claude-code-routines",
+      "name": "routines",
+      "source": "./plugins/routines",
       "description": "Claude Code Routines の検索・作成・更新・起動確認を行う共通操作スキル",
       "category": "utility"
-    },
-    {
-      "name": "issue-driven-sdd",
-      "source": "./plugins/issue-driven-sdd",
-      "description": "GitHub Issue のラベル 1 本で開発段階を表し、Claude Code Routines が段階ごとに起動して OpenSpec の propose → apply → archive を回す構成 (ラベル定義・Routine 設定表・PR リスク評価・バックログの issue 化)",
-      "category": "workflow"
     },
     {
       "name": "issue-label-driven",

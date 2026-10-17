@@ -4,13 +4,13 @@ GitHub Issue のラベル `To Do` → `In Progress` → `Done` だけで開発�
 付けると Claude Code の Routine が起動して実装し、`Closes #n` の PR を作る。merge で issue が閉じ、`Done` が付く。
 **issue 1 件 = 実装 PR 1 本。** OpenSpec の propose / apply / archive は挟まない。
 
-導入には、Routine の作成・更新を共通化する `claude-code-routines` plugin も必要。
+導入には、Routine の作成・更新を共通化する `routines` plugin も必要。
 
 ```bash
-claude plugin install claude-code-routines@sugiken-dev-public
+claude plugin install routines@sugiken-dev-public
 ```
 
-`issue-driven-sdd` の実測で確定した Routines の制約（ラベル集合で判定・追加だけが起動・N 追加で N 本起動）を
+`issue-driven-sdd`（現在は `archive/` に退避）の実測で確定した Routines の制約（ラベル集合で判定・追加だけが起動・N 追加で N 本起動）を
 前提に、**ラベル遷移を全部「1 回の書き込みで追加を含む」形に揃えている**。sdd で面倒だった 2 回書きと
 その修復（`release:` / `restart:`）は消える。
 
@@ -34,7 +34,7 @@ claude plugin install claude-code-routines@sugiken-dev-public
 | `routine-work` | `Issue: Labeled` = `To Do` | 着手判定 → `In Progress` → 実装 → `Closes #n` の PR。レビューは同じセッションで対応 |
 | `routine-dispatch` | `Issue: Closed` | merge 済み PR があれば `Done`、無ければ空集合。待っていた issue を `To Do` で放出 |
 | `routine-sweep` | Schedule | 死んだ worker の再起動、`blocked` の再評価、merge されず閉じた PR、応答が止まった PR |
-| `routines-setup` | 手動 | ラベル 5 本を揃え、`claude-code-routines:manage-routines` で Routine 3 本を適用・検証 |
+| `routines-setup` | 手動 | ラベル 5 本を揃え、`routines:manage-routines` で Routine 3 本を適用・検証 |
 
 ## 動きかた
 
@@ -67,7 +67,7 @@ claude plugin install claude-code-routines@sugiken-dev-public
 
 ## スコープ外
 
-- OpenSpec。仕様を書いてから実装したいなら `issue-driven-sdd`
+- OpenSpec。仕様を書いてから実装したいなら、`openspec` plugin の propose → apply を使う
 - PR の AI 評価（`assess-pr-risk`）。プロジェクト側で任意に作る
 - 循環依存の検出。互いに `depends on` する issue は人が解く
 - 複数リポジトリの横断、同時実行数の上限
