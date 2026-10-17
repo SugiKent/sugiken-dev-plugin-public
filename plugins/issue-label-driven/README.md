@@ -10,7 +10,7 @@ GitHub Issue のラベル `To Do` → `In Progress` → `Done` だけで開発�
 claude plugin install routines@sugiken-dev-public
 ```
 
-`issue-driven-sdd` の実測で確定した Routines の制約（ラベル集合で判定・追加だけが起動・N 追加で N 本起動）を
+`issue-driven-sdd`（現在は `archive/` に退避）の実測で確定した Routines の制約（ラベル集合で判定・追加だけが起動・N 追加で N 本起動）を
 前提に、**ラベル遷移を全部「1 回の書き込みで追加を含む」形に揃えている**。sdd で面倒だった 2 回書きと
 その修復（`release:` / `restart:`）は消える。
 
@@ -67,7 +67,7 @@ claude plugin install routines@sugiken-dev-public
 
 ## スコープ外
 
-- OpenSpec。仕様を書いてから実装したいなら `issue-driven-sdd`
+- OpenSpec。仕様を書いてから実装したいなら、`openspec` plugin の propose → apply を使う
 - PR の AI 評価（`assess-pr-risk`）。プロジェクト側で任意に作る
 - 循環依存の検出。互いに `depends on` する issue は人が解く
 - 複数リポジトリの横断、同時実行数の上限
