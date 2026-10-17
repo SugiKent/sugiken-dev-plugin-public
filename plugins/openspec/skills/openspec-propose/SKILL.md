@@ -14,7 +14,14 @@ metadata:
 
 実装の準備ができたら、`openspec-apply-change` スキルでその change の tasks を進められる。
 
-**作業スタイル:** 作業を始める前に `basic:poteto-mode` を読む。下の手順 1〜5 と、後述の「設計の形を決める」「徹底的な疑問点の解消について」「レビュー」を、一字一句そのままタスクリストに写す。やらない手順も消さず、`skip: <理由>` を添えて残す。手順を飛ばしたことが後から見えるようにするため。
+**進め方:** 下の手順 1〜5 と、後述の「設計の形を決める」「徹底的な疑問点の解消について」「レビュー」を、一字一句そのままタスクリストに写す。やらない手順も消さず、`skip: <理由>` を添えて残す。手順を飛ばしたことが後から見えるようにするため。各手順は、次の skill と参照を必要な場面で読む。
+
+| 場面 | 使うもの |
+|---|---|
+| 要求の言い直しと判断の詰め | `basic:grill-me`（動かせば分かる分岐は、その `references/prototype.md` で試作する） |
+| データの形と設計 | `architect:35-architect-sketch`、`architect:35-architect-principle` の「pstack の原則」 |
+| レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の仕分けは `architect:35-architect-interrogate` の `references/lead-judgment.md` |
+| 要約 | `openspec-apply-change` の `references/report-writing.md` |
 
 ---
 
@@ -89,10 +96,10 @@ metadata:
 - 作成した成果物のリストと簡単な説明
 - 準備状況: 成果物の作成状況と、グリリングで共有理解を確認できたかを別々に示す。未解決判断が残る場合は草案・回答待ちとし、「実装の準備ができた」と宣言しない
 - 試作で決めた分岐があれば、その分岐と証拠（スクリーンショットのパス、観察した出力やタイミング）を示す
-- 適用した原則と、それで変わった選択。挙げるのは、このセッションでファイルを読んだ原則だけ（`basic:poteto-mode` の「守ること」）
+- 適用した原則と、それで変わった選択。挙げるのは、このセッションでファイルを読んだ原則だけ
 - 次の選択肢: 「実装を依頼する」または「`openspec-apply-change` スキルで tasks を進める」
 
-要約は `basic:poteto-mode` の「返答の書き方」で書く。誰のための change で、その人に何が変わるかを先に書く。
+要約は `openspec-apply-change` の `references/report-writing.md` で書く。誰のための change で、その人に何が変わるかを先に書く。
 
 **成果物作成のガイドライン**
 
@@ -126,7 +133,7 @@ tasks.md は **change を archive するための完了条件**であり、本�
 
 # tasks の並べ方と検証
 
-tasks は、それぞれ確かめられる状態で終わる小さな単位の列にする（`basic:poteto-mode` の Sequence Work into Verifiable Units）。壊れたものを、それを起こした task で捕まえれば場所の特定が安いため。
+tasks は、それぞれ確かめられる状態で終わる小さな単位の列にする（`architect:35-architect-principle` の Sequence Work into Verifiable Units）。壊れたものを、それを起こした task で捕まえれば場所の特定が安いため。
 
 - 各 task に、それを確かめる証拠（実行するテスト・コマンド・E2E のシナリオ）を書く。証拠を書けない task は、分け方か中身が曖昧になっている。
 - 並べ方で作業を証明する。使われなくなるコードの削除を作り変えより先に、足場（共有の型、テスト基盤、migration）を機能より先に置く。バグ修正では、失敗するテストか再現を修正より先に置く。
@@ -154,7 +161,7 @@ tasks は、それぞれ確かめられる状態で終わる小さな単位の�
 
 # 設計の形を決める
 
-design を書く前に、データの形を名指しし、それをまとめる構造を `basic:poteto-mode` の Model the Domain で選ぶ（散らばった真偽値より状態機械、分岐より表や登録簿、繰り返す形の前提より型付きのモデル）。新しい要求は、既存の設計に継ぎを当てず、最初からその要求があった前提で設計し直す（Redesign from First Principles）。足す前に、この change で不要になるものを消せないかを見る（Subtract Before You Add）。
+design を書く前に、データの形を名指しし、それをまとめる構造を `architect:35-architect-principle` の Model the Domain で選ぶ（散らばった真偽値より状態機械、分岐より表や登録簿、繰り返す形の前提より型付きのモデル）。新しい要求は、既存の設計に継ぎを当てず、最初からその要求があった前提で設計し直す（Redesign from First Principles）。足す前に、この change で不要になるものを消せないかを見る（Subtract Before You Add）。
 
 change が関数の境界をまたぐ新しい型・モジュール・公開 API・データの持ち方を伴うなら、`architect:35-architect-sketch` の Phase A と Phase B を回す。
 

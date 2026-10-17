@@ -50,8 +50,10 @@ originally distributed in [cursor/plugins](https://github.com/cursor/plugins/tre
 by Lauren Tan (poteto):
 
 - `agents/comment-sicko.md` (from `pstack/agents/comment-sicko.md`)
+- `skills/openspec-apply-change/references/` and
+  `skills/openspec-apply-change/scripts/decision-log.sh`
 - The comment cleanup (no-comments), verification, multi-model review, and
-  working-style steps of `skills/openspec-apply-change/SKILL.md` and
+  skill-routing steps of `skills/openspec-apply-change/SKILL.md` and
   `skills/openspec-propose/SKILL.md`
 
 They are not an official pstack distribution, and this plugin is not

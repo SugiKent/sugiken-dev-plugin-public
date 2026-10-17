@@ -1,6 +1,6 @@
 ---
 name: 35-architect-principle
-description: "ソフトウェア設計の判断を、確立された設計原則を鉄則として適用しながら下すスキル。変更に強く・理解しやすく・壊れにくい構造を作るための判断基準（KISS / YAGNI / DRY / SOLID / モジュール化 / 関心の分離 / デザイン・バイ・コントラクト / フェイルファスト）を扱う。新しいクラス・モジュール・レイヤーを設計するとき、既存構造をリファクタするとき、抽象を導入するか迷うとき、設計レビューで『この構造は変更に耐えるか』を問いたいときに使用する。「設計原則」「design principle」「SOLID」「単一責任」「SRP」「OCP」「開放閉鎖」「LSP」「リスコフ」「ISP」「インターフェース分離」「DIP」「依存性逆転」「KISS」「YAGNI」「DRY」「関心の分離」「separation of concerns」「モジュール化」「疎結合」「凝集度」「過剰設計」「over-engineering」「抽象化しすぎ」「変更容易性」「フェイルファスト」「デザインバイコントラクト」「設計判断」「設計レビュー」等の発話・タスク要求時に使用。"
+description: "ソフトウェア設計の判断を、確立された設計原則を鉄則として適用しながら下すスキル。変更に強く・理解しやすく・壊れにくい構造を作るための判断基準（KISS / YAGNI / DRY / SOLID / モジュール化 / 関心の分離 / デザイン・バイ・コントラクト / フェイルファスト）を扱う。新しいクラス・モジュール・レイヤーを設計するとき、既存構造をリファクタするとき、抽象を導入するか迷うとき、設計レビューで『この構造は変更に耐えるか』を問いたいときに使用する。「設計原則」「design principle」「SOLID」「単一責任」「SRP」「OCP」「開放閉鎖」「LSP」「リスコフ」「ISP」「インターフェース分離」「DIP」「依存性逆転」「KISS」「YAGNI」「DRY」「関心の分離」「separation of concerns」「モジュール化」「疎結合」「凝集度」「過剰設計」「over-engineering」「抽象化しすぎ」「変更容易性」「フェイルファスト」「デザインバイコントラクト」「設計判断」「設計レビュー」等の発話・タスク要求時に使用。pstack の原則名（Laziness Protocol、Model the Domain、Prove It Works、Fix Root Causes など）が出たときと、openspec-propose / openspec-apply-change から原則を引くときにも使う。"
 ---
 
 # 設計原則（Design Principles）
@@ -218,7 +218,50 @@ KISS と YAGNI は「拡張性」と衝突する。この衝突は本スキル�
 - **`35-architect-db-design`**: DB 設計にも同じ思想（変更容易性・正規化=DRY・制約=契約）が流れる。データモデルは本スキルより長命なので、より保守的に原則を適用する。
 - **`35-architect-doubt-driven-development`**: 設計判断が自明でないとき、本スキルで下した結論を敵対的レビューにかける。本スキル＝判断基準、doubt＝その判断の反証。
 - **`35-architect-sketch`**: 関数の境界をまたぐ設計で、構造の異なる案を並べて比べる手順。候補の選別に使う赤旗（浅いモジュール、情報の漏れ、時間順の分割など）は、そのスキルの `references/design-red-flags.md` にある。
-- **`basic:poteto-mode`**: pstack の原則 24 本（Laziness Protocol、Model the Domain、Minimize Reader Load、Boundary Discipline など）を持つ。どれも同じ「変更容易性」を別の切り口で言ったもので、設計判断ではどちらの原則名を挙げてもよい。
+- **下の「pstack の原則」**: SOLID・KISS・YAGNI・DRY と同じ「変更容易性」を、別の切り口で言ったもの。設計判断ではどちらの原則名を挙げてもよい。
+
+## pstack の原則
+
+cursor/plugins の pstack にある原則 24 本を日本語化したもの。`openspec-propose` の設計と `openspec-apply-change` の各手順が、当てどころで名指しして読む。原則を当てるときは `references/pstack-principles/<名前>.md` を最後まで読む。名前は英語のまま持ち、軌道修正に使う（「Prove It Works を当てて、実物の出力を見せて」のように一言で直せる）。報告では、判断を形作った原則と、それで変わった選択を書く。
+
+**中核**
+
+- **Laziness Protocol**（`laziness-protocol`）は、リファクタリングするとき、差分の大きさを見極めるとき、抽象・層・引数の受け渡しを足したくなったときに当てる。削除と、問題を解く最小の変更に寄せる。
+- **Foundational Thinking**（`foundational-thinking`）は、ロジックを書く前に当てる。中心の型とデータ構造、足場と機能の順序、並行に動く主体が何を共有するかを決める。
+- **Redesign from First Principles**（`redesign-from-first-principles`）は、新しい要求を既存の設計へ組み込むときに当てる。最初からその要求があった前提で設計し直す。
+- **Attack the Premise**（`attack-the-premise`）は、同じ前提に立つ修正が 2 つ以上、同じ関門で失敗したときに当てる。次の修正を書く前に、その前提を書き出して直接確かめる。
+- **Subtract Before You Add**（`subtract-before-you-add`）は、追加・リファクタリング・書き直しの順序を決めるときに当てる。先に不要なものを消し、単純になった土台に積む。
+- **Minimize Reader Load**（`minimize-reader-load`）は、追いにくいコードをレビュー・整形するときに当てる。層の数と隠れた状態を数え、呼び出し元が 1 つの包みを畳み、書き換え可能な範囲を狭める。
+- **Outcome-Oriented Execution**（`outcome-oriented-execution`）は、段階の区切りを決めた書き直しや移行に当てる。目標の構造へ収束させ、使い捨ての互換状態を守らない。
+- **Experience First**（`experience-first`）は、製品・UX・機能範囲のトレードオフに当てる。実装の都合より利用者の喜びを取る。
+- **Exhaust the Design Space**（`exhaust-the-design-space`）は、前例のない操作や設計判断に当てる。2〜3 個の競合する試作を並べて比べてから決める。
+- **Build the Lever**（`build-the-lever`）は、自明でない作業すべてに当てる。手で作業せず、作業をする・証明する道具（codemod、スクリプト、生成器）を作る。道具はレビュアーが再実行できる成果物になる。
+
+**構造**
+
+- **Model the Domain**（`model-the-domain`）は、状態を持つロジック、分岐が多いコード、同じ形の前提を複数ファイルで繰り返すコードに当てる。散らばった条件分岐の代わりに、ドメインを構造（状態機械、型付きのモデル、表や登録簿、reducer、境界、適切なコレクション）で表す。
+- **Boundary Discipline**（`boundary-discipline`）は、検証・エラー処理・フレームワークのアダプタをつなぐときに当てる。ガードはシステムの境界に集め、内部の型は信頼し、業務ロジックは純粋に保つ。
+- **Type System Discipline**（`type-system-discipline`）は、型付き言語で型やシグネチャを設計するときに当てる。不正な状態を表現できなくし、意味の違う primitive を区別し、外部データは境界でパースする。
+- **Make Operations Idempotent**（`make-operations-idempotent`）は、クラッシュや再試行の中で動くコマンド・ライフサイクル処理・ループを設計するときに当てる。何度動いても同じ最終状態へ収束させる。
+- **Migrate Callers Then Delete Legacy APIs**（`migrate-callers-then-delete-legacy-apis`）は、古い呼び出し元が残る中で新しい内部 API を入れるときに当てる。移行と削除を同じ波で行う。
+- **Separate Before Serializing Shared State**（`separate-before-serializing-shared-state`）は、並行に動く主体が同じファイル・ブランチ・キー・オブジェクトへ書き込みうるときに当てる。まず共有をなくす。
+
+**検証**
+
+- **Prove It Works**（`prove-it-works`）は、作業の後、完了を宣言する前に当てる。代理の指標や「コンパイルが通った」で済ませず、実物で確かめる。
+- **Fix Root Causes**（`fix-root-causes`）は、デバッグに当てる。症状をたどり、システムが最初に誤った場所で直す。ガードが修正になるのは、それが扱う状態が正当なときだけ。
+- **Sequence Work into Verifiable Units**（`sequence-verifiable-units`）は、複数手順の作業（一括修正、移行、似た編集の連続）と、コミットや PR の積み方に当てる。小さな単位に分けて各単位を確認で終え、次へ進む前に確かめ、並べた順そのものが証明になるように届ける。
+- **Test Behavior, Not Implementation**（`test-behavior-not-implementation`）は、テストを書く・変える・残すときに当てる。コードの利用者が観測できることを確かめ、振る舞いが壊れたら落ち、内部だけ変えたら通るようにする。
+- **Explain the Number**（`explain-the-number`）は、計測した数字（速度向上、劣化、スループット、レイテンシ、eval の結果）を信じる・報告する・行動に使う前に当てる。数字を頭打ちにしているものを突き止め、思っている作業と別のものを測っていないかを潰す。
+
+**委任**
+
+- **Guard the Context Window**（`guard-the-context-window`）は、コンテキストが埋まってきたとき（大きな出力、長いファイル、繰り返しの読み込み、並行作業の計画）に当てる。大量の読み込みはサブエージェントに回し、本線には要約だけを置く。
+- **Never Block on the Human**（`never-block-on-the-human`）は、可逆な作業で「X してよいか」と聞きたくなったときに当てる。進めて結果を見せ、人間に軌道修正を任せる。
+
+**メタ**
+
+- **Encode Lessons in Structure**（`encode-lessons-in-structure`）は、同じ指示を 2 回書いている自分に気付いたときに当てる。lint、メタデータのフラグ、実行時の検査、スクリプトに埋め込み、文章を増やさない。
 
 ## 検証（Verification）
 

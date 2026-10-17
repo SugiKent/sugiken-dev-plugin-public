@@ -6,4 +6,4 @@
 
 利用者の体験が理屈より手触りで決まる製品判断にも当てる。
 
-具体的な進め方は、設計なら `architect:35-architect-sketch` の Phase B、UI や挙動なら `../playbooks/prototype.md` の手順 4（複数案を 1 つの切り替えの後ろに並べる）に従う。
+具体的な進め方は、設計なら `architect:35-architect-sketch` の Phase B、UI や挙動なら `basic:grill-me` の `references/prototype.md` の手順 4（複数案を 1 つの切り替えの後ろに並べる）に従う。

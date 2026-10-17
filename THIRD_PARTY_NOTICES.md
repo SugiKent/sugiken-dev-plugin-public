@@ -185,24 +185,34 @@ by Lauren Tan (poteto).
 
 The pstack-derived material is in:
 
-- `plugins/basic/skills/poteto-mode/` (from `pstack/skills/poteto-mode/SKILL.md`,
-  the playbooks `investigation.md`, `feature.md`, `bug-fix.md`,
-  `refactoring.md`, and `prototype.md`, the `principle-*` skills, and the
-  `figure-it-out`, `show-me-your-work`, `how`, `why`, and `tdd` skills)
+- `plugins/architect/skills/35-architect-principle/references/pstack-principles/`
+  and the "pstack の原則" section of
+  `plugins/architect/skills/35-architect-principle/SKILL.md` (from the
+  `pstack/skills/principle-*` skills and the Principles section of
+  `pstack/skills/poteto-mode/SKILL.md`)
 - `plugins/architect/skills/35-architect-sketch/` (from `pstack/skills/architect/`
-  and `pstack/skills/arena/SKILL.md`)
+  and `pstack/skills/arena/SKILL.md`; `references/grounding.md` from
+  `pstack/skills/how/SKILL.md`, `pstack/skills/why/SKILL.md`, and the
+  Investigation playbook)
 - `plugins/architect/skills/35-architect-interrogate/` (from
   `pstack/skills/interrogate/` and
   `pstack/skills/poteto-mode/references/bugbot-triage.md`)
 - `plugins/architect/agents/architect-interrogate-reviewer.md` (from the
   reviewer role in `pstack/skills/interrogate/SKILL.md`)
+- `plugins/openspec/skills/openspec-apply-change/references/` and
+  `plugins/openspec/skills/openspec-apply-change/scripts/decision-log.sh` (from
+  the Feature, Bug fix, and Refactoring playbooks, the Subagents and Writing the
+  reply sections of `pstack/skills/poteto-mode/SKILL.md`, and the `tdd` and
+  `show-me-your-work` skills)
+- `plugins/basic/skills/grill-me/references/prototype.md` (from the Prototype
+  playbook) and the "始める前に言い直す", "質問する前に分ける",
+  "推奨は判断で、追認ではない", and "全面委任・無人実行のとき" sections of
+  `plugins/basic/skills/grill-me/SKILL.md` (from
+  `pstack/skills/poteto-mode/SKILL.md`, `pstack/skills/in-your-own-words/SKILL.md`,
+  and `pstack/skills/sharpen/SKILL.md`)
 - `plugins/basic/skills/01-retro/references/` and the "三つのレンズで並行に読む",
   "統合の基準", and "強制の階段" sections of `plugins/basic/skills/01-retro/SKILL.md`
   (from `pstack/skills/reflect/` and `pstack/skills/correct/SKILL.md`)
-- The "始める前に言い直す", "質問する前に分ける", "推奨は判断で、追認ではない",
-  and "全面委任・無人実行のとき" sections of `plugins/basic/skills/grill-me/SKILL.md`
-  (from `pstack/skills/poteto-mode/SKILL.md`, `pstack/skills/in-your-own-words/SKILL.md`,
-  and `pstack/skills/sharpen/SKILL.md`)
 - The "安全の要になる事実" and "確かさの段階" parts of
   `plugins/architect/skills/35-architect-doubt-driven-development/SKILL.md`
   (from `pstack/skills/blast-radius/SKILL.md`)
@@ -227,17 +237,21 @@ Changes from upstream:
   (`Task` to `Agent`, readonly reviewers to a read-only agent, Cursor model
   slugs to `opus` and `sonnet`, a second model family to Codex MCP when it is
   available, and Cursor transcripts to `~/.claude/projects/`).
+- Split `poteto-mode` instead of shipping it as one skill. Its principles,
+  playbooks, and rules now sit in the skills that the OpenSpec propose and
+  apply steps call, so running propose or apply is enough to use them.
 - Folded `arena` into `35-architect-sketch`, the `how` and `why` procedures
-  into the investigation playbook, and `tdd` into the bug-fix playbook.
-- Connected the methods to this repository's OpenSpec workflow (propose,
-  apply, archive), the `architect` review skills, `grill-me`, and `01-retro`.
-- Left out playbooks and skills that depend on Cursor-only features, such as
-  Babysit, Shipping, Autopilot, Orchestrate, `setup-pstack`, and the Bugbot
-  watcher scripts.
+  into `35-architect-sketch/references/grounding.md`, and `tdd` into the
+  bug-fix task reference.
+- Left out playbooks and skills that depend on Cursor-only features or fall
+  outside the OpenSpec workflow, such as Babysit, Shipping, Autopilot,
+  Orchestrate, figure-it-out, `setup-pstack`, and the Bugbot watcher scripts.
 
 These files are not presented as an official pstack distribution, and this
 repository is not affiliated with or endorsed by the pstack author or Cursor.
-A copy of the license is in each new skill directory as `LICENSE`.
+Copies of the license are in `35-architect-sketch/LICENSE`,
+`35-architect-interrogate/LICENSE`, `35-architect-principle/references/pstack-principles/LICENSE`,
+`plugins/openspec/NOTICE.md`, and `plugins/basic/NOTICE.md`.
 
 Upstream source and license:
 

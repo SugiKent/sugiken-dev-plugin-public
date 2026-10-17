@@ -1,6 +1,6 @@
 ---
 name: 35-architect-sketch
-description: "コードを書く前に、型・シグネチャ・モジュール構造を本体なしでスケッチし、構造の異なる設計案を並行に作らせて比べ、1 つに統合してから実装し、実装中もスケッチに照らして見張るスキル。関数の境界をまたぐ変更、新しい型・モジュール・公開 API・データの持ち方を伴う change の design を書くとき、いきなりコードを書くと誤った形に縛られそうなときに使う。openspec-propose / openspec-apply-change と basic:poteto-mode から呼ばれるほか、「architect this」「設計して」「設計案を並べて」「型からスケッチして」「設計を競作させて」等の発話で使う。"
+description: "コードを書く前に、型・シグネチャ・モジュール構造を本体なしでスケッチし、構造の異なる設計案を並行に作らせて比べ、1 つに統合してから実装し、実装中もスケッチに照らして見張るスキル。関数の境界をまたぐ変更、新しい型・モジュール・公開 API・データの持ち方を伴う change の design を書くとき、いきなりコードを書くと誤った形に縛られそうなときに使う。openspec-propose / openspec-apply-change から呼ばれるほか、「architect this」「設計して」「設計案を並べて」「型からスケッチして」「設計を競作させて」等の発話で使う。"
 license: MIT
 metadata:
   source: https://github.com/cursor/plugins/tree/main/pstack/skills/architect
@@ -12,7 +12,7 @@ metadata:
 
 型、関数のシグネチャ、クラスの形、モジュールの境界を、`not implemented` の本体と擬似コードでスケッチする。複数のモデルの視点から案を作らせて統合し、選んだスケッチに沿ってコードを埋める。pstack の `architect` と `arena` を、Claude Code とこのリポジトリの SDD に合わせて日本語化した。
 
-原則名（Laziness Protocol など）は `basic:poteto-mode` の `references/principles/` にあり、当てるときはその原則のファイルを読む。
+原則名（Laziness Protocol など）は `35-architect-principle` の「pstack の原則」にあり、当てるときは `references/pstack-principles/` の原則のファイルを読む。
 
 ## 始め方
 
@@ -28,7 +28,7 @@ SDD の propose では Phase A〜C までを行い、結果を design.md に書�
 
 ## Phase A: 足場を固める
 
-新しいコードが触るすべての仕組みについて、本物の頭の中のモデルを作る。関係するサブシステムを `basic:poteto-mode` の `references/playbooks/investigation.md`「仕組みを説明する」で説明できる状態にする。ファイル名を挙げるだけでは足場にならない。設計が所有や層の分け方を変えるなら、同じファイルの「経緯を掘る」で今の形の理由も掘る。掘り当てた理由は推測で補わず、設計が守る制約として扱う。
+新しいコードが触るすべての仕組みについて、本物の頭の中のモデルを作る。関係するサブシステムを `references/grounding.md` の「仕組みを説明する」で説明できる状態にする。ファイル名を挙げるだけでは足場にならない。設計が所有や層の分け方を変えるなら、同じファイルの「経緯を掘る」で今の形の理由も掘る。掘り当てた理由は推測で補わず、設計が守る制約として扱う。
 
 本当にゼロからの作業で、組み込む先のシステムがないときだけ、Phase A を飛ばす。
 

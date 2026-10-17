@@ -11,7 +11,19 @@ metadata:
 
 OpenSpec の change の tasks を実装する。
 
-**作業スタイル:** 作業を始める前に `basic:poteto-mode` を読む。下の手順 1〜8 と、後述の手順 9〜12 を、一字一句そのままタスクリストに写す。やらない手順も消さず、`skip: <理由>` を添えて残す。手順を飛ばしたことが後から見えるようにするため。
+**進め方:** 下の手順 1〜8 と、後述の手順 9〜12 を、一字一句そのままタスクリストに写す。やらない手順も消さず、`skip: <理由>` を添えて残す。手順を飛ばしたことが後から見えるようにするため。各手順は、次の skill と参照を必要な場面で読む。
+
+| 場面 | 使うもの |
+|---|---|
+| 手順 7 の各 task | 性質に応じて `references/task-feature.md`（新しい振る舞い）、`references/task-bug-fix.md`（不具合）、`references/task-refactoring.md`（構造だけ） |
+| 手順 7 のスケッチとの照合 | `architect:35-architect-sketch` の Phase D と Phase E |
+| 判断の拠り所 | `architect:35-architect-principle` の「pstack の原則」（当てる原則のファイルを読む） |
+| 手順 7 で人間に尋ねる前 | `basic:grill-me` の「質問する前に分ける」 |
+| 手順 10 の横断レビュー | `architect:35-architect-interrogate`（Codex MCP と `architect:architect-interrogate-reviewer`） |
+| 手順 11 のコメント掃除 | `comment-sicko` エージェント、形の変更は `architect:35-architect-sketch` |
+| 手順 12 の振り返り | `basic:01-retro` |
+| 完了報告・一時停止の報告 | `references/report-writing.md` |
+| 無人実行・長い作業 | `references/decision-trail.md` |
 
 **ストアの選択:** ユーザーがストア（このマシンに登録された単体の OpenSpec リポジトリ）を指定した場合、または作業がストア内にある場合は、`openspec store list --json` を実行して登録済みストアの id を調べ、specs や changes を読み書きするコマンド（`new change`、`status`、`instructions`、`list`、`show`、`validate`、`archive`、`doctor`、`context`）に `--store <id>` を渡す。他のコマンドはこのフラグを取らない。コマンドが出力するヒントには既にフラグが含まれているので、後続でもそれを維持する。ストアがなければ、コマンドは最も近いローカルの `openspec/` ルートに対して作用する。
 
@@ -85,15 +97,15 @@ OpenSpec の change の tasks を実装する。
 7. **tasks を実装する（完了かブロックまでループ）**
 
    最初の task に入る前に:
-   - データの形と、それをまとめる構造を名指しする（`basic:poteto-mode` の Model the Domain）。design に型のスケッチがあれば、それが約束になる（`architect:35-architect-sketch` の Phase D）。
-   - スループット点検を書く（`basic:poteto-mode` の `references/playbooks/feature.md` 手順 3）。独立した作業の流れがあり、書き込むファイルが互いに素なら、サブエージェントに分けてよい。その差分は自分でレビューし、要約も自分で書く。
+   - データの形と、それをまとめる構造を名指しする（`architect:35-architect-principle` の Model the Domain）。design に型のスケッチがあれば、それが約束になる（`architect:35-architect-sketch` の Phase D）。
+   - スループット点検を書く（`references/task-feature.md` の手順 1）。独立した作業の流れがあり、書き込むファイルが互いに素なら、サブエージェントに分けてよい（同じファイルの「サブエージェントに任せるとき」）。その差分は自分でレビューし、要約も自分で書く。
 
    保留中の各 task について:
    - どの task に取り組んでいるかを表示する
-   - task の性質に合う型の手順を内側で使う。新しい振る舞いは機能、不具合はバグ修正（自分で再現してから直し、失敗するテストか再現を修正より先に置く）、構造だけの変更はリファクタリング（構造を動かす前に振る舞いを固定する）。型は `basic:poteto-mode` の `references/playbooks/` にある。
+   - task の性質に合う手順を内側で使う。新しい振る舞いは `references/task-feature.md`、不具合は `references/task-bug-fix.md`（自分で再現してから直し、失敗するテストか再現を修正より先に置く）、構造だけの変更は `references/task-refactoring.md`（構造を動かす前に振る舞いを固定する）。
    - 必要なコード変更を行う
    - 変更は最小かつ焦点を絞る
-   - コメントは書きながらきれいにする（`basic:poteto-mode` の「コメント」）
+   - コメントは書きながらきれいにする。残すのはコードでは示せない自明でない「なぜ」だけ。検証スクリプトやテストに段階を実況するコメント（`// Phase 1: カードを追加`）を書かず、手順の意味は assert やログの文字列に語らせる（`assert(ok, '再起動後も保持されている')`）。サブエージェントが書いた差分も同じ。手順 11 の掃除は、書くときの手抜きを取り返す場ではない
    - task に書かれた確認を実行し、緑になってから完了にする。赤のまま次の task へ進めば、壊れた土台の上に次の変更を積むことになる
    - tasks ファイルで task を完了にする: `- [ ]` → `- [x]`
    - 次の task へ続ける
@@ -157,7 +169,7 @@ Working on task 4/7: <task description>
 All tasks complete! Ready to archive this change.
 ```
 
-完了報告は `basic:poteto-mode` の「返答の書き方」で書く。誰のための change で、その人に何が変わるかを実装の詳細より先に書き、主張には実測・推測・当て推量のラベルを付ける。
+完了報告は `references/report-writing.md` で書く。誰のための change で、その人に何が変わるかを実装の詳細より先に書き、主張には実測・推測・当て推量のラベルを付ける。
 
 **一時停止時の出力（問題に遭遇）**
 
@@ -188,6 +200,10 @@ What would you like to do?
 - 各 task を完了したら直ちに task のチェックボックスを更新する
 - エラー・ブロッカー・不明瞭な要件では一時停止する - 推測しない
 - CLI 出力の contextFiles を使い、特定のファイル名を仮定しない
+- 可逆な作業は尋ねずに進め、結果を見せる（Never Block on the Human）。仕様の判断（誰に何が見えるか・何が起きるか）は尋ねる。実装の形の判断は自分で決め、完了報告に書く
+- 取り消せない操作（共有ブランチへの force push、デプロイ、データの削除、顧客へのメッセージ）の前は必ず止まる。組織・プロジェクト・ハーネスの規則が求める確認は、これより優先する
+- 「止まらないで」「終わるまで回して」と言われたら、確認を挟まずに最後まで進める。無人実行や長い apply では `references/decision-trail.md` で判断の記録を残す
+- 作業中に壊れた skill を見つけたら、作業は止めず、黙って回避もしない。手順 12 の振り返りで直す提案にする
 
 **流動的なワークフローとの統合**
 
@@ -200,7 +216,7 @@ What would you like to do?
 
 # 9. 実物で確かめる
 
-全 task が完了したら、ゲート（テスト・型チェック・lint）とは別に、変更した面で実物を動かして確かめる（`basic:poteto-mode` の Prove It Works）。型チェックとテストの成功だけでは、利用者に見える振る舞いの証明にならない。
+全 task が完了したら、ゲート（テスト・型チェック・lint）とは別に、変更した面で実物を動かして確かめる（`architect:35-architect-principle` の Prove It Works）。型チェックとテストの成功だけでは、利用者に見える振る舞いの証明にならない。
 
 - 確認は変更の種類に合わせる。CLI は実際のコマンドを実行する。UI は動いているアプリで変わった流れを通す（E2E や Playwright）。パーサや migration は保存した入力を再生する。保存の変更は書いた値を読み戻す。性能の変更は変更前後を計測し、Explain the Number を当ててから数字を書く。
 - 判定は VERIFIED / NOT VERIFIED / INCONCLUSIVE のどれかで書く。INCONCLUSIVE と、別の面で確かめただけのものは合格にしない。
@@ -224,7 +240,7 @@ Codex へのレビュー依頼では必ず次を指定する。
 - 正確性、仕様/design との整合性、エッジケース、回帰、セキュリティ、可読性・保守性、テスト不足を観点に含める
 - 指摘は `重大` / `中` / `Nit` の 3 段階に分類させる。各指摘に根拠となるファイル・行または該当箇所、影響、推奨対応を添えさせる
 
-レビュー結果が返ったら、ゲート結果と合わせて確認する。interrogate の手順 4・5 で両方のレビュアーの指摘を統合し、リードとして Act on / Consider / Noted / Dismissed に仕分ける（interrogate の `references/lead-judgment.md`）。両方のモデルが独立に挙げた指摘がいちばん強い信号になる。Act on は同じ change のスコープ内で修正し、必要なゲートと手順 9 の確認を再実行する。Consider は修正するかを判断して報告する。Dismissed は理由を付けて報告する。指摘が 0 件だったこともレビュー実施結果として報告する。
+レビュー結果が返ったら、ゲート結果と合わせて確認する。interrogate の手順 4・5 で両方のレビュアーの指摘を統合し、リードとして Act on / Consider / Noted / Dismissed に仕分ける（interrogate の `references/lead-judgment.md`）。両方のモデルが独立に挙げた指摘がいちばん強い信号になる。Act on は同じ change のスコープ内で修正し、必要なゲートと手順 9 の確認を再実行する。Consider は修正するかを判断して報告する。Dismissed は理由を付けて報告する。指摘が 0 件だったこともレビュー実施結果として報告する。PR に付いたレビュー bot やセキュリティレビューの指摘も、interrogate の `references/lead-judgment.md`「外部レビューの指摘」で直す・退ける・尋ねるに分ける。
 
 ## Codex MCP レビュー依頼の雛形
 
