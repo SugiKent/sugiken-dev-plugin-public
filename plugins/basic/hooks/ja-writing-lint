@@ -46,16 +46,22 @@ def mask_non_prose(text):
     lines = text.split("\n")
     out = []
     in_fence = False
+    in_front_matter = False
     for i, line in enumerate(lines):
+        if i == 0 and line.strip() == "---":
+            in_front_matter = True
+            out.append("")
+            continue
+        if in_front_matter:
+            if line.strip() == "---":
+                in_front_matter = False
+            out.append("")
+            continue
         if re.match(r"^\s*(```|~~~)", line):
             in_fence = not in_fence
             out.append("")
             continue
         if in_fence:
-            out.append("")
-            continue
-        if i == 0 and line.strip() == "---":  # front matter の開始
-            in_fence = True
             out.append("")
             continue
         line = re.sub(r"`[^`]*`", "", line)
