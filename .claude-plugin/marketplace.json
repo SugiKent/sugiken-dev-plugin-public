@@ -112,8 +112,8 @@
       "category": "workflow"
     },
     {
-      "name": "claude-code-routines",
-      "source": "./plugins/claude-code-routines",
+      "name": "routines",
+      "source": "./plugins/routines",
       "description": "Claude Code Routines の検索・作成・更新・起動確認を行う共通操作スキル",
       "category": "utility"
     },

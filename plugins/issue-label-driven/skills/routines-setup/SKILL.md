@@ -4,8 +4,8 @@ description: issue-label-driven を対象プロジェクトへ導入し、GitHub
 ---
 
 同じ plugin の `routine-common` を読む。現状を取得し、差分だけを直す。前提は Claude GitHub App と
-`claude-code-routines` plugin が対象プロジェクトで使えること。未導入なら
-`claude plugin install claude-code-routines@sugiken-dev-public` で導入する。
+`routines` plugin が対象プロジェクトで使えること。未導入なら
+`claude plugin install routines@sugiken-dev-public` で導入する。
 
 # 1. ラベルを揃える
 
@@ -31,7 +31,7 @@ description: issue-label-driven を対象プロジェクトへ導入し、GitHub
 
 # 3. Routines を揃える
 
-`claude-code-routines:manage-routines` を使い、次の設定を対象 repo に適用する。共通 skill に渡す repository は
+`routines:manage-routines` を使い、次の設定を対象 repo に適用する。共通 skill に渡す repository は
 対象 repo の `owner/name`、既存 id の記録先は
 `.claude/skills/issue-label-driven-custom/SKILL.md` の `## routines` とする。作成・発見した id は毎回そこへ保存する。
 
@@ -65,5 +65,5 @@ work と sweep に Claude Code Remote connector があることを確認する�
 
 PR のリスクを AI が評価して低ければ merge する仕組みは plugin に含めない。必要ならプロジェクト側に
 `assess-pr-risk` skill と、`PR Labeled` = `ai-assess:requested` で起動する Routine を作り、その設定も
-`claude-code-routines:manage-routines` に渡す。`question` が付いた PR は merge せず、routine のコメントは
+`routines:manage-routines` に渡す。`question` が付いた PR は merge せず、routine のコメントは
 `<!-- routine -->` で始める。

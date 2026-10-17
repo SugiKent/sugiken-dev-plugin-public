@@ -3,9 +3,9 @@ name: routines-setup
 description: 'issue-driven-sdd を導入し、GitHub ラベルと Claude Code Routines を現行規約へ合わせる。「Routines をセットアップして」「ラベルを作って」で使う。'
 ---
 
-`routine-common` を読む。前提は `openspec` と `claude-code-routines` plugin。
-Routine の操作は `claude-code-routines:manage-routines` を使う。未導入なら
-`claude plugin install claude-code-routines@sugiken-dev-public` で導入する。
+`routine-common` を読む。前提は `openspec` と `routines` plugin。
+Routine の操作は `routines:manage-routines` を使う。未導入なら
+`claude plugin install routines@sugiken-dev-public` で導入する。
 
 # 1. ラベル
 
@@ -24,7 +24,7 @@ Routine の操作は `claude-code-routines:manage-routines` を使う。未導�
 
 # 2. Routines
 
-`claude-code-routines:manage-routines` に対象 repo、次の設定表、本文、connector 要件と、手順 4 の
+`routines:manage-routines` に対象 repo、次の設定表、本文、connector 要件と、手順 4 の
 custom skill の `## routines` を ID の読取・保存先として渡し、差分を反映させる。
 
 | Name | Trigger | Filter | model | autofix |
@@ -45,7 +45,7 @@ worker と sweep には Claude Code Remote connector を付ける。
 旧 `routine-retro` と `retro` ラベルはこの plugin の範囲外なので触らない。
 
 PR 自動評価を導入する場合だけ `references/assess.md` を読み、label・skill・Routine を一式で作る。
-assess の設定・本文も `claude-code-routines:manage-routines` に渡す。
+assess の設定・本文も `routines:manage-routines` に渡す。
 
 # 3. 動作確認
 
