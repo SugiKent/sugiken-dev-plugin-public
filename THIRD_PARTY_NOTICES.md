@@ -176,3 +176,97 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## pstack
+
+This repository includes translations and adaptations of the pstack plugin
+originally distributed in [cursor/plugins](https://github.com/cursor/plugins/tree/main/pstack)
+by Lauren Tan (poteto).
+
+The pstack-derived material is in:
+
+- `plugins/basic/skills/poteto-mode/` (from `pstack/skills/poteto-mode/SKILL.md`,
+  the playbooks `investigation.md`, `feature.md`, `bug-fix.md`,
+  `refactoring.md`, and `prototype.md`, the `principle-*` skills, and the
+  `figure-it-out`, `show-me-your-work`, `how`, `why`, and `tdd` skills)
+- `plugins/architect/skills/35-architect-sketch/` (from `pstack/skills/architect/`
+  and `pstack/skills/arena/SKILL.md`)
+- `plugins/architect/skills/35-architect-interrogate/` (from
+  `pstack/skills/interrogate/` and
+  `pstack/skills/poteto-mode/references/bugbot-triage.md`)
+- `plugins/architect/agents/architect-interrogate-reviewer.md` (from the
+  reviewer role in `pstack/skills/interrogate/SKILL.md`)
+- `plugins/basic/skills/01-retro/references/` and the "三つのレンズで並行に読む",
+  "統合の基準", and "強制の階段" sections of `plugins/basic/skills/01-retro/SKILL.md`
+  (from `pstack/skills/reflect/` and `pstack/skills/correct/SKILL.md`)
+- The "始める前に言い直す", "質問する前に分ける", "推奨は判断で、追認ではない",
+  and "全面委任・無人実行のとき" sections of `plugins/basic/skills/grill-me/SKILL.md`
+  (from `pstack/skills/poteto-mode/SKILL.md`, `pstack/skills/in-your-own-words/SKILL.md`,
+  and `pstack/skills/sharpen/SKILL.md`)
+- The "安全の要になる事実" and "確かさの段階" parts of
+  `plugins/architect/skills/35-architect-doubt-driven-development/SKILL.md`
+  (from `pstack/skills/blast-radius/SKILL.md`)
+- The "根本原因か症状か" and "検証" axes of
+  `plugins/architect/skills/35-architect-code-review/SKILL.md` (from
+  `pstack/skills/interrogate/references/rubric.md`)
+- `plugins/openspec/agents/comment-sicko.md` (from `pstack/agents/comment-sicko.md`),
+  and the pstack-derived steps of
+  `plugins/openspec/skills/openspec-apply-change/SKILL.md` and
+  `plugins/openspec/skills/openspec-propose/SKILL.md` (from
+  `pstack/skills/no-comments/SKILL.md` and the poteto-mode workflow)
+- The lead-judgment step of `plugins/orchestration/agents/apply-review.md`
+  (from `pstack/skills/interrogate/references/lead-judgment.md`)
+
+Upstream files were taken from commit
+`101b274dd991f694e1f7024be2157e5f3adf07de` of `cursor/plugins`.
+
+Changes from upstream:
+
+- Translated into Japanese.
+- Mapped Cursor tools, subagent fields, models, and paths to Claude Code
+  (`Task` to `Agent`, readonly reviewers to a read-only agent, Cursor model
+  slugs to `opus` and `sonnet`, a second model family to Codex MCP when it is
+  available, and Cursor transcripts to `~/.claude/projects/`).
+- Folded `arena` into `35-architect-sketch`, the `how` and `why` procedures
+  into the investigation playbook, and `tdd` into the bug-fix playbook.
+- Connected the methods to this repository's OpenSpec workflow (propose,
+  apply, archive), the `architect` review skills, `grill-me`, and `01-retro`.
+- Left out playbooks and skills that depend on Cursor-only features, such as
+  Babysit, Shipping, Autopilot, Orchestrate, `setup-pstack`, and the Bugbot
+  watcher scripts.
+
+These files are not presented as an official pstack distribution, and this
+repository is not affiliated with or endorsed by the pstack author or Cursor.
+A copy of the license is in each new skill directory as `LICENSE`.
+
+Upstream source and license:
+
+- Project: [cursor/plugins pstack](https://github.com/cursor/plugins/tree/main/pstack)
+- License: [MIT License](https://github.com/cursor/plugins/blob/main/pstack/LICENSE)
+
+pstack is licensed under the MIT License. The upstream copyright and license
+notice are reproduced below for the included translations and adaptations.
+
+```text
+MIT License
+
+Copyright (c) 2026 Lauren Tan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

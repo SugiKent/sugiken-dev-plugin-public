@@ -24,7 +24,7 @@
     {
       "name": "architect",
       "source": "./plugins/architect",
-      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / コードレビュー / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査の設計・レビュー系スキル",
+      "description": "設計原則 (SOLID/KISS/YAGNI/DRY) / 設計スケッチ (構造の異なる案の競作と統合) / コードレビュー / 複数モデルの敵対的レビュー (interrogate) / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査の設計・レビュー系スキル",
       "category": "quality"
     },
     {
@@ -72,7 +72,7 @@
     {
       "name": "basic",
       "source": "./plugins/basic",
-      "description": "徹底質問 (grill-me) / 10歳向け図解説明 (eli5) / 表現思考 / retro / スケジュール抑制の汎用スキル / 長いセッションを Haiku で図にまとめる右ペイン mod (session-digest)",
+      "description": "作業スタイル (poteto-mode: 原則 24 本と作業の型) / 徹底質問 (grill-me) / 10歳向け図解説明 (eli5) / 表現思考 / retro / スケジュール抑制の汎用スキル / 長いセッションを Haiku で図にまとめる右ペイン mod (session-digest)",
       "category": "utility"
     },
     {
