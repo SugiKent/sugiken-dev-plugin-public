@@ -8,7 +8,7 @@ const HISTORY = [
   { role: 'assistant', text: '完了しました', toolUses: [] },
 ];
 
-function setup(on, gate?: Promise<void>, reply = 'まとめ') {
+function setup(on: any, gate?: Promise<void>, reply = 'まとめ') {
   const prompts: string[] = [];
   const clock = mock.clock(on);
   on('session.start', () => ({ cwd: '/work' }));
@@ -17,11 +17,11 @@ function setup(on, gate?: Promise<void>, reply = 'まとめ') {
   on('ui.invalidate', () => ({ value: undefined }));
   on('session.messages', () => ({ value: HISTORY }));
   on('turn.complete', () => ({ text: '' }));
-  on('prompt.submit', ($, e) => ({ text: e.text }));
-  on('turn.step', async function* ($, e) {
+  on('prompt.submit', ($: any, e: any) => ({ text: e.text }));
+  on('turn.step', async function* ($: any, e: any) {
     return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: null };
   });
-  on('model.complete', async ($, e) => {
+  on('model.complete', async ($: any, e: any) => {
     prompts.push(String(e.prompt));
     if (gate) await gate;
     return { value: { isAnswered: true, text: reply, usage: { input_tokens: 1, output_tokens: 1 } } };
@@ -29,17 +29,23 @@ function setup(on, gate?: Promise<void>, reply = 'まとめ') {
   return { prompts, clock };
 }
 
-async function steps($, count: number, from = 0) {
+async function steps($: any, count: number, from = 0) {
   for (let i = from; i < from + count; i++) {
     for await (const _ of $.turn.step({ turnId: 't1', index: i, model: 'opus', messageCount: 1 })) { /* drain */ }
   }
 }
 
-const complete = ($) => $.turn.complete({ answer: '完了しました', durationMs: 1, isAborted: false, turnId: 't1' });
-
-test('Haiku runs every 10 steps and at turn end', async ($, on) => {
-  const { prompts, clock } = setup(on);
+// The digest runs only after /session-digest on.
+async function start($: any) {
   await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await $.command.run({ command: 'session-digest', args: 'on' });
+}
+
+const complete = ($: any) => $.turn.complete({ answer: '完了しました', durationMs: 1, isAborted: false, turnId: 't1' });
+
+test('Haiku runs every 10 steps and at turn end', async ($: any, on: any) => {
+  const { prompts, clock } = setup(on);
+  await start($);
   await steps($, 9);
   await clock.settle();
   expect(prompts.length).toBe(0);
@@ -53,9 +59,9 @@ test('Haiku runs every 10 steps and at turn end', async ($, on) => {
   expect(prompts[1]).toContain('ターン終了時');
 });
 
-test('the turn-end digest reads the recent conversation, not the last answer alone', async ($, on) => {
+test('the turn-end digest reads the recent conversation, not the last answer alone', async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await complete($);
   await clock.settle();
   expect(prompts[0]).toContain('### ユーザー\n認証を Cognito から Salesforce 直に変えたい');
@@ -66,11 +72,11 @@ test('the turn-end digest reads the recent conversation, not the last answer alo
   expect(prompts[0]).not.toContain('ファイルの中身');
 });
 
-test('a call never starts while the previous one runs', async ($, on) => {
+test('a call never starts while the previous one runs', async ($: any, on: any) => {
   let release = () => {};
   const gate = new Promise<void>((r) => { release = r; });
   const { prompts, clock } = setup(on, gate);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await steps($, 20);
   await complete($);
   await clock.settle();
@@ -82,26 +88,26 @@ test('a call never starts while the previous one runs', async ($, on) => {
   expect(prompts[1]).toContain('ターン終了時');
 });
 
-test('the interval follows digestEverySteps', { options: { digestEverySteps: 3 } }, async ($, on) => {
+test('the interval follows digestEverySteps', { options: { digestEverySteps: 3 } }, async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await steps($, 7);
   await clock.settle();
   expect(prompts.length).toBe(2);
 });
 
-test('digestEverySteps 0 keeps turn end only', { options: { digestEverySteps: 0 } }, async ($, on) => {
+test('digestEverySteps 0 keeps turn end only', { options: { digestEverySteps: 0 } }, async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await steps($, 25);
   await complete($);
   await clock.settle();
   expect(prompts.length).toBe(1);
 });
 
-test('subagent steps and turns are not counted', async ($, on) => {
+test('subagent steps and turns are not counted', async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   for (let i = 0; i < 12; i++) {
     for await (const _ of $.turn.step({ turnId: 's1', index: i, model: 'haiku', messageCount: 1, agentId: 'a1' })) { /* drain */ }
   }
@@ -110,9 +116,9 @@ test('subagent steps and turns are not counted', async ($, on) => {
   expect(prompts.length).toBe(0);
 });
 
-test('only the diagram is shown, not prose around it', async ($, on) => {
+test('only the diagram is shown, not prose around it', async ($: any, on: any) => {
   const { clock } = setup(on, undefined, '状況を説明します。\n```\n✓ 調査 ─ ▶ 実装\n```\n以上です。');
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await complete($);
   await clock.settle();
   const ui = await $.ui.mount({ plugin: 'basic', component: 'Pane', requestId: 'session-digest', surface: 'terminal',
@@ -122,9 +128,9 @@ test('only the diagram is shown, not prose around it', async ($, on) => {
   expect(md.props.text).toBe('```\n✓ 調査 ─ ▶ 実装\n```');
 });
 
-test('Haiku also runs when a prompt is submitted, with that prompt in the input', async ($, on) => {
+test('Haiku also runs when a prompt is submitted, with that prompt in the input', async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await $.prompt.submit({ text: '次は E2E を書いて' });
   await clock.settle();
   expect(prompts.length).toBe(1);
@@ -132,10 +138,20 @@ test('Haiku also runs when a prompt is submitted, with that prompt in the input'
   expect(prompts[0].endsWith('### ユーザー\n次は E2E を書いて')).toBe(true);
 });
 
-test('a submitted prompt already in the conversation is not added twice', async ($, on) => {
+test('a submitted prompt already in the conversation is not added twice', async ($: any, on: any) => {
   const { prompts, clock } = setup(on);
-  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await start($);
   await $.prompt.submit({ text: '認証を Cognito から Salesforce 直に変えたい' });
   await clock.settle();
   expect(prompts[0].split('認証を Cognito から Salesforce 直に変えたい').length).toBe(2);
+});
+
+test('nothing runs until /session-digest on', async ($: any, on: any) => {
+  const { prompts, clock } = setup(on);
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true });
+  await $.prompt.submit({ text: '次は E2E を書いて' });
+  await steps($, 10);
+  await complete($);
+  await clock.settle();
+  expect(prompts.length).toBe(0);
 });

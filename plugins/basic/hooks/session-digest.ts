@@ -3,14 +3,15 @@
 // Haiku runs when a prompt is submitted (prompt.submit), every N main-loop
 // steps (turn.step, one model request of the turn) and at turn.complete, each
 // time on the last MAX_INPUT characters of the main conversation, not on the
-// latest answer alone.
+// latest answer alone. Nothing runs until `/session-digest on` (or the bare
+// command) opens the pane.
 const PANE = 'session-digest';
 const COMMAND = 'session-digest';
 const MODEL = 'haiku';
 const MAX_INPUT = 20000;
 const MAX_TOOL_INPUT = 200;
 const DEFAULT_EVERY = 10;
-export const VERSION = '1.5.0';
+export const VERSION = '1.6.0';
 
 const FENCE = '```';
 // One few-shot: a short conversation and the diagram for it.
@@ -153,7 +154,7 @@ const SYSTEM = [
 // hold it yet.
 type Job = { label: string; fallback?: string; prompt?: string };
 
-let interactive = false, enabled = true, opened = false, columns = 0, wanted = 0;
+let interactive = false, enabled = false, opened = false, columns = 0, wanted = 0;
 // Empty until the first call; the status line is hidden while empty.
 let status = '', summary = '';
 let every = DEFAULT_EVERY;
@@ -245,7 +246,6 @@ export function register(on: any, options: any = {}) {
   on('session.start', async ($: any, e: any, next: any) => {
     interactive = e.isInteractive && (e.surface === 'terminal' || e.surface === 'desktop');
     await $.command.register({ name: COMMAND, description: 'Haiku のセッション要約を表示 (off / on / refresh)', immediate: true });
-    await safe(() => open($));
     return next(e);
   });
 
