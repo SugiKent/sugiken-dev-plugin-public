@@ -284,3 +284,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## frontend-design
+
+`plugins/design/skills/design/` includes material adapted from the
+`frontend-design` agent skill distributed by Anthropic in
+[anthropics/skills](https://github.com/anthropics/skills). The guidance was
+translated into Japanese, trimmed to the parts not already covered by the other
+`design` plugin skills, and reorganized for this repository.
+
+The derived material is in:
+
+- `plugins/design/skills/design/SKILL.md`
+- `plugins/design/skills/design/references/visual-direction.md`
+
+Upstream source and license:
+
+- Project: [anthropics/skills](https://github.com/anthropics/skills)
+- License: see the `LICENSE.txt` distributed with the upstream
+  `frontend-design` skill for the complete terms.
