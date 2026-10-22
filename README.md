@@ -35,7 +35,7 @@ description による自動呼び出しは従来どおり機能する。
 | `mobile-store` | workflow | モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消) |
 | `marketing` | workflow | 公開済みプロダクトのマーケティング運用 (現状分析・打ち手の優先順位付け) |
 | `e2e` | quality | 網羅的 E2E の 4 フェーズ分解。Web=Playwright, モバイル=Maestro |
-| `design` | quality | UI/UX 設計・ユーザビリティ評価・UI から説明文を削る (stop-describing-ui) 系スキル |
+| `design` | quality | デザインの入口 (design) / UI/UX 設計・ユーザビリティ評価・UI から説明文を削る (stop-describing-ui) 系スキル |
 | `llm-eval` | quality | LLM-as-a-Judge 評価基盤のセットアップ (BINEVAL 手法準拠) |
 | `dev-utils` | utility | ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン / コミットからのカスタムリンター生成) |
 | `dev-tool-bootstrap` | utility | 運用ツールのスキャフォールド (mini-sentry / READ-only admin ダッシュボード) |

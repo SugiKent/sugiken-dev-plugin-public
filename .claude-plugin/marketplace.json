@@ -78,7 +78,7 @@
     {
       "name": "design",
       "source": "./plugins/design",
-      "description": "UI/UX 設計・ユーザビリティ評価系スキル (Krug の法則 / Nielsen の 10 ヒューリスティック / 重大度評価 / ダークパターン / アクセシビリティ)",
+      "description": "デザインの入口 (design: スキルの呼び分けと既定値に流れない視覚の判断基準) / UI/UX 設計・ユーザビリティ評価系スキル (Krug の法則 / Nielsen の 10 ヒューリスティック / 重大度評価 / ダークパターン / アクセシビリティ)",
       "category": "quality"
     },
     {
