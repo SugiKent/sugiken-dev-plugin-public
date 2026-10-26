@@ -20,7 +20,7 @@ metadata:
 |---|---|
 | 要求の言い直しと判断の詰め | `basic:grill-me`（動かせば分かる分岐は、その `references/prototype.md` で試作する） |
 | データの形と設計 | `architect:35-architect-sketch`、`architect:35-architect-principle` の「作業の原則」 |
-| レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の仕分けは `architect:35-architect-interrogate` の「手順 5. リードとして判定する」 |
+| レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の検証は `architect:35-architect-interrogate` の「手順 4. 統合し、検証する」、仕分けは同じ skill の「手順 5. リードとして判定する」 |
 | 要約 | `openspec-apply-change` の `references/report-writing.md` |
 | 無人実行・長い作業での判断の記録 | `openspec-apply-change` の `references/decision-trail.md` |
 
@@ -101,6 +101,7 @@ apply は判断しない。仕様・設計の判断、数値の根拠になる�
 - 「apply に判断を残さない」の結果。実測した数値とその方法、スクリプトが何も返さなかったこと（残した行があればその理由）を示す。無人実行なら、AI が既定で確定した選択を、理由と代わりに指示できることを添えて並べる
 - 試作で決めた分岐があれば、その分岐と証拠（スクリーンショットのパス、観察した出力やタイミング）を示す
 - 適用した原則と、それで変わった選択。挙げるのは、このセッションでファイルを読んだ原則だけ
+- レビューの結果。どの探す役と検証役を起動したか、どの Act on を成果物のどこへ反映したか、合意に届かなかった指摘とその票を示す
 - 次の選択肢: 「実装を依頼する」または「`openspec-apply-change` スキルで tasks を進める」
 
 要約は `openspec-apply-change` の `references/report-writing.md` で書く。誰のための change で、その人に何が変わるかを先に書く。
@@ -286,4 +287,13 @@ change が関数の境界をまたぐ新しい型・モジュール・公開 API
 それぞれの Skill は作業エージェントのバイアスを除去するために必ず SubAgent を起動して行うこと。
 最低でも doubt-driven-development のレビューは行うこと。
 
-コードのない計画を敵対的にレビューさせると、レビュアーは起きない理論上のリスクや端の条件を作り出す。そのため、レビューに出す前に、試作で決められる問いは試作で閉じておく。返ってきた指摘は `architect:35-architect-interrogate` の「手順 5. リードとして判定する」で Act on / Consider / Noted / Dismissed に仕分ける。具体的な実行の経路を示せない仮定の指摘と、「自分なら別のやり方にした」に帰着する指摘は、理由を添えて Dismissed に入れる。Act on は成果物に反映し、判断が要るものはグリリングに戻す。複数モデルでコードを叩くレビュー（interrogate そのもの）は、差分ができる apply で行う。
+コードのない計画を敵対的にレビューさせると、レビュアーは起きない理論上のリスクや端の条件を作り出す。そのため、レビューに出す前に、試作で決められる問いは試作で閉じておく。
+
+doubt-driven のレビューは、次の形で回す。
+
+* **探す役を 2 つ、新しいコンテキストで起動する。** `architect:architect-doubt-driven-development` と、別系統のモデル（`architect:35-architect-interrogate` の「手順 3. レビュアーを起動する」のレビュアー B と同じ選び方）。どちらにも同じ依頼文を渡す。Codex は plugin のファイルを読めない場合があるので、`architect:35-architect-doubt-driven-development` の「判断の進め方」と「出力」の本文を依頼文へ貼り、2 つの出力の形を揃える。
+* **依頼文に、目的・成果物・リポジトリを渡す。** change の目的（proposal の要約）、成果物のパス、関係する既存のコードと specs の場所、未完了の他の change の一覧を書く。レビュアーには、成果物とあわせてリポジトリの今のコードを読ませ、計画が目的を達成するか、既存の規約・データの形・他の機能と整合するか、変更していない箇所を壊さないかを確かめさせる。成果物の中だけで閉じたレビューは、既存のコードとのずれを見つけられないため。
+* **実行の結果を渡す。** 試作・計測・既存データの集計で決めた判断には、そのコマンドと出力（スクリーンショットのパス、観察した値）を添える。証拠の無い「確かめた」は、レビュアーに疑わせる対象として渡す。
+* **指摘を検証にかける。** 2 つの指摘を `architect:35-architect-interrogate` の「手順 4. 統合し、検証する」で統合し、別の検証役に確かめさせる。doubt-driven の出力には重大度が無いので、「反証または未確認点」の項目をすべて検証に回す。検証役には差分の代わりに成果物のパスを渡す。計画へのレビューは理論上のリスクを作りやすいので、合意の取れた指摘だけを残すことで、そのノイズを落とす。
+
+合意の取れた指摘は `architect:35-architect-interrogate` の「手順 5. リードとして判定する」で Act on / Consider / Noted / Dismissed に仕分ける。具体的な実行の経路を示せない仮定の指摘と、「自分なら別のやり方にした」に帰着する指摘は、理由を添えて Dismissed に入れる。Act on は成果物に反映し、判断が要るものはグリリングに戻す。合意に届かなかった指摘は成果物に反映せず、「出力」に一覧で示す。複数モデルでコードを叩くレビュー（interrogate そのもの）は、差分ができる apply で行う。

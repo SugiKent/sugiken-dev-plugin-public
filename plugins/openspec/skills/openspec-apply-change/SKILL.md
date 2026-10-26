@@ -19,7 +19,7 @@ OpenSpec の change の tasks を実装する。
 | 手順 7 のスケッチとの照合 | `architect:35-architect-sketch` の Phase D と Phase E |
 | 実装と確認の拠り所 | `architect:35-architect-principle` の「作業の原則」（当てる原則のファイルを読む） |
 | 判断が要る場面 | 決めずに一時停止し、`openspec-propose` へ戻す（下の「apply では判断しない」） |
-| 手順 10 の横断レビュー | `architect:35-architect-interrogate`（Codex MCP と `architect:architect-interrogate-reviewer`） |
+| 手順 10 の横断レビュー | `architect:35-architect-interrogate`（探す役の `architect:architect-interrogate-reviewer` と Codex、確かめる役の `architect:architect-interrogate-verifier`） |
 | 手順 11 のコメント掃除 | `openspec:comment-sicko` エージェント。design を変える形の変更は `openspec-propose` へ戻す |
 | 手順 12 の振り返り | `basic:01-retro` |
 | 完了報告・一時停止の報告 | `references/report-writing.md` |
@@ -162,7 +162,7 @@ Working on task 4/7: <task description>
 <手順 9 の判定（VERIFIED / NOT VERIFIED / INCONCLUSIVE）と、実行したコマンドと出力を書く>
 
 ### Review
-<手順 10 の Act on / Consider / Noted / Dismissed と、直したもの>
+<手順 10 の Act on / Consider / Noted / Dismissed、合意に届かなかった指摘、直したもの>
 
 ### Principles
 <適用した原則と、それで変わった選択。このセッションでファイルを読んだ原則だけ>
@@ -236,11 +236,12 @@ What would you like to do?
 
 spec ごとの実装が終わったら、テスト・型チェック・lint などのゲートを実行する**のと並行して**、`architect:35-architect-interrogate` の手順 1〜5 で横断レビューを走らせる。ゲートの完了を待ってからレビューを始めない。独立したレビューを並走させ、ゲートが通っても見逃し得る設計との不整合や実装漏れを回収する。
 
-- レビュアーとその起動の仕方は、interrogate の手順 3 に従う。既定は Codex MCP と `architect:architect-interrogate-reviewer` の 2 つ。どちらにも interrogate の `references/reviewer-prompt.md` を同じ形で埋めて渡す。依頼文を揃えると、2 つの系統の指摘の違いがモデルの差だけになり、両方が挙げた指摘を信頼できる信号として扱える。
-- 依頼文の意図の欄には、proposal と design の要約に加えて、正本ファイル（proposal、specs、design、tasks）のパスと、突き合わせてほしい design の決定（番号か節の名前）を書く。差分の欄には、実装ファイルの一覧と差分の取り方（`git diff <base>...HEAD`）を書く。
+- レビュアーとその起動の仕方は、interrogate の手順 3 に従う。既定は Codex と `architect:architect-interrogate-reviewer` の 2 つで、どちらもこの apply の会話を持たない新しいコンテキストで差分を読む。どちらにも interrogate の `references/reviewer-prompt.md` を同じ形で埋めて渡す。依頼文を揃えると、2 つの系統の指摘の違いがモデルの差だけになり、両方が挙げた指摘を信頼できる信号として扱える。
+- 依頼文の意図の欄には、proposal と design の要約に加えて、正本ファイル（proposal、specs、design、tasks）のパスと、突き合わせてほしい design の決定（番号か節の名前）を書く。差分の欄には、実装ファイルの一覧と差分の取り方（`git diff <base>...HEAD`）を書く。レビュアーは差分の外もたどるので、変更が触れる呼び出し元・共有する状態や設定の場所も添える。
+- 実行の証拠の欄には、手順 9 で実行したコマンドと出力、ここまでに通したゲートの出力をそのまま貼る。「テストは通った」のような要約で済ませない。レビュアーが証拠の抜けを指摘できるのは、出力そのものを見たときだけだから。
 - 意図は成果物から取る。interrogate と、その `references/lead-judgment.md` が「利用者に尋ねる」とする場面では、apply では尋ねず、`openspec-propose` へ戻す判断事項として報告する。
 
-レビュー結果が返ったら、ゲート結果と合わせて確認する。interrogate の手順 4・5 で両方のレビュアーの指摘を統合し、リードとして Act on / Consider / Noted / Dismissed に仕分ける。
+レビュー結果が返ったら、ゲート結果と合わせて確認する。interrogate の手順 4 で両方のレビュアーの指摘を統合し、探したレビュアーとは別の検証役に確かめさせ、合意の取れた指摘だけを手順 5 でリードとして Act on / Consider / Noted / Dismissed に仕分ける。合意に届かなかった指摘は直さず、完了報告に一覧で載せる。
 
 - Act on のうち、成果物が決めた範囲で直せるもの（仕様・設計からのずれ、実装の誤り）は、同じ change のスコープ内で直し、必要なゲートと手順 9 の確認を再実行する。
 - 直すのに成果物にない判断が要る Act on（design の誤り、design の形を変える組み替え）は、apply では直さず、`openspec-propose` へ戻す判断事項として報告する。
