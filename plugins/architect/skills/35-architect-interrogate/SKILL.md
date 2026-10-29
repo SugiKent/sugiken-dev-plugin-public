@@ -37,9 +37,9 @@ metadata:
 | レビュアー | 既定 |
 |---|---|
 | A | `architect:architect-interrogate-reviewer` を `model: "opus"` で起動する |
-| B | Codex プラグインの `codex:codex-rescue` サブエージェント。依頼文で、ファイルを編集せず指摘だけを返すよう伝える。使えなければ `architect:architect-interrogate-reviewer` を `model: "sonnet"` で起動し、系統の多様性が下がったことを判定に記す |
+| B | Codex プラグインの `codex:codex-rescue` サブエージェント。依頼文で、ファイルを編集せず指摘だけを返すよう伝える。プラグインが無ければ `codex exec -C <repo> -s read-only -o <結果のファイル> - < <依頼文のファイル>` で起動する（`--full-auto` は invalid flag で止まるので、サンドボックスは `-s` で指定する）。どちらも使えなければ `architect:architect-interrogate-reviewer` を `model: "sonnet"` で起動し、系統の多様性が下がったことを判定に記す |
 
-すべてのレビュアーに、`references/reviewer-prompt.md` の同じ雛形を埋めて渡す。埋めるのは、述べた意図、差分かファイルの中身、手順 1 の実行の証拠、`references/rubric.md` の観点、`references/code-quality-lens.md` のコード品質の目。Codex は plugin のファイルを読めない場合があるので、観点と目の本文を依頼文へ貼る。推論の深さ（`effort`）は仕事に合わせて選ぶ。
+すべてのレビュアーに、`references/reviewer-prompt.md` の同じ雛形を埋めて渡す。埋めるのは、述べた意図、差分かファイルの中身、手順 1 の実行の証拠、`references/rubric.md` の観点、`references/code-quality-lens.md` のコード品質の目。埋めた雛形は 1 つのファイルにして repo 内の ignore 済みの場所（`tmp/` など）に置き、全レビュアーに同じパスを渡す。雛形は 17KB 前後になり、Codex は plugin のキャッシュのファイルを読めない場合があり、レビュアーごとに本文を貼ると中身がずれるため。Codex には、指摘一覧を要約せず全文で返すよう頼む。推論の深さ（`effort`）は仕事に合わせて選ぶ。
 
 起動したレビュアーが失敗したら、残りで続け、脱落を判定に記す。レビュアーがファイルを変えていないことを、終わった後に `git status` で確かめる。
 

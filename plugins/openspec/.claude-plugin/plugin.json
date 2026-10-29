@@ -1,7 +1,7 @@
 {
   "name": "openspec",
   "description": "OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "author": {
     "name": "SugiKent"
   }
