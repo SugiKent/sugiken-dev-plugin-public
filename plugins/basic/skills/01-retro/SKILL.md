@@ -103,6 +103,11 @@ docs を読む・更新する判断では、先に [[01-docs-management]] の分
 - 対象の判断:
   - そのプロジェクト固有の内容 → プロジェクトの `.claude/skills/`
   - プロジェクトを跨いで使える汎用的な内容 → plugin repo `SugiKent/sugiken-dev-plugin-public` (https://github.com/SugiKent/sugiken-dev-plugin-public) の `plugins/*/skills/`（plugin 経由で配布されているスキルの改善はこちら。install 先のキャッシュを直接編集しない）
+- plugin のスキルへ回す気付きは、変えるスキルを plugin の全スキルから選ぶ。気付きを、そのセッションで動いていたスキル（呼び出し元の apply など）へまとめて寄せることはしない。
+  - 候補は、plugin repo の `plugins/*/skills/*/SKILL.md` の `description` を一覧して挙げる。手元に repo が無ければ、install 先のキャッシュを読むだけにする。
+  - その気付きが変える判断を本来持っているスキルを選ぶ。例えば、認可の順や情報の漏れは `architect:35-architect-security` が持つ。並行の書き込みや索引の整合は `architect:35-architect-db-design` が持つ。レビューの進め方は `architect:35-architect-interrogate` が持つ。1 つの気付きが複数の判断を含むなら、判断ごとに分ける。
+  - 選んだスキルの本文を読み、既に書いてあるかを確かめる（統合の基準の「既に書いてあるか」）。
+  - プレビューには、気付きごとに「選んだスキル」「その判断を持つ理由」「退けた候補」を書く。
 
 #### B. ルール更新 (`.claude/rules/`)
 
@@ -190,6 +195,7 @@ paths:
 
 ##### [提案1] [新規/改善] — スキル名
 - **ファイル**: `.claude/skills/[name]/SKILL.md`（汎用なら plugin repo の `plugins/[plugin]/skills/[name]/SKILL.md`）
+- **選んだ理由**: [そのスキルがこの判断を持つ理由と、退けた候補]（plugin のスキルのとき）
 - **理由**: [なぜこの更新が必要か]
 - **概要**: [変更内容の要約]
 
