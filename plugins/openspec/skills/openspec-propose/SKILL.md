@@ -20,6 +20,7 @@ metadata:
 |---|---|
 | 要求の言い直しと判断の詰め | `basic:grill-me`（動かせば分かる分岐は、その `references/prototype.md` で試作する） |
 | データの形と設計 | `architect:35-architect-sketch`、`architect:35-architect-principle` の「作業の原則」 |
+| 新しい認証・認可・token 発行の経路を足す change | design を書く前に `architect:35-architect-security` の「プロセス: まず脅威モデリング（Threat Model First）」を回す（必須） |
 | レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の検証は `architect:35-architect-interrogate` の「手順 4. 統合し、検証する」、仕分けは同じ skill の「手順 5. リードとして判定する」 |
 | 要約 | `openspec-apply-change` の `references/report-writing.md` |
 | 無人実行・長い作業での判断の記録 | `openspec-apply-change` の `references/decision-trail.md` |
@@ -149,8 +150,8 @@ apply が決めてよいのは、spec と design のどの文も書き換えな�
 2. **同じ change を使う。** `openspec new change` は実行しない。続きだと分かっているので、ガードレールにある「継続するか新規作成するか」の確認もしない。
 3. **止まった判断とその依存先だけを詰める。** 判断ツリーのうち、その判断と、それに依存する枝だけを「徹底的な疑問点の解消について」の基準で詰め直す。決まった枝は掘り直さない。形を決め直すなら「設計の形を決める」を回す。
 4. **影響を受ける成果物を直す。** design・specs・tasks を直す。直した判断が完了済みの task の中身を変えるなら、その task のチェックを外し、外した理由を tasks に書く。
-5. **確かめ直す。** 「apply に判断を残さない」のスクリプトを回し直し、直した範囲に `architect:35-architect-doubt-driven-development` のレビューを回す。
-6. **apply へ返す。** 何を決め、どの成果物のどこを直したかを要約し、`openspec-apply-change` の手順 4 から再開する。
+5. **確かめ直す。** 「apply に判断を残さない」のスクリプトを回し直し、成果物の差分に `architect:35-architect-doubt-driven-development` のレビューを回す。範囲を決定の一覧で渡すと、再入で新しく書いた判断がレビューから外れるため。レビューが利用者の承認した決定を覆したら、apply へ返す前に利用者に確認し直す。
+6. **apply へ返す。** 何を決め、どの成果物のどこを直したかを、再入で新しく書いた判断も含めて要約し、`openspec-apply-change` の手順 4 から再開する。
 
 無人実行で apply が止まったときは、apply を呼んだ呼び出し元（Routine やオーケストレーター）がこの節を回す。呼び出し元が propose を回せないなら、apply の一時停止報告をそのまま人への報告にして終える。
 
@@ -171,6 +172,7 @@ tasks は、それぞれ確かめられる状態で終わる小さな単位の�
 - 各 task に、それを確かめる証拠（実行するテスト・コマンド・E2E のシナリオ）を書く。証拠を書けない task は、分け方か中身が曖昧になっている。
 - 並べ方で作業を証明する。使われなくなるコードの削除を作り変えより先に、足場（共有の型、テスト基盤、migration）を機能より先に置く。バグ修正では、失敗するテストか再現を修正より先に置く。
 - ユニットテストが通っただけを、利用者に見える振る舞いの検証にしない。利用者が触る面を変える change では、その面を自動で動かす確認を task に入れる。変更の種類ごとの確かめ方は `openspec-apply-change` の「9. 実物で確かめる」に従う。
+- design が利用者の回復の手段・解消の経路を複数挙げるなら、tasks にはそれぞれを利用者の面で通す確認を書く。change の目的が「X で失敗しなくなる」なら、X を返していた処理を実際に呼ぶ確認を書く。
 - 一時的な互換コードで途中の状態を守る task を作らない。古い API を置き換えるなら、呼び出し元の移行と古い API の削除を同じ change に入れる（Migrate Callers Then Delete Legacy APIs）。
 
 ---
@@ -296,4 +298,4 @@ doubt-driven のレビューは、次の形で回す。
 * **実行の結果を渡す。** 試作・計測・既存データの集計で決めた判断には、そのコマンドと出力（スクリーンショットのパス、観察した値）を添える。証拠の無い「確かめた」は、レビュアーに疑わせる対象として渡す。
 * **指摘を検証にかける。** 2 つの指摘を `architect:35-architect-interrogate` の「手順 4. 統合し、検証する」で統合し、別の検証役に確かめさせる。doubt-driven の出力には重大度が無いので、「反証または未確認点」の項目をすべて検証に回す。検証役には差分の代わりに成果物のパスを渡す。計画へのレビューは理論上のリスクを作りやすいので、合意の取れた指摘だけを残すことで、そのノイズを落とす。
 
-合意の取れた指摘は `architect:35-architect-interrogate` の「手順 5. リードとして判定する」で Act on / Consider / Noted / Dismissed に仕分ける。具体的な実行の経路を示せない仮定の指摘と、「自分なら別のやり方にした」に帰着する指摘は、理由を添えて Dismissed に入れる。Act on は成果物に反映し、判断が要るものはグリリングに戻す。合意に届かなかった指摘は成果物に反映せず、「出力」に一覧で示す。複数モデルでコードを叩くレビュー（interrogate そのもの）は、差分ができる apply で行う。
+合意の取れた指摘は `architect:35-architect-interrogate` の「手順 5. リードとして判定する」で Act on / Consider / Noted / Dismissed に仕分ける。具体的な実行の経路を示せない仮定の指摘と、「自分なら別のやり方にした」に帰着する指摘は、理由を添えて Dismissed に入れる。Act on は成果物に反映し、判断が要るものはグリリングに戻す。Act on が design の決定を変えたら、直した差分をもう一度探す役に通す。直し自体が新しい欠陥を生むことがあるため。合意に届かなかった指摘は成果物に反映せず、「出力」に一覧で示す。複数モデルでコードを叩くレビュー（interrogate そのもの）は、差分ができる apply で行う。
