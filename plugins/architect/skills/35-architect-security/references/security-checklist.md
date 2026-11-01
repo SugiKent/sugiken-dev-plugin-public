@@ -76,6 +76,8 @@ Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: camera=(), microphone=(), geolocation=()
 ```
 
+- [ ] ヘッダを足したら、組み合わせた状態の実送信で既存の検査を通す（単独の評価では、片方が別の検査の入力を消す組み合わせを見落とすため。Referrer-Policy と Origin 検査、CSP の form-action と redirect など）
+
 ## CORS 設定
 
 ```typescript
