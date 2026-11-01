@@ -53,7 +53,16 @@ metadata:
 
    **tasks ファイルが存在しない場合:** task 関連の警告なしで続行する。
 
-4. **デルタ仕様の同期状態を評価する**
+4. **実装が未コミットで残っていないか確認する**
+
+   tasks が挙げた実装のパスを `git status --short <パス>` で見る。実装が作業ツリーにしかないまま archive すると、main spec だけが新しい仕様へ進み、spec からは完了に見えるのに本番とずれるため。
+
+   **未コミットの変更が見つかった場合:**
+   - 該当のパスを列挙した警告を表示する（別のセッションの差分と区別できなくても列挙する）
+   - **AskUserQuestion ツール**で続行の意思を確認する
+   - 呼び出し元が archive の後にコミットすると決めている流れ（orchestration の `apply-commit` など）では、確認せずに続行し、要約に載せる
+
+5. **デルタ仕様の同期状態を評価する**
 
    status JSON の `artifactPaths.specs.existingOutputPaths` を使ってデルタ仕様を確認する。存在しなければ、同期の確認なしで続行する。
 
@@ -67,7 +76,7 @@ metadata:
    - `openspec-sync-specs` スキルの手順でメイン仕様へ適用してから archive を進める。同期をスキップする選択肢は設けない。
    - デルタ仕様が存在しない場合は、同期なしで続行する。
 
-5. **archive を実行する**
+6. **archive を実行する**
 
    `planningHome.changesDir` の下に `archive` ディレクトリがなければ作成する:
    ```bash
@@ -84,14 +93,14 @@ metadata:
    mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
    ```
 
-6. **要約を表示する**
+7. **要約を表示する**
 
    archive の完了要約を表示する。次を含める:
    - change 名
    - 使われたスキーマ
    - archive の場所
    - specs が同期されたか（該当する場合）
-   - 警告（未完了の成果物 / tasks）についての注記
+   - 未完了の成果物・tasks・未コミットの実装の警告が出ていれば、その内容
 
 **成功時の出力**
 
