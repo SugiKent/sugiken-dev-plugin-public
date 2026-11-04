@@ -27,7 +27,7 @@ OpenSpec の change の tasks を実装する。
 
 **apply では判断しない:** apply は、propose で決めたことを実行し、propose で決めた基準で確かめるだけにする。仕様・設計の判断、数値の根拠になる実測、AI による仮置きの確定が要る場面に来たら、apply の中で決めない。その場で一時停止し、何が決まっていないかと、それがどの task を止めているかを書いて、`openspec-propose`（成果物の更新とグリリング）へ戻す。手順を最後まで回すために判断を補うより、止まるほうを選ぶ。apply の中で決めた判断は、グリリングとレビューを通らず、成果物にも残らないため。何を propose で済ませるか、apply が決めてよい局所の選択は何かの正本は、`openspec-propose` の「apply に判断を残さない」にある。戻した後の手順は `openspec-propose` の「apply から戻ったとき」にある。
 
-**呼び出し元が apply の中で聞くことを許したとき:** 呼び出し元の指示が「決められないことだけを聞く」のように apply の中での質問を許していれば、`openspec-propose` へ戻す代わりに聞いてよい。そのときは次の 3 つを守る。聞く前に「一時停止時の出力」の Undecided（決まっていない判断、それが止めている task、集めた証拠）を本文に出し、質問は本文に出したものだけを指す。決まった内容は、実装と同じコミットで design と spec delta に書き戻し、`openspec validate --strict` を通す。決定後の差分は、手順 10 の横断レビューへもう一度通す。propose へ戻したときにグリリング・成果物・レビューが担うことを、apply の中で代わりに果たすため。
+**呼び出し元が apply の中で聞くことを許したとき:** 呼び出し元の指示が「決められないことだけを聞く」のように apply の中での質問を許していれば、`openspec-propose` へ戻す代わりに聞いてよい。そのときは次の 3 つを守る。聞く前に「一時停止時の出力」の「人間に確認してほしいこと」（決まっていない判断、それが止めている task、集めた証拠）を本文に出し、質問は本文に出したものだけを指す。決まった内容は、実装と同じコミットで design と spec delta に書き戻し、`openspec validate --strict` を通す。決定後の差分は、手順 10 の横断レビューへもう一度通す。propose へ戻したときにグリリング・成果物・レビューが担うことを、apply の中で代わりに果たすため。
 
 **ストアの選択:** ユーザーがストア（このマシンに登録された単体の OpenSpec リポジトリ）を指定した場合、または作業がストア内にある場合は、`openspec store list --json` を実行して登録済みストアの id を調べ、specs や changes を読み書きするコマンド（`new change`、`status`、`instructions`、`list`、`show`、`validate`、`archive`、`doctor`、`context`）に `--store <id>` を渡す。他のコマンドはこのフラグを取らない。コマンドが出力するヒントには既にフラグが含まれているので、後続でもそれを維持する。ストアがなければ、コマンドは最も近いローカルの `openspec/` ルートに対して作用する。
 
@@ -150,64 +150,13 @@ Working on task 4/7: <task description>
 ✓ Task complete
 ```
 
-**完了時の出力**
+**完了時・一時停止時の出力**
 
-```
-## Implementation Complete
+完了・一時停止・回答待ち・既に全 task 完了の場合・retro 後に作業を止めて返す報告は、`references/report-writing.md` の「最終報告の固定フォーマット」に従う。change 名に続けて「進捗報告」「検証内容」「AIが判断して進めたこと」「人間に確認してほしいこと」を固定列の表で出し、独自の要約を前後に足さない。
 
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 7/7 tasks complete ✓
-
-### Completed This Session
-- [x] Task 1
-- [x] Task 2
-...
-
-### Verification
-<手順 9 の判定（VERIFIED / NOT VERIFIED / INCONCLUSIVE）と、実行したコマンドと出力を書く>
-
-### Review
-<手順 10 の Act on / Consider / Noted / Dismissed、合意に届かなかった指摘、直したもの>
-
-### Principles
-<適用した原則と、それで変わった選択。このセッションでファイルを読んだ原則だけ>
-
-### Retro
-<振り返りで反映したファイル、作成した Issue、ユーザー全体のスキルへの提案、反映しなかった候補とその理由を書く>
-
-All tasks complete! Ready to archive this change.
-```
-
-この出力を使うのは、手順 8 の archive の条件を満たすときだけ。
-
-完了報告は `references/report-writing.md` で書く。誰のための change で、その人に何が変わるかを実装の詳細より先に書き、主張には実測・推測・当て推量のラベルを付ける。
-
-**一時停止時の出力（問題に遭遇）**
-
-```
-## Implementation Paused
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 4/7 tasks complete
-
-### Issue Encountered
-<description of the issue>
-
-### Undecided
-<判断が要って止まったときに書く。決まっていない判断、それが止めている task、集めた証拠。推奨を添えるなら、確かめた遷移・経路と未測の組み合わせを並べる。一時停止の中で見つけた別件も行にする。表の外の別件は誰も閉じないため。`openspec-propose` の「apply から戻ったとき」の入力になる>
-
-### Commits
-<未 push のコミットと、push が deploy になるか。一時停止で止まるのは archive だけで、共有ブランチのコミットは他のセッションの push で本番に出るため>
-
-**Options:**
-1. <option 1>
-2. <option 2>
-3. Other approach
-
-What would you like to do?
-```
+- 完了は手順 8 の archive の条件を満たすときだけとし、手順 9〜12 の結果を対応する表へ入れる。retro 後に独自の報告形式へ切り替えない。
+- 一時停止時の出力では、未決判断（従来の Undecided）、それが止めている task、集めた証拠、推奨と未測の組み合わせ、別件を「人間に確認してほしいこと」の表に入れる。未 push のコミットと push が deploy になるかは「進捗報告」に入れる。
+- 誰のための change で何が変わるか、検証・レビュー・原則・コメント掃除・retro の必須情報は、共通参照の対応表に従って残す。
 
 **ガードレール**
 - 完了かブロックまで tasks を進め続ける
