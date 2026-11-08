@@ -21,9 +21,9 @@ context: fork
 
 ## 手順
 
-1. 起動プロンプトの実行対象（対象ドメイン、例 `C-01x` / 全ケース）と前提（DB reset 要否）を確認する。
+1. 起動プロンプトの実行対象（対象ドメイン、例 `C-01x` / 全ケース）と前提（DB reset 要否）を確認する。既定は起動プロンプトが渡したケースだけを実行し、全件は起動プロンプトが全件実行を明示したときだけ流す。実行対象が書かれていなければ全件に倒さず、「実行対象未指定」として報告する。
 2. ハートビートを立ててからヘッドレス実行する：
-  - Web: `npx playwright test`（特定: `npx playwright test e2e/tests/auth/`、失敗のみ: `--last-failed`）
+  - Web: `npx playwright test`（特定: `npx playwright test e2e/tests/auth/`、ケース ID: `--grep "C-01[0-9]"`、失敗のみ: `--last-failed`）
   - モバイル: `maestro test .maestro/flows/`（tags: `maestro test --include-tags smoke`）
 3. 結果を回収し、ハートビートを消す。
 4. 失敗ケースごとに、エラー内容・再現条件・**原因の見立て（実装側の不具合 / E2E 側の記述 / データ前提）**を添える。**ただし修正はしない**。trace（Web: `test-results/<name>/trace.zip`）は読んで見立てに反映してよい。
