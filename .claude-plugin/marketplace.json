@@ -18,7 +18,7 @@
     {
       "name": "orchestration",
       "source": "./plugins/orchestration",
-      "description": "openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式)",
+      "description": "openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式) / 完了 change の Orca 並行 archive / リポジトリ品質点検",
       "category": "workflow"
     },
     {
@@ -54,7 +54,7 @@
     {
       "name": "analytics",
       "source": "./plugins/analytics",
-      "description": "分析業務",
+      "description": "業務データの分析の進め方 (検証・再現性・成果物管理・数値の説明)",
       "category": "utility"
     },
     {

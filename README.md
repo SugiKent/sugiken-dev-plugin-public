@@ -16,7 +16,7 @@ claude plugin install mvp-workflow@sugiken-dev-public
 claude plugin install architect@sugiken-dev-public
 
 # プロジェクト単位で入れたい場合
-claude plugin install mobile-release@sugiken-dev-public --scope project
+claude plugin install mobile-store@sugiken-dev-public --scope project
 ```
 
 または対話 UI: `/plugin` → sugiken-dev-public から選択。
@@ -30,7 +30,7 @@ description による自動呼び出しは従来どおり機能する。
 | --- | --- | --- |
 | `mvp-workflow` | workflow | 個人開発 MVP の構想〜OpenSpec 化までのワークフロー (skill はフェーズ番号順) |
 | `openspec` | workflow | OpenSpec の change ワークフローと、全 change の横断整合性レビューを行う日本語化スキル集。propose・apply が手順の中で grill-me・architect・retro の各 skill を呼び、試作で分岐を決め、実物で確かめ、多モデルでレビューする |
-| `orchestration` | workflow | openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式 + Orca 並列方式) |
+| `orchestration` | workflow | openspec/changes 全実装のオーケストレーション (単一セッション多段 SubAgent 方式) / 完了 change の Orca 並行 archive (orca-113) / リポジトリ品質点検 (120) |
 | `architect` | quality | 設計原則 (SOLID/KISS/YAGNI/DRY と作業の原則 24 本) / 設計スケッチ (構造の異なる案の競作と統合) / コードレビュー / 複数モデルの敵対的レビュー (interrogate) / 重大バグ検出 / DB 設計 / 疑い駆動開発 / セキュリティ / 依存監査 / テスト監査 |
 | `mobile-store` | workflow | モバイルアプリのストアメタデータ運用 (実装とストア文言のドリフト解消) |
 | `marketing` | workflow | 公開済みプロダクトのマーケティング運用 (現状分析・打ち手の優先順位付け) |
@@ -40,17 +40,26 @@ description による自動呼び出しは従来どおり機能する。
 | `dev-utils` | utility | ローカル開発・検証を支える汎用ユーティリティ (env vars / port / feature flag / CLI / dev ログイン / コミットからのカスタムリンター生成 / テスト高速化) |
 | `dev-tool-bootstrap` | utility | 運用ツールのスキャフォールド (mini-sentry / READ-only admin ダッシュボード) |
 | `basic` | utility | 徹底質問 (grill-me) / 10歳向け図解説明 (eli5) / 表現思考 / retro / スケジュール抑制 / 業務フロー図 (draw.io) の汎用スキル / 長いセッションを Haiku で図にまとめる右ペイン mod (session-digest) |
+| `analytics` | utility | 業務データの分析の進め方 (検証・再現性・成果物管理・数値の説明) |
 | `analytics-tools` | infra | プロダクト分析ツール導入 (Amplitude: Web / モバイル / サーバ) |
+| `aws` | infra | private subnet の RDS に Prisma migration を流すマイグレーション用 Lambda 構築 |
 | `fastify` | infra | Fastify + pino の dev エラーログ基盤 |
 | `railway` | infra | Railway のデプロイ・運用ガイドとログからのエラー調査 |
 | `workshop` | utility | 勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成まで |
 | `routines` | utility | Claude Code Routines の検索・作成・更新・起動確認。workflow の setup が共通で参照する |
 | `issue-label-driven` | workflow | GitHub Issue の To Do / In Progress / Done だけで回す非 SDD 版 (issue 1 件 = PR 1 本) |
 
+他の plugin の skill を呼ぶものがある。使うときは呼ばれる側も入れる。
+
+* `openspec` → `architect` / `basic` / `design`
+* `orchestration` → `openspec` / `e2e` / `architect` / `basic` / `design`
+* `issue-label-driven` → `orchestration` / `routines`
+
 ## 更新の反映
 
 - skill の編集はこの repo で行い、commit → push する
-- `plugin.json` に `version` を書いていないため、**commit ごとに新バージョン扱い** (git SHA) になる
+- `plugin.json` に `version` を書いていない plugin は、**commit ごとに新バージョン扱い** (git SHA) になる
+- `openspec` だけは `plugin.json` に `version` を固定している。変更したら `version` を上げないと各マシンに反映されない
 - 各マシンでは `claude plugin update <plugin>@sugiken-dev-public` か marketplace の自動更新で反映される
 
 ## 運用ルール
