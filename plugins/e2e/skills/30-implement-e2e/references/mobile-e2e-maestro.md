@@ -45,9 +45,8 @@ Java 17+ が必須（Android Emulator 経由）。`maestro --version` で確認�
   subflows/                    # 再利用部品
     login.yaml
     reset_state.yaml
-e2e/
-  cases/                       # テストケース md（このスキルの成果物）
-    2026-05-17-1430_cases.md
+docs/quality/e2e/cases/        # テストケース md（20-enumerate-e2e-cases の成果物）
+  2026-05-17-1430-cases.md
 .env.maestro                   # APP_ID, TEST_EMAIL 等
 ```
 

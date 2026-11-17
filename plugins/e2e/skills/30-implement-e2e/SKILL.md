@@ -1,6 +1,6 @@
 ---
 name: 30-implement-e2e
-description: "洗い出し済みの `docs/quality/e2e/cases/*-cases.md` を正として、網羅的な E2E テストを実装するスキル。Web は Playwright、モバイルは Maestro。ケース ID 単位で実装し、その場で実行→失敗→修正の recursive ループを回し、テスト側/実装側どちらのバグかを判定して両方を適切に直す。緑になったケースは cases.md の実装列を更新する。「E2E 実装」「e2e を実装して」「Playwright テスト作成」「Maestro フロー作成」「ケースファイルで実装」等のリクエスト時に使用。"
+description: "洗い出し済みの `docs/quality/e2e/cases/*-cases.md` を正として、網羅的な E2E テストを実装するスキル。Web は Playwright、モバイルは Maestro。ケース ID 単位で実装し、その場で実行→失敗→修正の recursive ループを回し、テスト側/実装側どちらのバグかを判定して両方を適切に直す。緑になったケースは cases.md の実装列を更新する。呼び出し元はケースファイルのパス・担当ケース ID・プラットフォームを引数で渡す。「E2E 実装」「e2e を実装して」「Playwright テスト作成」「Maestro フロー作成」「ケースファイルで実装」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 model: opus
 context: fork
@@ -15,19 +15,19 @@ context: fork
 ## 前提
 
 - 環境は [[10-setup-e2e-env]] で構築済みであること。未構築なら先にセットアップする（または呼び出し側へ差し戻す）。
-- ケースは [[20-enumerate-e2e-cases]] が作った `docs/quality/e2e/cases/{timestamp}-cases.md`。指定がなければ最新のレビュー済みケースファイルを使う。
+- ケースは [[20-enumerate-e2e-cases]] が作った `docs/quality/e2e/cases/{timestamp}-cases.md`。選び方は次の「解決順序」に従う。
 
 ## ケースファイルの解決順序（厳守）
 
 集約台帳（`docs/quality/e2e/all-changes-cases.md`）でオーケストレーションされている場合、個別ケースには並行セッションが propose 中の無関係な change のファイルが存在しうる。最新タイムスタンプに機械的に飛びつくと、指定と異なる change を実装し、他セッションの資産を書き換える事故になる。
 
 1. 呼び出し元がケースファイルのパス（または節・ケース ID 範囲）を明示した場合、それだけを正とする。個別ケースの探索は行わない。
-2. 指定が無い場合に限り、最新の `docs/quality/e2e/cases/{timestamp}-cases.md` を拾う。
+2. 指定が無い場合に限り、対象 change に対応し、かつレビュー済みの `docs/quality/e2e/cases/{timestamp}-cases.md` のうち最新のものを拾う。候補が絞れなければ実装せず報告する。
 3. 作業開始前に「これから読むケースファイルのパス」を宣言する。指定と異なるファイルを開いてしまったと気づいた時点で作業を止め、呼び出し元へ報告する（そのまま実装を続けない）。指定ファイルが存在しない場合も、代替を探さず報告する。
 
 ## リファレンス（着手前に必読）
 
-対象プラットフォームのものを全文読む。locator 優先順位・POM/subflow・storageState 認証・flaky 対策・trace/実行コマンドが載っている。
+対象プラットフォームのものを全文読む。locator 優先順位・POM/subflow・storageState 認証・flaky 対策・trace/実行コマンドが載っている。修正の進め方とテスト方針は参照ではなくこの本文が正。
 
 - Web: [references/web-e2e-playwright.md](references/web-e2e-playwright.md)
 - モバイル: [references/mobile-e2e-maestro.md](references/mobile-e2e-maestro.md)
@@ -36,7 +36,7 @@ context: fork
 
 ケース実装より前に土台を用意する（後で並列実装しても衝突しないように）：
 
-- Web: Page Object（`e2e/pages/`）+ `fixtures.ts` + `auth.setup.ts`（storageState）。
+- Web: Page Object（`e2e/pages/`）+ `fixtures.ts` + `e2e/tests/auth.setup.ts`（storageState。testDir の内側に置く）。
 - モバイル: `subflows/`（`login.yaml` / `reset_state.yaml`）。
 
 ## Step 2: ケース ID 単位で実装

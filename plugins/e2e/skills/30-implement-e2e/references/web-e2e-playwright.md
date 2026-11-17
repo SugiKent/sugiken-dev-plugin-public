@@ -17,10 +17,11 @@ npx playwright install --with-deps  # CI 環境（Linux）
 ### 1-2. ディレクトリ構成（推奨）
 
 ```
+docs/quality/e2e/cases/        # テストケース md（20-enumerate-e2e-cases の成果物）
+  2026-05-17-1430-cases.md
 e2e/
-  cases/                       # テストケース md（このスキルの成果物）
-    2026-05-17-1430_cases.md
   tests/                       # 実テストファイル（ケース ID 単位）
+    auth.setup.ts              # storageState 生成（testDir 内に置く）
     auth/
       C-001_signup_happy.spec.ts
       C-002_signup_validation.spec.ts
@@ -30,8 +31,6 @@ e2e/
     SignupPage.ts
     HomePage.ts
   fixtures.ts                  # test 拡張（POM 注入、API client）
-  auth.setup.ts                # storageState 生成
-  visual/                      # toHaveScreenshot 専用
 playwright/.auth/              # storageState（必ず .gitignore）
 playwright.config.ts
 ```
@@ -49,7 +48,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['html'], ['github']] : 'list',
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',      // retries: 0 のローカルでも初回失敗の trace を残す
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 15_000,
@@ -141,7 +140,7 @@ await responsePromise;
 ログイン UI を毎回叩くと flaky・遅い。**API ログイン → storageState 保存** が定石。
 
 ```ts
-// e2e/auth.setup.ts
+// e2e/tests/auth.setup.ts
 import { test as setup } from '@playwright/test';
 import fs from 'node:fs';
 
@@ -238,13 +237,7 @@ test('C-006 ホームの a11y', async ({ page }) => {
 
 ### 2-9. Visual Regression
 
-組み込みの `toHaveScreenshot()` をログイン後の主要 3 画面のみに当てるのが MVP の現実解：
-
-```ts
-await expect(page).toHaveScreenshot('home.png', { maxDiffPixels: 100 });
-```
-
-スケールしたら Argos / Chromatic に移行。
+VRT は作らない（SKILL.md の「テスト方針」）。スクリーンショットは失敗時の証拠としてだけ残す。
 
 ---
 
@@ -295,7 +288,7 @@ MCP は accessibility tree YAML を context として返すので、locator の�
 2. `npx playwright show-trace test-results/<name>/trace.zip` で trace viewer 起動
 3. Claude には trace のスクショと error-context、対象 spec、対象 POM を context として渡す
 4. **テスト側の locator / wait 不足** か **実装側のバグ** かを Claude に判定させる
-5. 修正案は diff で提示させ、人間が承認してから apply（盲目的 apply は禁止）
+5. trace を読んで原因を確かめてから直す。進め方と止める条件は SKILL.md の Step 3 に従う
 
 ### 4-5. Claude が守るべき規約（CLAUDE.md に書く想定）
 
@@ -303,7 +296,6 @@ MCP は accessibility tree YAML を context として返すので、locator の�
 - assertion は `await expect(locator).toX()` 形式のみ
 - `waitForTimeout` 禁止
 - storageState 認証、UI ログイン繰り返し禁止
-- 自動 fix 禁止、diff を提示してから apply
 - テストは `e2e/tests/<domain>/<C-XXX>_<slug>.spec.ts` に配置
 
 ---
@@ -360,12 +352,12 @@ npx playwright codegen http://localhost:3000 --output e2e/tests/_raw.spec.ts
 | 軽量 POM（`pages/` 数本）+ fixtures | Screenplay Pattern |
 | API ログイン + storageState | UI ログイン毎回 |
 | `@axe-core/playwright` を主要画面に相乗り | 専用 a11y スイート |
-| `toHaveScreenshot()` を主要 3 画面のみ | Argos / Chromatic |
+| 失敗時のスクリーンショットだけ | VRT（`toHaveScreenshot()`・Argos・Chromatic） |
 | `page.route()` で外部 API モック | 本物の third-party 接続 |
 | chromium 単体で開始（高速） | 多ブラウザ matrix |
 | Playwright MCP（探索）+ codegen（雛形） | MCP で全テスト生成 |
 
-これだけで「主要 3〜5 フローを E2E + a11y + 主要画面 VRT」がカバーでき、Claude Code が自走できる土台になる。
+これだけで「主要 3〜5 フローを E2E + a11y」がカバーでき、Claude Code が自走できる土台になる。
 
 ---
 
