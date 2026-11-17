@@ -70,19 +70,22 @@ worktree も repoId も不要。pane は現在アクティブな worktree（こ�
 
 `openspec/changes/<name>/`（`archive/` は除く）のうち、**次をすべて満たすもの**を完了済みとみなす:
 
-1. `tasks.md` が存在し、**未チェック（`- [ ]`）タスクが0件**かつ **チェック済み（`- [x]`）タスクが
-   1件以上**（＝タスクがあって全部終わっている）。
+1. `tasks.md` が存在し、**未完了タスクが0件**かつ **完了タスクが1件以上**（＝タスクがあって全部終わっている）。
+   数え方は `openspec-archive-change` の「task の完了状態を確認する」に従う（`-` と `*`、字下げ、`[X]` を同じに扱い、
+   コードフェンス内は数えず、読めない記法は未完了）。
 2. その change 用の **pane がまだ無い**（`orca terminal list` の title に change 名が現れない）。
    Claude はアーカイブ着手後にタブ title を change 名へ書き換えるため（§6）、title で重複アーカイブを
    検出できる。
 
 ```bash
-# 完了判定（unchecked が 0 かつ checked が 1 以上なら完了候補）
-grep -c '^- \[ \]' openspec/changes/<name>/tasks.md   # 0 であること
-grep -c '^- \[x\]' openspec/changes/<name>/tasks.md   # 1 以上であること
+# 完了判定。出力が「0 <1 以上>」なら完了候補（左が未完了、右が完了）
+awk '/^[[:space:]]*```/{f=!f; next}
+  !f && /^[[:space:]]*[-*][[:space:]]+\[[xX]\]/{c++; next}
+  !f && /^[[:space:]]*[-*][[:space:]]+\[.\]/{u++}
+  END{print u+0, c+0}' openspec/changes/<name>/tasks.md
 ```
 
-判定は決定論的にコードで行う（grep / terminal list の title 照合）。LLM の主観で判断しない。
+判定は決定論的にコードで行う（awk / terminal list の title 照合）。LLM の主観で判断しない。
 該当が0件なら「アーカイブ対象（tasks.md 完了済み）の change はありません」と報告して終了する。
 
 > 補足: `/opsx:archive` 側は `openspec status --change` で**成果物**の完了状態も確認するが、未完了でも
