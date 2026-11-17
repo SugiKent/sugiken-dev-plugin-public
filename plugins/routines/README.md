@@ -1,6 +1,6 @@
 # routines
 
-Claude Code Routines の操作をまとめた plugin。`issue-label-driven` の setup からも使う。
+Claude Code Routines の操作をまとめた plugin。
 
 ```bash
 claude plugin install routines@sugiken-dev-public

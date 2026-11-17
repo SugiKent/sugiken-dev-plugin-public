@@ -46,14 +46,12 @@ description による自動呼び出しは従来どおり機能する。
 | `fastify` | infra | Fastify + pino の dev エラーログ基盤 |
 | `railway` | infra | Railway のデプロイ・運用ガイドとログからのエラー調査 |
 | `workshop` | utility | 勉強会資料の構成・壁打ち・デザインレビューから PPTX／Google Slides 作成まで |
-| `routines` | utility | Claude Code Routines の検索・作成・更新・起動確認。workflow の setup が共通で参照する |
-| `issue-label-driven` | workflow | GitHub Issue の To Do / In Progress / Done だけで回す非 SDD 版 (issue 1 件 = PR 1 本) |
+| `routines` | utility | Claude Code Routines の検索・作成・更新・起動確認 |
 
 他の plugin の skill を呼ぶものがある。使うときは呼ばれる側も入れる。
 
 * `openspec` → `architect` / `basic` / `design`
 * `orchestration` → `openspec` / `e2e` / `architect` / `basic` / `design`
-* `issue-label-driven` → `orchestration` / `routines`
 
 ## 更新の反映
 

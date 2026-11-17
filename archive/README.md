@@ -5,5 +5,6 @@
 | plugin | 退避した理由 |
 | --- | --- |
 | `issue-driven-sdd` | 現在使っていない。GitHub Issue のラベルで段階を表し、Routines が OpenSpec の propose → apply → archive を回す構成だった |
+| `issue-label-driven` | 現在使っていない。GitHub Issue の To Do / In Progress / Done だけで回す非 SDD 版だった |
 
 戻すときは、ディレクトリを `plugins/` に戻し、`marketplace.json` の `plugins` に項目を足す。
