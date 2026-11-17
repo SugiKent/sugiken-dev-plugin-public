@@ -21,14 +21,14 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestio
 | `apply-frontend` | sonnet | フロント実装（画面 / コンポーネント / クライアント状態） | `frontend-implementation` |
 | `apply-backend` | opus | バックエンド実装（API / Service / Repository / スキーマ / migration） | `backend-implementation` |
 | `apply-review` | opus | 高リスクまたは横断的変更のレビュー | architect 各スキル |
-| `apply-archive` | sonnet | change の archive と `openspec validate --strict` | `.claude/commands/openspec/archive.md` |
+| `apply-archive` | sonnet | change の archive と `openspec validate --strict` | `openspec-archive-change`（openspec plugin） |
 | `apply-commit` | sonnet | 意味のある単位での外科的コミット | `20-commit-meaningful-diffs`（basic plugin） |
 
 > **E2E の実行・報告は、全 change 完了後にだけ skill を直接 invoke**。`40-run-and-report-e2e` skill（e2e plugin, `model: sonnet` + `context: fork`）を invoke すると、skill 自身が subagent へ fork してヘッドレス実行・報告する。専用の実行 agent は挟まない。一方、開始時のケース設計は `20-enumerate-e2e-cases`、最終段階の E2E テスト実装・改善は `30-implement-e2e` を、それぞれ書き込み責務を分離した専属 SubAgent として invoke する。
 
 ## 最終ゴール（最上位の成功条件）
 
-**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンであること。既存の E2E 基盤がある場合は、`docs/quality/e2e/all-changes-cases.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。高リスクまたは横断的な変更では、必要な結合レビューの指摘も解消する。
+**最終ゴール**: すべての change が `archive` され、`openspec validate --strict` がグリーンであること。開始時から残っている失敗は、この作業が持ち込んだものと分けて報告する。既存の E2E 基盤がある場合は、`docs/quality/e2e/all-changes-cases.md` の全ケースが実装済みかつグリーンであることも成功条件に加える。高リスクまたは横断的な変更では、必要な結合レビューの指摘も解消する。
 ---
 
 # 全体フロー
@@ -92,7 +92,7 @@ E2E 基盤がない場合は、E2E 基盤そのものを暗黙に新設せず、
 
 各 change の担当者には、E2E テストの作成、`40-run-and-report-e2e` の invoke、E2E 成功の完了条件化を指示しない。change 単位では実装、必要な unit / integration test、必要な場合だけのレビュー、archive、commit までを担当させる。
 
-`apply-archive` には、このスキルが **E2E を全 change 完了後へ集約する延期ポリシー**を採用していることを明示する。これにより、個別 change の E2E 未実行だけを理由に archive を止めず、最終ゴールとしての E2E オールグリーンは Phase 4 で担保する。
+`apply-archive` には、このスキルが **E2E を全 change 完了後へ集約する延期ポリシー**を採用していること、その change でレビューが必須か、tasks の全件完了を要求するかを渡す。これにより、個別 change の E2E 未実行だけを理由に archive を止めず、最終ゴールとしての E2E オールグリーンは Phase 4 で担保する。
 
 ## Phase 3 の途中結合レビューと後続 change の発行
 
