@@ -139,7 +139,7 @@ SVC="${SVC:?SVC environment variable is required (e.g. SVC=api)}"
 LINES="${LINES:-1000}"
 SUMMARY="$OUTDIR/per_deployment_summary.tsv"
 
-printf "deployment_id\tcreated_at\tstatus\tlines_fetched\tfivexx_count\toldest_5xx_ts\n" > "$SUMMARY"
+printf "deployment_id\tcreated_at\tstatus\tfetch\tlines_fetched\tfivexx_count\toldest_5xx_ts\n" > "$SUMMARY"
 
 jq -r '[.[] | select(.status == "SUCCESS" or .status == "FAILED" or .status == "SKIPPED")]
   | sort_by(.createdAt) | reverse
@@ -150,20 +150,30 @@ while IFS='|' read -r ID CREATED STATUS; do
   [ -z "$ID" ] && continue
   FILE="$OUTDIR/dep_${CREATED:0:10}_${ID:0:8}.jsonl"
   echo "--- Fetching $ID ($CREATED $STATUS)"
-  railway logs --service "$SVC" --lines "$LINES" --json "$ID" \
-    > "$FILE" 2> "${FILE}.err"
+  # 取得と解析の失敗を 0 件に見せない。失敗は unknown として残す
+  if railway logs --service "$SVC" --lines "$LINES" --json "$ID" > "$FILE" 2> "${FILE}.err"; then
+    FETCH=ok
+  else
+    FETCH=failed
+  fi
   L=$(wc -l < "$FILE" | tr -d ' ')
-  X=$(jq -c 'select((.res.statusCode // .statusCode // 0 | tonumber) >= 500)' "$FILE" 2>/dev/null | wc -l | tr -d ' ')
-  O=$(jq -c 'select((.res.statusCode // .statusCode // 0 | tonumber) >= 500)' "$FILE" 2>/dev/null \
-       | jq -r '.timestamp' 2>/dev/null | sort | head -1)
-  printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$ID" "$CREATED" "$STATUS" "$L" "$X" "${O:-NONE}" >> "$SUMMARY"
-  echo "    lines=$L, 5xx=$X, oldest_5xx=${O:-NONE}"
+  if [ "$FETCH" = ok ] && FIVEXX=$(jq -c 'select((.res.statusCode // .statusCode // 0 | tonumber) >= 500)' "$FILE" 2>> "${FILE}.err"); then
+    X=$(printf '%s' "$FIVEXX" | grep -c . || true)
+    O=$(printf '%s' "$FIVEXX" | jq -r '.timestamp' 2>/dev/null | sort | head -1)
+  else
+    [ "$FETCH" = ok ] && FETCH=parse_failed
+    X=unknown; O=unknown
+  fi
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$ID" "$CREATED" "$STATUS" "$FETCH" "$L" "$X" "${O:-NONE}" >> "$SUMMARY"
+  echo "    fetch=$FETCH, lines=$L, 5xx=$X, oldest_5xx=${O:-NONE}"
 done < "$OUTDIR/_dep_order.txt"
 
 echo
 echo "=== Summary ==="
 column -t -s $'\t' "$SUMMARY"
 ```
+
+集計表の `fetch` は `ok`（取得成功）・`failed`（取得失敗）・`parse_failed`（解析失敗）。レポートでは「取得成功で 0 件」「保持期限切れ（REMOVED）」「取得・解析の失敗（unknown）」を分けて書き、失敗したデプロイを根拠に「エラーなし」と書かない。失敗は `.err` を読み、認証・通信の問題なら直して取り直す。
 
 `SVC` で対象 service 名、`OUTDIR` で Step 2 の出力先を環境変数として渡す前提とする (`SVC=api OUTDIR=railway_logs_analysis/<TS> bash /tmp/fetch_deps.sh`)。プロジェクト固有のデフォルト値を埋め込まない。
 
@@ -175,7 +185,7 @@ railway_logs_analysis/{TS}/
 ├── deployments.json                 # railway deployment list の生 JSON
 ├── _dep_order.txt                   # 調査順
 ├── per_deployment_summary.tsv       # 集計表
-├── dep_<date>_<shortid>.jsonl       # 各デプロイのログ (空ファイルは REMOVED 相当)
+├── dep_<date>_<shortid>.jsonl       # 各デプロイのログ (.err に取得・解析のエラー)
 └── sample.json                      # ログ形式偵察用サンプル
 ```
 
