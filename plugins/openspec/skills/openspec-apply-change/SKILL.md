@@ -110,7 +110,7 @@ OpenSpec の change の tasks を実装する。
 7. **tasks を実装する（完了かブロックまでループ）**
 
    最初の task に入る前に:
-   * design に書かれたデータの形と、それをまとめる構造（`architect:35-architect-principle` の Model the Domain）を名指しする。apply で新しく選ばない。design に型のスケッチがあれば、それが約束になる（`architect:35-architect-sketch` の Phase D）。書かれていなければ `openspec-propose` へ戻す。
+   * design に書かれたデータの形と、それをまとめる構造（`architect:35-architect-principle` の Model the Domain）を名指しする。apply で新しく選ばない。design に型のスケッチがあれば、それが約束になる（`architect:35-architect-sketch` の Phase D）。スケッチがなくても、tasks に `skip: <理由>` と従う既存の契約が書かれ、その契約が実在し、task が新しい公開契約も未決の仕様も持ち込まないなら、その既存契約を約束として着手する。どちらもなければ `openspec-propose` へ戻す。
    * スループット点検を書く（`references/task-feature.md` の手順 1）。独立した作業の流れがあり、書き込むファイルが互いに素なら、サブエージェントに分けてよい（同じファイルの「サブエージェントに任せるとき」）。その差分は自分でレビューし、要約も自分で書く。
 
    保留中の各 task について:
