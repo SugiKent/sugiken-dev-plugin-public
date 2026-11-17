@@ -106,7 +106,7 @@ references を土台にしつつ、 **以下の仕様を曲げない**:
 
 1. **Judge アダプタで既存 LLM を再利用**（`detect-and-wire-llm.md`）。`eval/llm` の `askJSON({model, system, user, schema})` が唯一のプロバイダ依存点。BINEVAL 本体（generate/evaluate/optimize）は全てこれ経由で呼ぶ。既存ラッパーがあればその中で呼ぶ。
 2. **評価用プロンプトは 2 ステップ**（`meta-prompt.md`）: $T$ を明示要件 $R$ に **要約** → 各 $r_k$ を **1 つ以上の二値質問** に分解。複数サブタスクは別質問に割り、 **各質問に違反例を必ず付与**。「はい」=充足 /「いいえ」=違反。次元 $D$ で整理。 **$M$ はタスク非依存**（変えるのは `task-prompt.md` だけ）。
-3. **評価は質問ごとに独立**（`evaluator.md`）。$f_E(x,y,q_i)\in\{0,1\}$ と説明 $e_i$ を **同時に** 返す。構造化出力で `{answer, explanation}` を強制。
+3. **評価は質問ごとに独立**（`evaluator.md`）。$f_E(x,y,q_i)\in\{0,1\}$ と説明 $e_i$ を **同時に** 返す。構造化出力で `{answer, explanation}` を強制。gold があるケースでは `expected` と POLICY を `evaluate` の `ref` で判定役まで通し、結果は `toReportCase` で共通 report の 1 ケースへ変換する（`scaffold-typescript.md`）。
 4. **スコアは「はい」の割合**。次元 $S_d=\frac{1}{|Q_d|}\sum f_E$、全体 $S=\frac{1}{N}\sum f_E$、$S'=S\cdot(b-a)+a$（1–5 なら $S'=S\cdot4+1$）。
 5. **最適化は既定 `MAX_ITER=2`**（`prompt-optimization.md`）。教訓は dedup 後 ≤10、書換は局所的に。 **質問分解の再生成も更新対象に含める**。held-out 信号があれば early stopping。
 

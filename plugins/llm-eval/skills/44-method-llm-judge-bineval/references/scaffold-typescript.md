@@ -121,13 +121,18 @@ export function loadQuestions(): Question[] {
   return fs.readdirSync(dir).flatMap((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")).questions);
 }
 
-async function askOne(model: string, x: string, y: string, q: Question) {
+// gold の expected と POLICY.md（41-golden-set-construction）。gold の無い用途（プロダクト内の自己評価）では省く
+export type Reference = { expected?: string; policy?: string };
+
+async function askOne(model: string, x: string, y: string, q: Question, ref: Reference) {
+  const refBlock = (ref.policy ? `\n\n# 判断基準（POLICY）\n${ref.policy}` : "")
+    + (ref.expected ? `\n\n# 正解（expected）\n${ref.expected}` : "");
   return askJSON({
     model,
     system: `あなたは厳密な二値評価者です。次の 1 つの Yes/No 質問だけを独立に判定します。他の観点は考慮しません。
 質問: ${q.text}
 違反例（この場合 "no"）: ${q.violation_example}`,
-    user: `# 入力 x\n${x}\n\n# 評価対象の出力 y\n${y}\n\n判定してください。`,
+    user: `# 入力 x\n${x}${refBlock}\n\n# 評価対象の出力 y\n${y}\n\n判定してください。`,
     schema: ANSWER_SCHEMA,
   }) as Promise<{ answer: "yes" | "no"; explanation: string }>;
 }
@@ -140,11 +145,11 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R
   return out;
 }
 
-export async function evaluate(x: string, y: string, model = config.judgeModel) {
+export async function evaluate(x: string, y: string, model = config.judgeModel, ref: Reference = {}) {
   const questions = loadQuestions();
   const answers = await mapLimit(questions, config.concurrency, async (q) => {
     let yes = 0, expl = "";
-    for (let r = 0; r < config.runs; r++) { const a = await askOne(model, x, y, q); yes += a.answer === "yes" ? 1 : 0; expl = a.explanation; }
+    for (let r = 0; r < config.runs; r++) { const a = await askOne(model, x, y, q, ref); yes += a.answer === "yes" ? 1 : 0; expl = a.explanation; }
     const f = yes / config.runs >= 0.5 ? 1 : 0;
     return { id: q.id, dimension: q.dimension, answer: f ? "yes" : "no", explanation: expl, f };
   });
@@ -155,6 +160,14 @@ export async function evaluate(x: string, y: string, model = config.judgeModel) 
   const overallRaw = answers.reduce((s, x) => s + x.f, 0) / answers.length;
   return { overall: { raw: overallRaw, scaled: scale(overallRaw) }, dimensions: dims,
     answers: answers.map(({ f, ...rest }) => rest) };
+}
+
+// 40-eval-directory-setup の reports/report.json の 1 ケースへ変換する。structuralPass は 43 の結果を入れる
+export function toReportCase(target: string, caseId: string, r: Awaited<ReturnType<typeof evaluate>>, passAt: number) {
+  const no = r.answers.filter((a) => a.answer === "no");
+  return { target, caseId, pass: r.overall.raw >= passAt, score: r.overall.scaled,
+    reason: no.map((a) => `${a.id}: ${a.explanation}`).join(" / ") || "全質問が yes",
+    structuralPass: null, error: null };
 }
 ```
 

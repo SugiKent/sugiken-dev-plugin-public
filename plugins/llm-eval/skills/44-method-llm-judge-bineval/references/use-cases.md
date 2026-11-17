@@ -13,17 +13,19 @@ PR ごとに出力品質を二値スコアでゲートする。閾値割れで f
 import { evaluate } from "../evaluate";
 import { config } from "../config";
 import { z } from "zod";
+import { readFileSync } from "node:fs";
 
-// テストケース: [{x, y}] を fixtures から読む（実出力を CI 前段で生成しておく）
+// テストケース: [{x, y, expected?}] を fixtures から読む（実出力を CI 前段で生成しておく）
 const THRESHOLDS: Record<string, number> = { consistency: 0.8, coherence: 0.7 }; // 次元別 raw 閾値
 
 const MAX_EVAL_CASES_BYTES = 64_000; // 巨大 JSON による DoS を防ぐ
 const MAX_EVAL_CASES = 500;
 
-const EvalCaseSchema = z.object({ x: z.string().max(10_000), y: z.string().max(10_000) });
+const EvalCaseSchema = z.object({ x: z.string().max(10_000), y: z.string().max(10_000), expected: z.string().max(10_000).optional() });
+const POLICY = process.env.EVAL_POLICY_PATH ? readFileSync(process.env.EVAL_POLICY_PATH, "utf8") : undefined; // gold の POLICY.md
 const EvalCasesSchema = z.array(EvalCaseSchema).max(MAX_EVAL_CASES);
 
-function parseEvalCases(raw: string | undefined): { x: string; y: string }[] {
+function parseEvalCases(raw: string | undefined): z.infer<typeof EvalCasesSchema> {
   const input = raw ?? "[]";
   if (input.length > MAX_EVAL_CASES_BYTES) throw new Error(`EVAL_CASES exceeds ${MAX_EVAL_CASES_BYTES} bytes`);
   const parsed = JSON.parse(input);
@@ -34,7 +36,7 @@ async function main() {
   const cases = parseEvalCases(process.env.EVAL_CASES);
   let failed = false;
   for (const c of cases) {
-    const r = await evaluate(c.x, c.y, config.judgeModel);
+    const r = await evaluate(c.x, c.y, config.judgeModel, { expected: c.expected, policy: POLICY });
     for (const [dim, th] of Object.entries(THRESHOLDS)) {
       const raw = r.dimensions[dim]?.raw ?? 1;
       if (raw < th) { console.error(`FAIL ${dim}: ${raw.toFixed(3)} < ${th}`); failed = true; }
