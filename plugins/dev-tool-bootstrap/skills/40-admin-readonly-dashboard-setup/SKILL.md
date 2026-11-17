@@ -66,7 +66,7 @@ apps/server/tests/admin/
 4. `${CLAUDE_SKILL_DIR}/references/admin-template/` (テストを選んだ場合は `references/test-templates/` も `apps/server/tests/admin/` へ) をコピーする。 `REPLACE_ME@example.com` と `../auth.js` / `../db.js` / `../logger.js` の import は該当プロジェクトに合わせて必ず置換する。
 5. server エントリで `app.use("/admin", adminRouter)` を **認証 middleware より後** に mount する (better-auth の cookie が読める位置)。
 6. `.env.example` (存在すれば `.env` も) に `ADMIN_EMAIL` と `SERVER_BASE_URL` を追記する。 `.env` に値を直書きしない (= 値はユーザーが手で入れる)。
-7. 動作確認はこのスキルでは実行せず、 ユーザーに案内する: server 起動 → `/admin/login` を開く (404 が返る) → ADMIN_EMAIL の inbox に magic link が届く → `/admin` で Home、 `/admin/users` で User 一覧が出る。 届かない場合は better-auth の `sendMagicLink` callback と SMTP 設定を確認する。
+7. 手元でできる動作確認は自分で行う: 型検査、 テストテンプレを入れたなら vitest、 ローカルで server を起動して `/admin/login` と未ログインの `/admin`・`/admin/users` と POST が 404 になること、 ログに magic link 送信の呼び出しが出ること。 実メールの受信と、 届いたリンクでのログイン後の画面だけを未実施としてユーザーに渡す。 届かない場合は better-auth の `sendMagicLink` callback と SMTP 設定を確認する。
 8. 雛形は Home + Users 2 ページしかない。 **AskUserQuestion** で次に足すセクション (エラーログダッシュボード / ユーザ Detail / ドメインモデル一覧 / 観測イベント / 何も追加しない) を聞き、 選ばれたものに集中する。 **全部一気に作らない** (= 初期化スキルの責務は基盤導入まで)。
 
 ## やってはいけないこと
