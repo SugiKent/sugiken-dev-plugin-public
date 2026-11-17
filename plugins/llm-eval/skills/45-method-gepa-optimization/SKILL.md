@@ -1,6 +1,6 @@
 ---
 name: 45-method-gepa-optimization
-description: "eval の採点結果（gold への絶対評価）を報酬に、GEPA（arXiv:2507.19457。reflection ベースの進化的 prompt 最適化）でプロンプトを自動最適化する『最適化手法』を敷設するスキル。論文著者らの standalone `gepa` パッケージ（DSPy 非依存）を使い、`GEPAAdapter` から eval CLI を `PROMPTS_OVERRIDE_FILE` 付き直列 subprocess で叩き、`--json-out` の score を報酬にする。核心は**インクリメンタル構築**: reflection に『最小差分の編集のみ・1 回で 1 振る舞いだけ・全体リライト禁止』を必ず注入し、小さく書いてベースラインを超える振る舞いを 1 つずつ積む。目的関数は train split のみ、holdout は収束後の汎化検証専用（過学習の歯止め）。最終 prompt の diff は人間がレビューして採用。プロンプトだけで合格ゲートに届かなければ同じ evaluator を報酬に RFT へ escalation。前提は 40〜42 の基盤（特に 42-eval-injection-seam の prompt override / CLI 契約）と gold（41）、採点は 43-method-code-based-scoring / 44-method-llm-judge-bineval。llm-eval プラグインの『手法』の1つ（評価ではなく最適化。評価手法と同列に並ぶ）。「GEPA」「プロンプト最適化」「APO」「automatic prompt optimization」「プロンプト自動改善」「reflection 最適化」「最小差分でプロンプトを積む」「RFT escalation」「train holdout で過学習を防ぐ」等の発話・タスク要求時に使用。"
+description: "eval の採点結果（gold への絶対評価）を報酬に、GEPA（arXiv:2507.19457。reflection ベースの進化的 prompt 最適化）でプロンプトを自動最適化する『最適化手法』を敷設するスキル。論文著者らの standalone `gepa` パッケージ（DSPy 非依存）を使い、`GEPAAdapter` から eval CLI を `PROMPTS_OVERRIDE_FILE` 付き直列 subprocess で叩き、`--json-out` の score を報酬にする。核心は**インクリメンタル構築**: reflection に『最小差分の編集のみ・1 回で 1 振る舞いだけ・全体リライト禁止』を必ず注入し、小さく書いてベースラインを超える振る舞いを 1 つずつ積む。train を調整用と選択用に分けて最適化し、holdout は収束後の最終確認専用（過学習の歯止め）。最終 prompt の diff は人間がレビューして採用。プロンプトだけで合格ゲートに届かなければ同じ evaluator を報酬に RFT へ escalation。前提は 40〜42 の基盤（特に 42-eval-injection-seam の prompt override / CLI 契約）と gold（41）、採点は 43-method-code-based-scoring / 44-method-llm-judge-bineval。llm-eval プラグインの『手法』の1つ（評価ではなく最適化。評価手法と同列に並ぶ）。「GEPA」「プロンプト最適化」「APO」「automatic prompt optimization」「プロンプト自動改善」「reflection 最適化」「最小差分でプロンプトを積む」「RFT escalation」「train holdout で過学習を防ぐ」等の発話・タスク要求時に使用。"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, Agent
 ---
 
@@ -18,7 +18,9 @@ llm-eval プラグインの**手法の1つ**。評価そのものではなく、
   - `42-eval-injection-seam` — **prompt override（`PROMPTS_OVERRIDE_FILE`）と eval CLI 契約
     （`--cases` / `--json-out`）が必須の前提**。この差し替え口（seam）がなければ最適化は回せない。
   - 採点は評価手法（43 / 44）が出す `structuralPass` / `score` / `reason`。
-- **目的関数は学習用データ分割のみ**。検証用データは収束後の汎化検証にだけ使う（過学習の歯止め）。
+- **データは 3 役に分ける**。41 の train を、反省ステップの材料にする「調整用」（gepa の `trainset`）と、
+  毎 iteration の候補選択・収束判定に使う「選択用」（gepa の `valset`）に分ける。41 の holdout は「最終確認用」で、
+  収束後に 1 回だけ使う（過学習の歯止め）。
 
 ## 手法の選定理由
 
@@ -44,8 +46,9 @@ llm-eval プラグインの**手法の1つ**。評価そのものではなく、
 - `GEPAAdapter` に 2 メソッドを実装:
   - `evaluate(batch, candidate, capture_traces) -> EvaluationBatch(outputs, scores, trajectories)`
     — candidate を temp JSON に書き、`PROMPTS_OVERRIDE_FILE` env 付きで eval CLI を
-    **直列 subprocess** 実行、`--json-out` を読んで score/5 を 0–1 正規化
-    （error / 構造的な不合格（structural）は 0）、判定役の LLM（judge）の `reason` を実行の軌跡（trajectories）に格納
+    **直列 subprocess** 実行、`--json-out` を読んで 0–1 の報酬にする。判定役なし（43 のみ、`score` が null）は
+    `structuralPass` で成功 1／失敗 0。判定役あり（44）は `score` をその尺度の最大値で割る。error / 構造的な不合格は 0。
+    `reason` は実行の軌跡（trajectories）に格納
   - `make_reflective_dataset(...)` — 判定役の `reason` を `Feedback` として反省ステップに渡す
 - `GEPAResult.best_candidate` を現在の run の `artifacts/best_prompts.json` に保存
 
@@ -61,7 +64,7 @@ llm-eval プラグインの**手法の1つ**。評価そのものではなく、
 - 反省ステップ用の LM への指示に **「最小差分の編集のみ提案する。1 回の編集で 1 つの振る舞いだけを
   追加または削除する。全体のリライトは禁止」** を明記する。
 - 1 iteration = 1 振る舞い変更として現在の run の `reports/history.md` に記録
-  （日時 / 対象 prompt / 変更概要 / 学習用データ Δ / 検証用データ Δ / 採用可否）。
+  （日時 / 対象 prompt / 変更概要 / 調整用 Δ / 選択用 Δ / 採用可否）。最終確認用の結果は収束後に 1 行だけ足す。
 - 効果が確認できない変更は積まない。「念のため」の指示は肥大化の温床。
 - 理由: 一括リライトは「どの記述が効いているのか」を不明にし、変更容易性の低い複雑で長大な
   prompt を生む。積み上げ式なら各記述に「ベースラインを超えた」という存在理由が紐づき、
@@ -71,9 +74,9 @@ llm-eval プラグインの**手法の1つ**。評価そのものではなく、
 
 ## 運用の制約
 
-- **目的関数は学習用データ分割のみ**。検証用データは収束後の汎化検証にだけ使う。
+- 最終確認用（41 の holdout）を iteration 中に読まない。
 - eval subprocess は**常に直列**（共有 DB seed）。gepa 側に並列オプションがあっても使わない。
-- 収束条件: 検証用データが N iteration 改善なし、または合格ゲート達成。
+- 収束条件: 選択用が N iteration 改善なし、または選択用で合格ゲート達成。その後に最終確認用で合格ゲートを確かめる。
 - 最終 prompt の diff は**人間がレビュー**（肥大化・重複・列挙の混入、プロンプト設計規約への適合）。
 - 採用したら: prompt 反映 → prompt 内容を検証する既存テストを追従 → 現在の run の `reports/` に
   最終結果を保存する。使用した最適化スクリプト一式は `scripts/`、入力 gold は `inputs/gold/` に残す。
