@@ -64,8 +64,12 @@ issue は書いても追加にならないので、`[]` を書いてから `[To 
 open PR のうち、最新のコメントが人のもの（`routine-common` の定義）で、そこから 3 時間を超えて routine の
 返信が無いものを探す。auto-fix は VM 回収後も再開するので、本当に止まったものだけ拾う。
 
-見つかったら `routine-common` の「worker の共通手順」と `routine-work` を読み、PR のスレッド全体と diff を
-読んで続きを引き受ける。auto-fix を有効化し直す。引き継ぐのは 1 セッションで 1 件まで。
+見つかったら、その PR と issue `#n` を対象として**引継ぎモード**で続きを引き受ける。引き継ぐのは 1 セッションで 1 件まで。
+
+- 対象は sweep が選んだ PR と issue。`CCR_TRIGGER_*` は読まない。
+- PR の `started:` の `session:` を `get_session` で引き、生きていれば触らない。
+- `routine-common` の「worker の共通手順」のうち「対象の特定」「着手可否の判定」「着手の印」は飛ばす。新規着手用の判定で、引継ぎ対象自体（`In Progress`・既存の open PR）が撤退条件に当たるため。
+- 新しい PR は作らない。PR のスレッド全体と diff を読み、既存の PR ブランチに続きを積む。それ以外は `routine-work` の 3・5 に従い、auto-fix を有効化し直す。
 
 # やらないこと
 

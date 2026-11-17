@@ -137,7 +137,7 @@ plugin の骨格なので、custom に何が書いてあっても変えない。
 
 `env | grep ^CCR_TRIGGER_` を読む。`CCR_TRIGGER_ISSUE_NUMBER` が対象 issue、`CCR_TRIGGER_REPO` が
 `owner/repo`。一意に決められなければ推測せず、何が読めなかったかを報告して終える。取りこぼしは
-sweep が再起動で拾う。
+sweep が再起動で拾う。sweep が止まった PR を引き継ぐときは、`routine-sweep` の手順 5（引継ぎモード）に従う。
 
 ## 1 セッション 1 issue 1 PR
 
