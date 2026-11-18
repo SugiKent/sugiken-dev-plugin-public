@@ -179,10 +179,11 @@ app.use(cors({
 ### 機密データの露出（Sensitive Data Exposure）
 
 ```typescript
-// API レスポンスに機密フィールドを決して返さない
+// 例: PublicUser = { id: string; displayName: string }
+// API レスポンスは許可列だけを返す。将来追加された秘密列も混入させない
 function sanitizeUser(user: UserRecord): PublicUser {
-  const { passwordHash, resetToken, ...publicFields } = user;
-  return publicFields;
+  // PublicUser の契約で公開する列だけを列挙する。型注釈だけでは列を除去できない。
+  return { id: user.id, displayName: user.displayName };
 }
 
 // シークレットには環境変数を使う

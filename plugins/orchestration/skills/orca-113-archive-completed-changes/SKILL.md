@@ -77,15 +77,13 @@ worktree も repoId も不要。pane は現在アクティブな worktree（こ�
    Claude はアーカイブ着手後にタブ title を change 名へ書き換えるため（§6）、title で重複アーカイブを
    検出できる。
 
+`openspec-archive-change` を開き、その SKILL.md と同じディレクトリの `scripts/task-status.py` の絶対パスを解決する。インストール先は固定しない。見つからない場合は判定不能として報告し、別の awk へ置き換えない。
+
 ```bash
-# 完了判定。出力が「0 <1 以上>」なら完了候補（左が未完了、右が完了）
-awk '/^[[:space:]]*```/{f=!f; next}
-  !f && /^[[:space:]]*[-*][[:space:]]+\[[xX]\]/{c++; next}
-  !f && /^[[:space:]]*[-*][[:space:]]+\[.\]/{u++}
-  END{print u+0, c+0}' openspec/changes/<name>/tasks.md
+python3 "<解決した archive スキル>/scripts/task-status.py" "openspec/changes/<name>/tasks.md"
 ```
 
-判定は決定論的にコードで行う（awk / terminal list の title 照合）。LLM の主観で判断しない。
+JSON の `eligible` が true かつ終了コード 0 の change だけを候補にする。archive とそのコミット自体の除外は同スキルの `--exclude "行番号:その行の全文"` に従い、行・理由を worker に渡す。親と worker は同じ parser を使い、worker は移動直前にも読み直して判定する。未知状態やエラーを完了扱いしない。pane の重複は terminal list の title で照合する。
 該当が0件なら「アーカイブ対象（tasks.md 完了済み）の change はありません」と報告して終了する。
 
 > 補足: `/opsx:archive` 側は `openspec status --change` で**成果物**の完了状態も確認するが、未完了でも
@@ -140,18 +138,18 @@ dispatch する。`orca terminal send` でプロンプトを直接送る旧来�
 worker の Claude CLI に注入するため、親はアーカイブ完了を構造的に検知できる（§6）。
 
 ```bash
-# 1) アーカイブ内容をタスク化（spec に下記の必須 3 点を入れる）。--json の戻りに task id が返る
+# 1) アーカイブ内容をタスク化（spec に下記の必須 4 点を入れる）。--json の戻りに task id が返る
 orca orchestration task-create --spec \
-  "OpenSpec change '<change名>' をアーカイブする。/opsx:archive スキルを change 名 '<change名>' を指定して実行する。この change は tasks.md が完了済み。デルタ仕様が存在する場合は『今すぐ同期する』を選んでメイン仕様へ同期した上でアーカイブまで完了させ、確認のために処理を止めない（AskUserQuestion で止まらず自分で同期して進める）。この作業は worktree ではなく共有チェックアウト上で他の change と並行で進むため、git のブランチ切り替え・commit・stash は行わない（アーカイブ結果は未コミット差分のまま残してよい）。" \
+  "OpenSpec change '<change名>' をアーカイブする。/opsx:archive スキルを change 名 '<change名>' を指定して実行する。この change は task 全件完了が必須。親の判定を信用せず、openspec-archive-change の共通 parser で開始時と移動直前に再検査し、未完了・tasks 不在・項目なし・判定エラーなら確認で迂回せず不足を報告して止める。archive 自体の除外行と理由が渡された場合も本文を再確認する。デルタ仕様が存在する場合は『今すぐ同期する』を選んでメイン仕様へ同期した上でアーカイブまで完了させ、確認のために処理を止めない（AskUserQuestion で止まらず自分で同期して進める）。この作業は worktree ではなく共有チェックアウト上で他の change と並行で進むため、git のブランチ切り替え・commit・stash は行わない（アーカイブ結果は未コミット差分のまま残してよい）。" \
   --json
 
 # 2) §3 の戻り handle（§4 で tui-idle 確認済み）へ inject 付き dispatch
 orca orchestration dispatch --task <task_id> --to <pane handle> --inject --json
 ```
 
-> **spec に必ず含める3点:** (1) change 名を指定して選択プロンプトをスキップさせる、(2) デルタ仕様同期の
+> **spec に必ず含める4点:** (1) change 名を指定して選択プロンプトをスキップさせる、(2) デルタ仕様同期の
 > 確認で AskUserQuestion に止まらず自分で「今すぐ同期する」を選んで進めさせる、(3) 共有チェックアウトを
-> 守るため **ブランチ/commit/stash 禁止**。(1)(2) を書かないと worker が入力待ちで固まる。
+> 守るため **ブランチ/commit/stash 禁止**、(4) 共通 parser による全 task 完了の再検査と、未完了・判定不能なら移動しないこと。除外があれば行と理由も渡す。(1)(2) を書かないと worker が入力待ちで固まる。
 
 **ポイント:**
 

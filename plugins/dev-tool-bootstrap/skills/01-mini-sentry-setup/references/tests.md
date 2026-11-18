@@ -590,7 +590,7 @@ describe("mobile captureException", () => {
     expect(raw).toBeTruthy();
     const items = JSON.parse(raw as string);
     expect(items).toHaveLength(1);
-    expect(items[0].exception.value).toBe("boom");
+    expect(items[0].payload.exception.value).toBe("boom");
   });
 
   it("flushes queued items on init", async () => {
@@ -614,10 +614,9 @@ describe("mobile captureException", () => {
     const { initErrorTracker, __internal } = require("../../src/error-tracking");
     __internal.resetForTests();
     initErrorTracker();
-    await new Promise<void>((r) => setImmediate(() => r()));
-    await new Promise<void>((r) => setImmediate(() => r()));
+    await __internal.flushQueue();
     expect(fetchSpy).toHaveBeenCalled();
-    expect(mockAsyncStore.has(QUEUE_KEY)).toBe(false);
+    expect(JSON.parse(mockAsyncStore.get(QUEUE_KEY) as string)).toEqual([]);
   });
 
   it("is a no-op when endpoint or token is missing", async () => {
@@ -641,6 +640,14 @@ describe("mobile captureException", () => {
 ```
 
 ---
+
+## queue の競合・失敗検証
+
+* `__internal.enqueue` を並列に呼び、両方が残ることを確認する。
+* fetch を制御 Promise で止めた flush 中にも enqueue が完了し、送信再開後も新着が残ることを確認する。同じ payload を再追加した場合も ID で区別する。
+* 同時 flush は同じ処理を待ち、送信失敗分は残す。旧 payload 配列も送信前に ID 付きへ移行する。
+* storage の読取・解析・書込を失敗させ、既存 queue を空として上書きしないこと、失敗後も次の操作が動くことを確認する。成功送信後の保存失敗は再送可能な状態を保つ。
+* テスト終了時は開始した flush/capture/enqueue をすべて await する。`resetForTests` は稼働中処理を破棄しない。
 
 ## テスト戦略の要点
 

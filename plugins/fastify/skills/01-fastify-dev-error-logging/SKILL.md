@@ -20,7 +20,7 @@ description: "個人開発プロジェクトで Fastify + pino サーバを書�
 ## 0. 大原則
 
 1. **dev では 4xx / 5xx ごとに 1 行 JSON ログを吐く**（200 系は本機能では何も追加しない）
-2. ログには `requestId / method / url / statusCode / responseTime / query / requestBody / errorMessage / errorStack / validationDetails` を載せる
+2. ログには `requestId / method / route template / statusCode / responseTime / sanitized query / requestBody / errorMessage / errorStack / validationDetails` を載せる
 3. **production では何も追加しない**（ログ量・PII リスクを増やさない。Sentry に任せる）
 4. **redact paths は宣言で書く**。各ハンドラで個別 sanitize しない（漏れの元）
 5. **ルート側は zod 失敗時に必ず throw する**。`reply.code(400).send(...)` で握りつぶさない
@@ -58,6 +58,11 @@ export const REDACT_PATHS = [
 
 const REDACT_CONFIG = { paths: REDACT_PATHS, censor: "[REDACTED]" };
 
+// 自動 request log にも生 URL を流さない。ルート確定前・未一致は固定値にする。
+function serializeRequest(req: { id?: string; method?: string; routeOptions?: { url?: string } }) {
+  return { id: req.id, method: req.method, url: req.routeOptions?.url ?? "[unmatched]" };
+}
+
 const cache = new Map<string, FastifyBaseLogger>();
 let cachedRoot: FastifyBaseLogger | null = null;
 let fileWarnEmitted = false;
@@ -82,7 +87,7 @@ function buildDestination(): DestinationStream | undefined {
 
 function getRootLogger(): FastifyBaseLogger {
   if (cachedRoot) return cachedRoot;
-  const base = { redact: REDACT_CONFIG } as const;
+  const base = { redact: REDACT_CONFIG, serializers: { req: serializeRequest } } as const;
   const dest = buildDestination();
   if (dest) {
     cachedRoot = pino(base, dest);
@@ -138,9 +143,7 @@ declare module "fastify" {
   }
 }
 
-const SENSITIVE_KEYS = new Set([
-  "password", "token", "code", "verificationCode", "email", "authorization", "cookie",
-]);
+const SENSITIVE_KEY = /^(password|token|(?:access|refresh|id)[_-]?token|code|verification[_-]?code|email|authorization|cookie|secret|api[_-]?key)$/i;
 const REDACTED = "[REDACTED]";
 const MAX_DEPTH = 6;
 
@@ -181,15 +184,15 @@ export function registerDevErrorLog(app: FastifyInstance): void {
     const payload = {
       requestId: req.id,
       method: req.method,
-      url: req.url,
+      url: req.routeOptions.url ?? "[unmatched]",
       statusCode: status,
       responseTime: reply.elapsedTime,
-      query: req.query,
+      query: sanitize(req.query, 0),
       requestBody: req._devCapturedBody ?? sanitizeBody(req.body),
       ...(store.errorMessage ? { errorMessage: store.errorMessage } : {}),
       ...(store.errorStack ? { errorStack: store.errorStack } : {}),
       ...(store.validationDetails !== undefined
-        ? { validationDetails: store.validationDetails }
+        ? { validationDetails: sanitize(store.validationDetails, 0) }
         : {}),
     };
     const level = status >= 500 ? "error" : "warn";
@@ -234,6 +237,7 @@ function extractOrpcErrorIntoStore(req: FastifyRequest, payload: unknown): void 
 
 // pino redact paths の wildcard は 1 階層分しか効かない。
 // deep clone + 再帰 redact で 2 階層以上にも対応する。
+// body と query で同じ機密キー規則を使う。アプリ固有の秘密項目も追加する。
 function sanitizeBody(body: unknown): unknown {
   if (typeof body === "string") {
     const trimmed = body.trim();
@@ -251,7 +255,7 @@ function sanitize(value: unknown, depth: number): unknown {
   if (Array.isArray(value)) return value.map((v) => sanitize(v, depth + 1));
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    out[k] = SENSITIVE_KEYS.has(k) ? REDACTED : sanitize(v, depth + 1);
+    out[k] = SENSITIVE_KEY.test(k) ? REDACTED : sanitize(v, depth + 1);
   }
   return out;
 }
@@ -259,7 +263,8 @@ function sanitize(value: unknown, depth: number): unknown {
 
 **ポイント**:
 
-- pino の `redact.paths` の wildcard (`*.password`) は **1 階層分しか効かない**。`{ user: { credentials: { password } } }` 等の 2 階層以上は素通り。**deep clone + 再帰 redact** で補う
+* `url` はルートのテンプレートを記録し、query string と実際の path parameter を含めない。未一致なら `[unmatched]`。query は再帰マスクする。自動 request log も `serializeRequest` を通し、生 URL の別経路での漏れを防ぐ。秘密値を error message に埋め込む実装は別途直す。
+* pino の `redact.paths` の wildcard (`*.password`) は **1 階層分しか効かない**。`{ user: { credentials: { password } } }` 等の 2 階層以上は素通り。**deep clone + 再帰 redact** で補う
 - oRPC の body は `addContentTypeParser({ parseAs: "string" })` で **string** になるので、`sanitizeBody` 内で `JSON.parse` を試みる
 - `setErrorHandler` を呼ばない（Sentry の `setupFastifyErrorHandler` と衝突するため）。読み取りは `onError` だけで十分
 - `reply.payload` は public API ではないので使わない。oRPC エラーは `onSend` の `payload` 引数から取る

@@ -1,12 +1,12 @@
 ---
 name: 42-eval-injection-seam
-description: "本番コードを一切変えずに、eval からモデルとプロンプトを差し替えられる『注入 seam（縫い目）』を敷設するメタスキル。核心は (1) モデルの env 実注入（`EVAL_TARGET_MODEL` — ラベルではなく実際にモデルを差し替える。モデル固有設定は override 時に自動で外す）、(2) prompt override 機構（`PROMPTS_OVERRIDE_FILE` — env でファイルパスを渡し、許可リスト外キーや JSON 破損は silent fallback せず fail fast）、(3) eval CLI の機械可読契約（`--cases` / `--json-out` とケース単位の結果 JSON スキーマ）、(4) marker 実走による end-to-end 検証（override が本物の agent に届いている証明）。env 未設定時は完全に従来どおりで**本番挙動不変**。この seam は複数モデルの A/B 絶対評価や自動プロンプト最適化（45-method-gepa-optimization）の前提であり、ここで固定する CLI/JSON 契約が**評価手法を追加しても破綻しない共通インターフェース**になる。ディレクトリ構造は 40-eval-directory-setup、gold は 41-golden-set-construction に従う。「モデル注入」「EVAL_TARGET_MODEL」「prompt override」「PROMPTS_OVERRIDE_FILE」「本番コード無変更 A/B」「モデル差し替え」「プロンプト差し替え seam」「eval CLI 契約」「json-out」「override が効いているか検証」「モデル比較 A/B」等の発話・タスク要求時に使用。"
+description: "既定の本番挙動を保ち、必要最小限のコード変更で eval からモデルとプロンプトを差し替えられる『注入 seam（縫い目）』を敷設するメタスキル。核心は (1) モデルの env 実注入（`EVAL_TARGET_MODEL` — ラベルではなく実際にモデルを差し替える。モデル固有設定は override 時に自動で外す）、(2) prompt override 機構（`PROMPTS_OVERRIDE_FILE` — env でファイルパスを渡し、許可リスト外キーや JSON 破損は silent fallback せず fail fast）、(3) eval CLI の機械可読契約（`--cases` / `--json-out` とケース単位の結果 JSON スキーマ）、(4) marker 実走による end-to-end 検証（override が本物の agent に届いている証明）。env 未設定時は完全に従来どおりで**本番挙動不変**。この seam は複数モデルの A/B 絶対評価や自動プロンプト最適化（45-method-gepa-optimization）の前提であり、ここで固定する CLI/JSON 契約が**評価手法を追加しても破綻しない共通インターフェース**になる。ディレクトリ構造は 40-eval-directory-setup、gold は 41-golden-set-construction に従う。「モデル注入」「EVAL_TARGET_MODEL」「prompt override」「PROMPTS_OVERRIDE_FILE」「本番コード無変更 A/B」「モデル差し替え」「プロンプト差し替え seam」「eval CLI 契約」「json-out」「override が効いているか検証」「モデル比較 A/B」等の発話・タスク要求時に使用。"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
-# モデル実注入と prompt override 差し替え口（seam）（本番コード無変更の A/B 基盤・手法共通契約）
+# モデル実注入と prompt override 差し替え口（seam）（既定の本番挙動を保つ A/B 基盤・手法共通契約）
 
-**本番の挙動を一切変えずに**、eval からモデルとプロンプトを差し替えられるようにする基盤スキル。
+**override 未設定時の本番挙動を保ち**、eval からモデルとプロンプトを差し替えられるようにする基盤スキル。差し替え口の敷設には本番コードの最小限の変更を伴う。コード編集を禁止された依頼では既存の差し替え口だけを使い、存在しなければ適用できない範囲を報告する。
 この差し替え口があるからこそ、複数モデルを同じ確定した正解データ（gold）で絶対評価でき、プロンプト最適化ループが
 候補プロンプトを生きた agent に注入できる。ここで固定する **CLI/JSON 契約**が、
 評価手法を追加しても壊れない共通インターフェースになる。

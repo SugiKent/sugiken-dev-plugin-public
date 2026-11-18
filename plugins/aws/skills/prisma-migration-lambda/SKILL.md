@@ -182,12 +182,26 @@ CDK deploy の**後段**で migrate Lambda を invoke する。**成否は 2 段
     if [ "$FN_ERROR" != "None" ] && [ -n "$FN_ERROR" ]; then
       echo "::error::migration Lambda が FunctionError=$FN_ERROR を返しました"; exit 1
     fi
-    # (b) body の ok:true（LWA pass-through で raw / escaped どちらの形でも拾う）
-    if grep -q '"ok": *true' migrate-out.json || grep -q '\\"ok\\": *true' migrate-out.json; then
-      echo "DB migration OK ($FN)"
-    else
-      echo "::error::migration が ok:true を返しませんでした（上のレスポンスを確認）"; exit 1
-    fi
+    # (b) raw JSON または HTTP wrapper の body を構造として検証する（Node.js が必要）
+    node <<'NODE'
+    const fs = require('node:fs');
+    try {
+      const response = JSON.parse(fs.readFileSync('migrate-out.json', 'utf8'));
+      if (!response || typeof response !== 'object' || Array.isArray(response)) throw new Error('invalid response');
+      let body = response;
+      if ('statusCode' in response || 'body' in response) {
+        if (!Number.isInteger(response.statusCode) || response.statusCode < 200 || response.statusCode >= 300 || response.isBase64Encoded === true) {
+          throw new Error('invalid HTTP response');
+        }
+        body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
+      }
+      if (!body || typeof body !== 'object' || Array.isArray(body) || body.ok !== true) throw new Error('migration failed');
+      console.log('DB migration OK');
+    } catch (error) {
+      console.error('::error::migration response validation failed:', error.message);
+      process.exitCode = 1;
+    }
+    NODE
 ```
 
 **なぜ二重チェックか**：LWA 経由の HTTP エラーは Lambda invoke としては「成功(FunctionError=None)」に見え得る。

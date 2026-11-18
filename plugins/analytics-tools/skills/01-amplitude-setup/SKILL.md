@@ -67,6 +67,7 @@ Amplitude は「とりあえず入れて全部 track」すると 1 週間で破�
 | --------------- | ----------------------------------------- |
 | `CTA_クリック`  | 主要 CTA（signup, purchase, share）押下時 |
 | `ナビ_クリック` | グローバルナビ / タブ切替時               |
+| `要素_タップ` | Mobile のその他の要素のタップ時 |
 
 共通 event_properties:
 
@@ -74,7 +75,7 @@ Amplitude は「とりあえず入れて全部 track」すると 1 週間で破�
 - `cta_label` （表示テキスト。参考用）
 - `screen_name`, `position` (`header` / `footer` / `card_n`)
 
-それ以外の generic な click は Web autocapture / Mobile の共通 Pressable wrapper に拾わせる（保険）。主軸は明示 track した `cta_id` で行う。
+それ以外の generic な click は Web autocapture / Mobile の共通 Pressable wrapper に拾わせる（保険）。SDK の autocapture 固有イベント名はそのまま扱い、この命名規約は明示送信するカスタムイベントに適用する。主軸は明示 track した `cta_id` で行う。
 
 #### 系統 C: 異常系
 
@@ -209,13 +210,13 @@ property の取りうる値の総数は数百〜数千以内に抑える。
 - パッケージ: `@amplitude/analytics-browser`
 - 設定:
   - **autocapture は `pageViews` / `sessions` / `elementInteractions` / `formInteractions` / `frustrationInteractions` / `fileDownloads` / `attribution` を ON**（全 PV / 全 click の保険）
-  - `networkTracking` / `webVitals` は OFF （自前 `api_error_occurred` を送る、Web Vitals は別ツールに任せる）
+  * `networkTracking` / `webVitals` は OFF （自前 `APIエラー_発生` を送る、Web Vitals は別ツールに任せる）
   - dev は `logLevel: Debug`、prod は `Warn`
   - `minIdLength: 1` （内部 UUID 短縮形が弾かれないよう明示）
 - 起動: アプリ初期化時に 1 度だけ `init()`、`pagehide` で `setTransport("beacon")` + `flush()`
-- PV: autocapture と並行して **明示の `page_viewed` も SPA route 変更で送る** （screen_name の論理名を持たせるため）。React Router なら `useLocation` の effect で発火、 **`screen_path` はテンプレ化する**
-- Click: 主要 CTA は明示 `cta_clicked`。それ以外は autocapture に任せる
-- Error: `window.addEventListener("error" / "unhandledrejection")` + `ErrorBoundary` の `componentDidCatch` で `client_error_occurred` を送る
+* PV: autocapture と並行して **明示の `画面_表示` も SPA route 変更で送る** （screen_name の論理名を持たせるため）。React Router なら `useLocation` の effect で発火、 **`screen_path` はテンプレ化する**
+* Click: 主要 CTA は明示 `CTA_クリック`。それ以外は autocapture に任せる
+* Error: `window.addEventListener("error" / "unhandledrejection")` + `ErrorBoundary` の `componentDidCatch` で `クライアントエラー_発生` を送る
 - API client: `fetch` ラッパーで `X-Amp-Device-Id` を自動付与
 - env: `VITE_AMPLITUDE_API_KEY` （`01-env-vars-setup` の規約に従い、 dev key を user に取得依頼）
 
@@ -232,9 +233,9 @@ property の取りうる値の総数は数百〜数千以内に抑える。
   - `trackingOptions` で `adid: false`, `carrier: false` （個人開発で広告属性は不要）
   - dev は `Debug`、prod は `Warn`
 - 起動: `App.tsx` の `useEffect` で `init()` を await、 `AppState` 'background' で `flush()`
-- PV: RN は autocapture がないので、Expo Router の `usePathname` / `useSegments` を effect で監視し、 **画面遷移ごとに `page_viewed` を明示発火** 。`screen_name` は segments の末尾、`screen_path` は pathname
-- Click: **共通 `TrackedPressable` ラッパー** を作る。`ctaId` prop があれば `cta_clicked`、無ければ generic `element_tapped` を吐く。主要 button はすべてこのラッパーに差し替える
-- Error: `ErrorUtils.setGlobalHandler` で `client_error_occurred` を送る。既存ハンドラを保存して chain する
+* PV: RN は autocapture がないので、Expo Router の `usePathname` / `useSegments` を effect で監視し、 **画面遷移ごとに `画面_表示` を明示発火** 。`screen_name` は segments の末尾、`screen_path` は segments から組み立てたテンプレート（例: `/wishes/[id]`）とし、raw pathname の ID を送らない
+* Click: **共通 `TrackedPressable` ラッパー** を作る。`ctaId` prop があれば `CTA_クリック`、無ければ generic `要素_タップ` を吐く。主要 button はすべてこのラッパーに差し替える
+* Error: `ErrorUtils.setGlobalHandler` で `クライアントエラー_発生` を送る。既存ハンドラを保存して chain する
 - API client: `getDeviceId()` を `X-Amp-Device-Id` ヘッダに付与
 - env: `EXPO_PUBLIC_AMPLITUDE_API_KEY` （ **クライアントバンドルに埋め込まれる前提** の public key なので OK。秘密鍵は絶対に `EXPO_PUBLIC_` に入れない）
   - **EAS Environment Variables に登録する場合は visibility を `sensitive` (または `plaintext`) にする。 `secret` で登録すると `EXPO_PUBLIC_*` であっても client bundle に注入されず `undefined` になり、 init が呼ばれず event が一切送られない** 。 build ログに警告も出ないので発覚が遅れる典型パターン（EAS の Environment Variables の visibility 仕様に起因）

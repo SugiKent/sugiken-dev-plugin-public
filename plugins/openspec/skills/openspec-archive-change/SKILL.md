@@ -2,7 +2,7 @@
 name: openspec-archive-change
 description: 実験的ワークフローで完了した change を archive する。実装が完了した後に change を確定・archive したいときに使う。
 license: MIT
-compatibility: Requires openspec CLI.
+compatibility: Requires openspec CLI and Python 3.
 metadata:
   author: openspec
   version: "1.0"
@@ -44,7 +44,13 @@ metadata:
 
    tasks ファイル（通常 `tasks.md`）を読み、未完了の task を確認する。
 
-   `- [ ]`（未完了）と `- [x]`（完了）の task を数える。字下げ、行頭の `-` と `*`、`[x]` と `[X]` は同じに扱い、コードフェンスの中の例は数えない。どちらとも読めない記法（`[~]` など）は未完了に数える。記法の違いで未完了を見落とすと、終わっていない change を archive するため。archive とそのコミット自体を指す task は、この archive で完了させるものなので未完了に数えない。
+   この SKILL.md と同じディレクトリの `scripts/task-status.py` を `python3` で実行して数える。字下げ・`-` / `*` / `+`・`[x]` / `[X]` を扱い、backtick / tilde のコードフェンス内を除外し、未知の状態は未完了にする。JSON の `eligible` が true のときだけ全件完了である（終了コード 0）。終了コード 1 は未完了等、2 は読込・記法・除外指定のエラー。ファイル不在の扱いは下記に従い、それ以外のエラーは解消するまで archive しない。
+
+   archive とそのコミット自体を指す task だけは本文を読んで特定し、`--exclude "行番号:その行の全文"` を指定できる。単語だけで自動除外しない。除外理由と行を記録し、再検査時は本文が変わっていないか読み直す。
+
+   ```bash
+   python3 "<この SKILL.md のディレクトリ>/scripts/task-status.py" "<tasks ファイル>"
+   ```
 
    呼び出し元が task 全件完了を要求する場合は、未完了 task・tasks ファイル不在・チェック項目なしで停止する。続行確認は出さず、不足を報告する。archive の移動直前にも再検査する。以下の警告後の続行とファイル不在時の続行は、全件完了の要求がない場合だけに適用する。
 
@@ -75,7 +81,7 @@ metadata:
 
    **同期方針:**
    - デルタ仕様が存在する場合は、同期内容の要約を表示したうえで、ユーザーへの確認なしに必ず同期する。
-   - `openspec-sync-specs` スキルの手順でメイン仕様へ適用してから archive を進める。同期をスキップする選択肢は設けない。
+   * `openspec-sync-specs` スキルの手順でメイン仕様へ適用し、差分確認と main specs の strict 検証に成功してから archive を進める。失敗・未検証なら移動せず同期途中として報告する。同期をスキップする選択肢は設けない。
    - デルタ仕様が存在しない場合は、同期なしで続行する。
 
 6. **archive を実行する**
@@ -120,7 +126,7 @@ All artifacts complete. All tasks complete.
 **ガードレール**
 - 与えられていなければ、必ず change の選択を促す
 - 完了確認には成果物グラフ（openspec status --json）を使う
-- 警告で archive をブロックしない - 通知して確認するだけ
+* 通常の警告は通知して確認する。ただし、全件完了を要求された task 判定の失敗と同期検証の失敗・未実行では archive を止める
 - archive へ移動するとき .openspec.yaml を保持する（ディレクトリと一緒に移動する）
 - 何が起きたかの明確な要約を表示する
 - デルタ仕様が存在する場合は、ユーザーに確認せず必ず `openspec-sync-specs` の手順で同期する

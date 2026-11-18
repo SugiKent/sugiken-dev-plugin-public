@@ -373,7 +373,7 @@ server 5 ファイル、mobile 1 ファイル。**E2E は書かない**（webhoo
 | `routes.test.ts` | 認証 OK/NG、schema 違反 400、64KB 超え 413、token 未設定 204 |
 | `notifier.test.ts` | 初出通知 / dedupe / webhook 5xx / fetch 例外 / kind 未設定 |
 | `service.test.ts` | mask → fingerprint → INSERT → fire-and-forget notify |
-| `captureException.test.ts` (mobile) | Error / 非 Error / 失敗時 queue 追加 / 起動時 flush / endpoint 未設定 no-op / sensitive key redact |
+| `captureException.test.ts` (mobile) | Error / 非 Error / queue 並行追加・flush 中の新着保全・保存失敗後の復旧 / 起動時 flush / endpoint 未設定 no-op / sensitive key redact |
 
 完全なテストコードは **`references/tests.md`** に集約。vitest（server）と jest（mobile）の両方を含む。
 

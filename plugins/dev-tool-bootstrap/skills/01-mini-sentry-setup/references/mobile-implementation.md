@@ -1,6 +1,6 @@
 # Mobile implementation (Expo / React Native)
 
-`apps/mobile/src/error-tracking/index.ts` の 1 ファイル、約 280 行で完結する。
+`apps/mobile/src/error-tracking/index.ts` の 1 ファイルで完結する。
 
 依存:
 - `@react-native-async-storage/async-storage` （オフライン queue 用）
@@ -172,34 +172,55 @@ function buildPayload(
   };
 }
 
-async function readQueue(): Promise<IngestPayload[]> {
-  try {
-    const raw = await AsyncStorage.getItem(QUEUE_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as IngestPayload[]) : [];
-  } catch {
-    return [];
-  }
+interface QueueEntry { id: number; payload: IngestPayload }
+let queueTail: Promise<unknown> = Promise.resolve();
+let nextQueueId = 0;
+let flushInFlight: Promise<void> | null = null;
+
+// 同一 JS runtime 内の storage 更新だけを直列化する。通信待ちはここに入れない。
+function withQueueLock<T>(operation: () => Promise<T>): Promise<T> {
+  const result = queueTail.then(operation);
+  queueTail = result.catch(() => undefined);
+  return result;
 }
 
-async function writeQueue(items: IngestPayload[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(items));
-  } catch (err: unknown) {
-    logger.warn({
-      event: "error_tracking.queue_write_failed",
-      err: err instanceof Error ? err.message : String(err),
-    });
+async function readQueue(): Promise<QueueEntry[]> {
+  const raw = await AsyncStorage.getItem(QUEUE_STORAGE_KEY);
+  if (!raw) return [];
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) throw new Error("invalid error queue");
+  // 旧形式（payload 配列）も読める。flush は送信前に ID 付きで保存する。
+  const used = new Set<number>();
+  for (const item of parsed) {
+    if (item && typeof item === "object" && "id" in item) {
+      if (!Number.isSafeInteger(item.id) || item.id <= 0 || used.has(item.id)) throw new Error("invalid queue id");
+      used.add(item.id);
+      nextQueueId = Math.max(nextQueueId, item.id);
+    }
   }
+  return parsed.map((item) => {
+    const payload = item && typeof item === "object" && "id" in item ? item.payload : item;
+    if (!payload || payload.platform !== "mobile" || typeof payload.message !== "string") throw new Error("invalid queue payload");
+    const id = item && typeof item === "object" && "id" in item ? item.id : allocateQueueId();
+    return { id, payload: payload as IngestPayload };
+  });
+}
+
+function allocateQueueId(): number {
+  if (!Number.isSafeInteger(nextQueueId + 1)) throw new Error("queue id exhausted");
+  return ++nextQueueId;
+}
+
+async function writeQueue(items: QueueEntry[]): Promise<void> {
+  await AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(items));
 }
 
 async function enqueue(payload: IngestPayload): Promise<void> {
-  const items = await readQueue();
-  items.push(payload);
-  const trimmed =
-    items.length > QUEUE_MAX_LENGTH ? items.slice(items.length - QUEUE_MAX_LENGTH) : items;
-  await writeQueue(trimmed);
+  await withQueueLock(async () => {
+    const items = await readQueue();
+    items.push({ id: allocateQueueId(), payload });
+    await writeQueue(items.slice(-QUEUE_MAX_LENGTH));
+  });
 }
 
 async function sendOnce(payload: IngestPayload): Promise<boolean> {
@@ -246,26 +267,38 @@ export async function captureException(
   }
 }
 
-async function flushQueue(): Promise<void> {
-  if (!isEnabled()) return;
-  const items = await readQueue();
-  if (items.length === 0) return;
-  const remaining: IngestPayload[] = [];
-  for (const item of items) {
-    const ok = await sendOnce(item);
-    if (!ok) remaining.push(item);
-  }
-  if (remaining.length === 0) {
-    await AsyncStorage.removeItem(QUEUE_STORAGE_KEY);
-  } else {
-    await writeQueue(remaining);
-  }
+function flushQueue(): Promise<void> {
+  if (flushInFlight) return flushInFlight;
+  if (!isEnabled()) return Promise.resolve();
+  flushInFlight = (async () => {
+    const items = await withQueueLock(async () => {
+      const snapshot = await readQueue();
+      if (snapshot.length > 0) await writeQueue(snapshot);
+      return snapshot;
+    });
+    const sent = new Set<number>();
+    for (const item of items) {
+      if (await sendOnce(item.payload)) sent.add(item.id);
+    }
+    if (sent.size > 0) {
+      await withQueueLock(async () => {
+        const current = await readQueue();
+        await writeQueue(current.filter((item) => !sent.has(item.id)));
+      });
+    }
+  })().catch((err: unknown) => {
+    logger.warn({
+      event: "error_tracking.queue_flush_failed",
+      err: err instanceof Error ? err.message : String(err),
+    });
+  }).finally(() => { flushInFlight = null; });
+  return flushInFlight;
 }
 
 // Exposed for tests.
 export const __internal = {
   readQueue,
-  writeQueue,
+  enqueue,
   flushQueue,
   buildPayload,
   clampExtra,
@@ -351,7 +384,9 @@ RNErrorUtils.setGlobalHandler((error, isFatal) => {
 
 ### 6. AsyncStorage が失敗してもアプリは生きる
 
-`readQueue` / `writeQueue` は `try/catch` で握り、失敗時は空配列 / no-op で返す。本機能のために本体機能を巻き添えにしない。
+storage の読取・解析失敗を空配列扱いして上書きしない。書込失敗も呼出元へ伝え、`captureException` / `flushQueue` の外側で警告してアプリを継続する。保存できなかった新着は永続化済みと扱わない。送信後の削除保存に失敗した既存項目は残り、次回再送され得る。
+
+queue は内部 ID と payload を保存し、API には payload だけを送る。同一 JS runtime の storage 更新を直列化し、flush 中の新着（同一内容も含む）を成功 snapshot と区別する。容量超過時の古い項目破棄は既存の上限方針に従う。複数 runtime/process から同じ storage を書く構成には、このメモリ内排他を流用しない。
 
 ### 7. `__DEV__` で environment 判定
 
