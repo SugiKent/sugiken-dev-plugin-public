@@ -13,8 +13,8 @@ import { describe, expect, it } from "vitest";
 import { computeFingerprint, normalizeStackFrame } from "../../src/error-tracking/fingerprint.js";
 
 describe("normalizeStackFrame", () => {
-  it("returns the first non-empty line", () => {
-    const result = normalizeStackFrame("\n   at Foo (a.js:1:2)\n   at Bar (b.js:3:4)");
+  it("skips the error header and returns the first frame", () => {
+    const result = normalizeStackFrame("Error: failure\n   at Foo (a.js:1:2)\n   at Bar (b.js:3:4)");
     expect(result).toContain("Foo");
     expect(result).not.toContain("Bar");
   });
@@ -90,6 +90,11 @@ describe("maskExtra", () => {
     expect(out.token).toBe("[REDACTED]");
     expect(out.API_KEY).toBe("[REDACTED]");
     expect(out.benign).toBe("ok");
+  });
+
+  it("masks nested arrays while preserving non-sensitive values", () => {
+    expect(maskExtra({ items: [{ token: "x", keep: 1 }, [{ password: "x" }], null] }))
+      .toEqual({ items: [{ token: "[REDACTED]", keep: 1 }, [{ password: "[REDACTED]" }], null] });
   });
 
   it("recurses into nested objects", () => {
