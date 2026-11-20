@@ -50,6 +50,7 @@ description による自動呼び出しは従来どおり機能する。
 
 他の plugin の skill を呼ぶものがある。使うときは呼ばれる側も入れる。
 
+* `mvp-workflow` の `100-write-openspec-for-mvp-tasks` → `openspec` とその依存 plugin
 * `openspec` → `architect` / `basic` / `design`
 * `orchestration` → `openspec` / `e2e` / `architect` / `basic` / `design`
 

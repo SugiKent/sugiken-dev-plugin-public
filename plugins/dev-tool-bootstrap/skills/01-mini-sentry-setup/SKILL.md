@@ -159,12 +159,12 @@ Sentry の event envelope は冗長すぎる。**最小限の field のみ**に�
 `apps/server/src/error-tracking/fingerprint.ts`:
 
 ```
-fingerprint = sha1(platform | exceptionType | 正規化(stack 1 行目))
+fingerprint = sha1(platform | exceptionType | 正規化(stack の最初のフレーム))
 ```
 
 「正規化」とは:
 
-1. 改行で split し、最初の **空でない行**（最も内側のフレーム）を取る
+1. 改行で split し、V8 の `at ...` または Firefox / React Native の `関数@場所:行:列` に合う最初のフレームを取る。識別できなければ最初の非空行、空 stack なら空文字へ戻す
 2. `?...` 形式の query string を除去（bundle hash query 対策）
 3. `_[a-f0-9]{8,}` のような **バンドルのハッシュ部分** を除去
 4. 数字列を全部 `0` に正規化（行番号 / 列番号の揺れ吸収）

@@ -221,7 +221,7 @@ onFlowStart:
 - `sleep` を使わない。代わりに `assertVisible` の自動待機 or `extendedWaitUntil`。
 - アニメーション後は `waitForAnimationToEnd`。
 - タップが効きづらい箇所は `retryTapIfNoChange: true`。
-- 起動時は必ず `launchApp.clearState: true`（状態汚染防止）。
+* 独立したケースの開始時は `launchApp.clearState: true` で状態を初期化する。保存の永続化を検証するケース途中の再起動では状態を消さず、保存 → 状態を保持した再起動 → 保存値の復元確認を行う。
 - アプリ側で E2E 時はアニメを無効化（前述の `IS_E2E` フラグ）。
 
 ### 3-6. 権限拒否経路を必ずテスト
@@ -344,7 +344,7 @@ claude mcp add maestro -- maestro mcp
 
 - Element 指定は `id`（testID）優先、`text` は最終手段
 - `sleep` 禁止、`assertVisible` の自動待機を使う
-- 各フロー冒頭は `launchApp.clearState: true`
+* 独立したケースの開始時は `launchApp.clearState: true`。ケース途中の再起動や共通 subflow で、検証対象の保存状態を消さない
 - 失敗修復は推測でなく `inspect_screen` を読んでから
 - 1 フロー = 1 ストーリー、10 アサート以下
 - フローファイルは `.maestro/flows/<C-XXX>_<slug>.yaml`

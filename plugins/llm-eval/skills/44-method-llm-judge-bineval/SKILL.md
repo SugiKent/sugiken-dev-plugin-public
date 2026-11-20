@@ -114,7 +114,7 @@ references を土台にしつつ、 **以下の仕様を曲げない**:
 
 `task-prompt.md` に $T$ が入っている場合のみ、`generate-questions` を 1 度実行して `questions/<dimension>.json` を生成する（基盤の初期状態を作る **セットアップ行為**）。$T$ 未記入なら雛形だけ残し、README に「$T$ を書いてから実行」と記す。
 
-生成後、`quality-check` を走らせ spread / φ / coverage を確認。 **spread が無い・相関が高すぎる** など質問設計が弱い兆候があれば README に残し、必要なら質問を分割/多様化する。
+生成後は質問の構造を確認する。spread / φ / coverage には、`references/quality-checks.md` のケース × 質問の 0/1 評価行列が必要。対象ケースに対する Phase 2 の評価結果がある場合だけ `quality-check` を実行し、結果がなければ README に「統計チェック未実施」と入力行列の作成手順を残す。質問生成だけで統計チェック済みと扱わず、セットアップのために実評価を強制しない。 **spread が無い・相関が高すぎる** など質問設計が弱い兆候があれば README に残し、必要なら質問を分割/多様化する。
 
 ## Step 4: 選ばれた用途の実行基盤を敷く
 

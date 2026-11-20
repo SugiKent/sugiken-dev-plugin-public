@@ -52,6 +52,14 @@ interface IngestPayload {
 
 let initialized = false;
 
+function maskExtraValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskExtraValue);
+  if (value && typeof value === "object") {
+    return maskExtra(value as Record<string, unknown>);
+  }
+  return value;
+}
+
 function maskExtra(input: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
@@ -59,11 +67,7 @@ function maskExtra(input: Record<string, unknown>): Record<string, unknown> {
       out[key] = "[REDACTED]";
       continue;
     }
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      out[key] = maskExtra(value as Record<string, unknown>);
-      continue;
-    }
-    out[key] = value;
+    out[key] = maskExtraValue(value);
   }
   return out;
 }

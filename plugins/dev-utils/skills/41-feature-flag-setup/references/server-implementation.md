@@ -13,10 +13,18 @@ const TTL_MS = process.env.NODE_ENV === "production" ? 60_000 : 0; // dev: 常�
 let cache: Map<string, string> = new Map();
 let lastLoaded = 0;
 
-async function refresh(): Promise<void> {
-  const rows = await listAllFlags();
-  cache = new Map(rows.map((r) => [r.name, r.value]));
-  lastLoaded = Date.now();
+let refreshTail: Promise<void> = Promise.resolve();
+
+function refresh(): Promise<void> {
+  // TTL 更新と明示 reload を同じ列に並べ、古い応答による上書きを防ぐ。
+  const operation = refreshTail.then(async () => {
+    const rows = await listAllFlags();
+    cache = new Map(rows.map((r) => [r.name, r.value]));
+    lastLoaded = Date.now();
+  });
+  // 呼び出し元には失敗を返す。次の更新だけは前回の失敗から回復できる。
+  refreshTail = operation.catch(() => undefined);
+  return operation;
 }
 
 /** 参照時に TTL を見て古ければ取り直す（setInterval は使わない） */

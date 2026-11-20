@@ -57,12 +57,11 @@ const NUMERIC_RUN_PATTERN = /\d+/g;
 const BUNDLE_HASH_QUERY = /\?[^):\s]*/g;
 
 export function normalizeStackFrame(rawStack: string): string {
-  const firstLine =
-    rawStack
-      .split("\n")
-      .map((s) => s.trim())
-      .find((l) => l.length > 0) ?? "";
-  return firstLine
+  const lines = rawStack.split("\n").map((s) => s.trim()).filter(Boolean);
+  // V8: "at fn (...)" / Firefox・React Native: "fn@file:line:column".
+  const frame = lines.find((line) => /^at\s+/.test(line) || /@.+:\d+(?::\d+)?$/.test(line));
+  // フレームを識別できない形式は先頭の非空行、空 stack は空文字に戻す。
+  return (frame ?? lines[0] ?? "")
     .replace(BUNDLE_HASH_QUERY, "")
     .replace(PATH_HASH_PATTERN, "")
     .replace(NUMERIC_RUN_PATTERN, "0")
@@ -86,7 +85,7 @@ export function computeFingerprint(input: {
 - `PATH_HASH_PATTERN = /[._-][a-f0-9]{8,}\b/gi` — `chunk-abc12345.js` のような **バンドルのハッシュ部分** を消す（リリース間で別のハッシュになるので、消さないと別 fingerprint になる）
 - `NUMERIC_RUN_PATTERN = /\d+/g` — 行番号 `:42:10` を `:0:0` に。コード追加 / リファクタで行番号がずれても同 fingerprint になる
 
-stack の **1 行目のみ** を使うのは「最も内側のフレーム = 最終的に throw された場所」を識別子にする方針。stack 全体を使うと、呼び出し元の差で別 fingerprint になりがち。
+エラー見出しを除いた **最初の識別可能なフレーム** を使うのは「最も内側のフレーム = 最終的に throw された場所」を識別子にする方針。stack 全体を使うと、呼び出し元の差で別 fingerprint になりがち。
 
 ---
 
@@ -101,6 +100,14 @@ const EXTRA_TRUNCATED_SENTINEL = "… [truncated]";
 export const MAX_EXCEPTION_VALUE_BYTES = 8 * 1024;
 export const MAX_MESSAGE_BYTES = 8 * 1024;
 
+function maskExtraValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskExtraValue);
+  if (value && typeof value === "object") {
+    return maskExtra(value as Record<string, unknown>);
+  }
+  return value;
+}
+
 export function maskExtra(
   input: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
@@ -111,11 +118,7 @@ export function maskExtra(
       result[key] = "[REDACTED]";
       continue;
     }
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      result[key] = maskExtra(value as Record<string, unknown>);
-      continue;
-    }
-    result[key] = value;
+    result[key] = maskExtraValue(value);
   }
   return result;
 }

@@ -217,7 +217,7 @@ migrate を流すには migration 用 Lambda に新しい schema が要るが、
 
 - **旧コードも動く変更（カラム・テーブルの追加、nullable への変更）**: migration 用 Lambda のイメージ更新 → migrate invoke（§5 で成功を確認）→ アプリの新コードを有効にする。
 - **旧コードが壊れる変更（カラムの削除・改名）**: 先にそのカラムを参照しないアプリを出し、次の deploy で削除の migration を流す。改名は追加 → 移行 → 削除に分ける。
-- サーバと migration 用 Lambda が同じイメージ（§7）で、1 回の CDK deploy で両方が切り替わる構成では、上の順序が守れない。アプリ側の切り替え（Lambda alias・トラフィック移行など）を migrate の成功後に回すか、その deploy には旧コードと互換な migration だけを入れる。
+* サーバと migration 用 Lambda が同じイメージ（§7）で、1 回の CDK deploy で両方が切り替わる構成では、上の順序が守れない。アプリ側の切り替え（Lambda alias・トラフィック移行など）を migrate の成功後に回すか、旧コードが新スキーマで動き、かつ新コードが migration 前の旧スキーマでも動く変更だけを同時に切り替える。旧コードとの互換性だけでは、新コードの先行起動を安全にできない。
 
 ---
 

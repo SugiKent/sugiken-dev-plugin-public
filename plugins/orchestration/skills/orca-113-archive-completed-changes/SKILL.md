@@ -137,10 +137,12 @@ dispatch する。`orca terminal send` でプロンプトを直接送る旧来�
 `--inject` は task spec に加えて **coordinator preamble**（＝「終わったら親へ `worker_done` を返せ」）を
 worker の Claude CLI に注入するため、親はアーカイブ完了を構造的に検知できる（§6）。
 
+各 dispatch の前に対象 change の正確な source path を控える。worker には、完了報告へ移動元と実際の archive path を含めるよう渡す。
+
 ```bash
 # 1) アーカイブ内容をタスク化（spec に下記の必須 4 点を入れる）。--json の戻りに task id が返る
 orca orchestration task-create --spec \
-  "OpenSpec change '<change名>' をアーカイブする。/opsx:archive スキルを change 名 '<change名>' を指定して実行する。この change は task 全件完了が必須。親の判定を信用せず、openspec-archive-change の共通 parser で開始時と移動直前に再検査し、未完了・tasks 不在・項目なし・判定エラーなら確認で迂回せず不足を報告して止める。archive 自体の除外行と理由が渡された場合も本文を再確認する。デルタ仕様が存在する場合は『今すぐ同期する』を選んでメイン仕様へ同期した上でアーカイブまで完了させ、確認のために処理を止めない（AskUserQuestion で止まらず自分で同期して進める）。この作業は worktree ではなく共有チェックアウト上で他の change と並行で進むため、git のブランチ切り替え・commit・stash は行わない（アーカイブ結果は未コミット差分のまま残してよい）。" \
+  "OpenSpec change '<change名>' をアーカイブする。/opsx:archive スキルを change 名 '<change名>' を指定して実行する。この change は task 全件完了が必須。親の判定を信用せず、openspec-archive-change の共通 parser で開始時と移動直前に再検査し、未完了・tasks 不在・項目なし・判定エラーなら確認で迂回せず不足を報告して止める。archive 自体の除外行と理由が渡された場合も本文を再確認する。デルタ仕様が存在する場合は『今すぐ同期する』を選んでメイン仕様へ同期した上でアーカイブまで完了させ、確認のために処理を止めない（AskUserQuestion で止まらず自分で同期して進める）。この作業は worktree ではなく共有チェックアウト上で他の change と並行で進むため、git のブランチ切り替え・commit・stash は行わない（アーカイブ結果は未コミット差分のまま残してよい）。完了報告には正確な移動元と実際の archive path を含める。" \
   --json
 
 # 2) §3 の戻り handle（§4 で tui-idle 確認済み）へ inject 付き dispatch
@@ -177,13 +179,15 @@ orca orchestration check --wait --types worker_done,escalation,decision_gate --t
   来るか pane が消えるまで rolling に `check --wait` し直す。勝手に pane を kill / 再 dispatch しない。
 - `escalation` が来たら握り潰さず、内容を確認して対処する。
 
-**worker_done は最終確認ではない。** worker_done を回収したら、アーカイブが本当に成立したかを
-**change ディレクトリが `openspec/changes/archive/YYYY-MM-DD-<name>/` へ移動した**ことで決定論的に確認する
-（これが §7 で pane を閉じてよい唯一の根拠）:
+**worker_done は最終確認ではない。** 控えていた source path と worker の返した移動元を照合し、返された archive path が同じ change 名の移動先であることを確認する。名前の部分一致や別 change の archive を完了根拠にしない。正確な source が存在せず、正確な destination がディレクトリとして存在することが、§7 で pane を閉じてよい根拠になる。
 
 ```bash
-ls openspec/changes/ | grep -q '<change名>' && echo "まだ移動していない" || echo "changes 直下から消えた"
-ls openspec/changes/archive/ | grep '<change名>'   # YYYY-MM-DD-<change名> が出れば移動済み
+# source_path は dispatch 前に控えたパス、archive_path は同一 change の移動先と照合済みのパス
+if [ ! -e "$source_path" ] && [ -d "$archive_path" ]; then
+  echo "対象 change の移動を確認した"
+else
+  echo "移動を確認できない。pane を閉じずに調査する"
+fi
 ```
 
 **liveness 確認のフォールバック（check --wait が無反応のとき）:** rolling wait が連続で `{count:0}` のとき、

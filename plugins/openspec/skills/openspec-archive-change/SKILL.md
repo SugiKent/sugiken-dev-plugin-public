@@ -117,10 +117,12 @@ metadata:
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** `planningHome.changesDir`/YYYY-MM-DD-<name>/ から導かれる archive パス
-**Specs:** ✓ Synced to main specs (or "No delta specs" or "Sync skipped")
+**Archived to:** `<planningHome.changesDir>/archive/YYYY-MM-DD-<name>/`（実際の移動先パス）
+**Specs:** ✓ Synced to main specs (or "No delta specs")
+**Artifacts:** <完了数/総数。未完了なら対象と続行承認を記載>
+**Tasks:** <完了数/総数・除外数。未完了なら件数と続行承認、不在なら「tasks ファイルなし」と記載>
 
-All artifacts complete. All tasks complete.
+Archiveへの移動完了。実装・成果物の完了状態は上記の確認結果に従う。
 ```
 
 **ガードレール**
