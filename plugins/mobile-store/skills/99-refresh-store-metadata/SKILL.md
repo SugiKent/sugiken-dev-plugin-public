@@ -2,6 +2,7 @@
 name: 99-refresh-store-metadata
 description: "個人開発の Expo + React Native モバイルアプリで、App Store / Google Play のストア文言（name / subtitle / keywords / promotional_text / description / short_description / full_description）を、実装の現状に合わせて最新化するスキル。`openspec/specs/` の capability 一覧・実際の画面実装・PROJECT.md を突き合わせて『実装済みなのにストアで訴求されていない機能』と『ストアに書いてあるが実装に存在しない記述（虚偽表示リスク）』のドリフトを検出し、字数上限・ASO・iOS/Android 整合を守って書き換える。「ストアの説明文を最新化」「metadata を最新化」「ストア文言が実装と合ってない」「description を実装に合わせて」「新機能をストアに反映」「キーワードを見直したい」「ASO を見直したい」「訴求漏れがないか確認」等の発話・タスク要求時に使用。書き換えとローカル検証までが責務で、App Store Connect / Play Console への push は行わない。release_notes / changelogs も扱わない（push 側の責務）。"
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # ストアメタデータ最新化スキル（実装 → 文言のドリフト解消）

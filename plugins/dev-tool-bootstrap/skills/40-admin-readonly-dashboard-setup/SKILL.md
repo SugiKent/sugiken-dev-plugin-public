@@ -2,6 +2,7 @@
 name: 40-admin-readonly-dashboard-setup
 description: "個人開発 / 小規模 SaaS の Web サーバプロジェクトに、 READ-only の admin ダッシュボードを初期化するスキル。 認証は better-auth の magic link、 認可は単一 ADMIN_EMAIL 一致。 拒否時はすべて 404 を返して admin の存在自体を秘匿し、 `/admin/login` は GET 叩くだけで自分の inbox に magic link が届く副作用フォーム不要設計。 `apps/server/src/admin/` 配下に env.ts / middleware.ts / routes.ts / views.ts / queries.ts を配置し、 `app.use(\"/admin\", adminRouter)` で組み込む。 タグドテンプレ HTML レンダラ・restrictive CSP・READ-only catch-all まで含む。 「admin 画面」「管理画面」「ダッシュボード」「READ-only admin」「magic link login」「ADMIN_EMAIL」「admin 認可」「stealth login」「運用ダッシュボード」「social engineering 防止 admin」等の発話・タスク要求時に使用。 一度きりのスキャフォールド用。 認証方式 (Email OTP / Basic Auth / Cloudflare Access / OAuth) や ORM (Drizzle / Kysely / 生 SQL) や フレームワーク (Fastify / Hono / Next.js) への差し替え指針は references/ に同梱。"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # READ-only Admin Dashboard セットアップスキル

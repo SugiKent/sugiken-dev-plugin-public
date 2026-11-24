@@ -1,6 +1,7 @@
 ---
 name: orca-113-archive-completed-changes
 description: "個人開発プロジェクトで、tasks.md が完了している（全タスクが `- [x]`）OpenSpec change それぞれに Orca の pane（ターミナル分割）を1つずつ作り、各 pane で Claude エージェントを起動して /opsx:archive スキルでアーカイブまで完了させる一連の手順スキル。worktree は一切作らず、現在のチェックアウト上で 1pane / 1archive で並行アーカイブさせる。完了 change の判定（tasks.md 全 [x]）・pane 分割・Claude 起動→タスク化して dispatch --inject・監視付きディスパッチ（orchestration の check --wait で worker_done を待ち、archive/ への移動で最終確認）・確認待ちでブロックさせない指示・同一チェックアウト共有の注意・やってはいけないことをまとめる。「完了した change を archive」「tasks.md が完了している change を opsx:archive」「change ごとに pane を作って archive」「完了 change を並行でアーカイブ」「change のアーカイブを自動化」等の発話・タスク要求時に使用。引数は不要（完了 change を自動検出する）。"
+disable-model-invocation: true
 ---
 
 # tasks.md 完了済み OpenSpec change を Orca pane で並行アーカイブする

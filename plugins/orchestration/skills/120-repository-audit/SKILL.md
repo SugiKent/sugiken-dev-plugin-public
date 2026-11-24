@@ -1,6 +1,7 @@
 ---
 name: 120-repository-audit
 description: リポジトリの品質をまとめて点検し、問題の修正・再発防止・検証まで進める。
+disable-model-invocation: true
 ---
 
 # リポジトリの品質点検

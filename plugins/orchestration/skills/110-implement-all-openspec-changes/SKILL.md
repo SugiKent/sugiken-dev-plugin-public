@@ -2,6 +2,7 @@
 name: 110-implement-all-openspec-changes
 description: "単一の Claude Code セッションで、openspec/changes 配下のすべての承認済み OpenSpec change を、実装順と archive 順を分けて安全に実装・archive するオーケストレーションスキル。MODIFIED delta の衝突、実装中に発見した後続 change、共有ファイルの並行コミット、共有 DB の汚染を管理し、途中と最終の結合レビューを行う。E2E 基盤があるプロジェクトでは、開始時に全 change を読ませた専属 SubAgent が `docs/quality/e2e/all-changes-cases.md` を先行作成し、各 change 内では E2E を作成・実行せず、全 change 完了後にケース実装・全件実行・必要な修正を行う。「openspec を全部実装」「changes を実装しきる」「MVP 全実装」「apply を回しきる」「全 change archive まで」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash, Agent, Skill, AskUserQuestion, mcp__codex__codex, mcp__codex__codex-reply
+disable-model-invocation: true
 ---
 
 # OpenSpec Changes 完全実装スキル

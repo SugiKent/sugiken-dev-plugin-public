@@ -1,6 +1,7 @@
 ---
 name: prisma-migration-lambda
 description: "private subnet の RDS(PostgreSQL) に対して `prisma migrate deploy` を安全に流すための「マイグレーション用 Lambda」を構築するスキル。RDS が private isolated subnet にありローカル/CI から直接到達できないとき、VPC 内の Lambda に migrate を代行させ、GitHub Actions などから `aws lambda invoke` で起動する設計・手順・ハマりどころをまとめる。サーバ用イメージと同一イメージを CMD だけ差し替えて再ビルドを避ける方式、Lambda Web Adapter(LWA) の pass-through invoke、readiness を塞がないための「起動時 listen・request 時 migrate」分離、Secrets Manager からの DATABASE_URL 解決、CI 側の成否判定(FunctionError と body ok:true の二重チェック)を扱う。「マイグレーション Lambda」「migrate Lambda」「prisma migrate deploy を本番に」「private subnet の RDS に migration」「VPC 内から migrate」「Lambda Web Adapter pass-through」「aws lambda invoke で migration」等の発話・タスク要求時に使用。前提は Prisma + CDK(v2) + RDS(private subnet)。"
+disable-model-invocation: true
 ---
 
 # Prisma マイグレーション用 Lambda 構築スキル

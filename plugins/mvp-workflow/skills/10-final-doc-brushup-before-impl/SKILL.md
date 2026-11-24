@@ -2,6 +2,7 @@
 name: 10-final-doc-brushup-before-impl
 description: "個人開発のMVP実装前に、Web版（full-ts-template）またはモバイル版（my-wish-list / Expo + React Native）のリファレンス技術スタックと `docs/mvp/` を中心とした docs の内容を参照しながら、AskUserQuestionsで技術的意思決定や仕様の確定を漏れなく行い、MVP 文書を更新するスキル。「MVP決定」「意思決定」「技術的意思決定」などのリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Bash
+disable-model-invocation: true
 ---
 
 # MVP 意思決定スキル

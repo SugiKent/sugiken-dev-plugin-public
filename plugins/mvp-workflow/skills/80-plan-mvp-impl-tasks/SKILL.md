@@ -2,6 +2,7 @@
 name: 80-plan-mvp-impl-tasks
 description: "個人開発プロジェクトでMVPの仕様が決まった後、プロジェクト全体を実装するための『順序』を計画するスキル。基盤→仕組み→ユーザー体験順、で並べたタスクリストを `docs/mvp/implementation-tasks.md` に記録する。「実装順序」「実装タスク」「impl tasks」「MVPの実装計画」等のリクエスト時に使用。"
 allowed-tools: Read, Grep, Glob, Write, Bash
+disable-model-invocation: true
 ---
 
 # MVP 実装順序プランニングスキル

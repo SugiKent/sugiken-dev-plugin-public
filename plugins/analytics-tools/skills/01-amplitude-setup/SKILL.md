@@ -1,6 +1,7 @@
 ---
 name: 01-amplitude-setup
 description: "個人開発プロジェクトに Amplitude を導入する際の実装スキル。Web 版（Browser SDK 2 / full-ts-template）、モバイル版（React Native SDK / Expo + my-wish-list）、サーバ版（Node SDK / Fastify）の 3 面をカバーし、PV / クリック / 異常系 / サーバイベント の 4 系統を漏れなく拾う標準設計、event property 設計パターン、命名規約、PII 取り扱い、anonymous → identify の移行、autocapture の取捨選択、dev/prod 切り替え、検証フロー、アンチパターンまでを提供する。「Amplitude」「analytics」「イベントトラッキング」「event tracking」「track event」「user property」「tracking plan」「@amplitude/analytics-browser」「@amplitude/analytics-react-native」「@amplitude/analytics-node」「session replay」「autocapture」「identify」「setUserId」「ampli」等の発話・タスク要求時に使用。"
+disable-model-invocation: true
 ---
 
 # Amplitude セットアップスキル

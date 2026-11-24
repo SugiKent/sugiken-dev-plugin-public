@@ -1,6 +1,7 @@
 ---
 name: 88-speed-up-tests
 description: "テストスイートの実行時間を、GitHub Actions 上の実測を基準に短くするスキル。計測 → 仮説 → 検証 → 修正の順で進め、遅いテストと遅い共通処理の両面から原因を探し、runner の CPU・メモリの制約のもとで最も速い構成を見つける。特定のフレームワークや手法を前提にしない。「テストを速くして」「CI が遅い」「テストの実行時間を短くしたい」「test が重い」「GitHub Actions のテストを高速化」「speed up tests」「slow tests」等の発話・タスク要求時に使用。"
+disable-model-invocation: true
 ---
 
 # テストを速くする

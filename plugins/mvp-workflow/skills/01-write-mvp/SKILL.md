@@ -1,6 +1,7 @@
 ---
 name: 01-write-mvp
 description: "個人開発のプロジェクトの MVP を構想していくためのSkill.「MVPを考える」際に呼び出されます"
+disable-model-invocation: true
 ---
 
 # MVP ドキュメントの構築方法

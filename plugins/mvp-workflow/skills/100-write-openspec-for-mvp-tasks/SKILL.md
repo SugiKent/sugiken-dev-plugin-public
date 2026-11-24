@@ -1,6 +1,7 @@
 ---
 name: 100-write-openspec-for-mvp-tasks
 description: "`docs/mvp/implementation-tasks.md` に基づいて OpenSpec change を作成する"
+disable-model-invocation: true
 ---
 
 # やること

@@ -1,6 +1,7 @@
 ---
 name: 01-mini-sentry-setup
-description: "個人開発の Web/モバイル + Node サーバプロジェクトに、Sentry SaaS の代替となる『最小限の自前エラートラッカー（mini-sentry）』を導入するスキル。Express + Prisma + PostgreSQL の server に ingest endpoint を生やし、mobile (Expo / React Native) と server から発生した未捕捉例外を Bearer 認証付き POST で受信・永続化し、新規 fingerprint のみ Discord / Slack webhook に通知する構成をゼロから構築する。「mini-sentry」「ミニセントリー」「自前エラートラッカー」「captureException」「error tracking」「Sentry 代替」「unhandled rejection を拾いたい」「グローバルエラーハンドラ」「Discord webhook でエラー通知」「Slack webhook でエラー通知」「ErrorUtils.setGlobalHandler」「Express の error middleware で Sentry もどき」等の発話・タスク要求時に使用。"
+description: "自前エラートラッカー mini-sentry を導入する。ユーザーがスキル名を指定するか、mini-sentry の導入を明示的に依頼した場合にだけ使う。一般的なエラー監視・ログ・通知の依頼からは選ばない。"
+disable-model-invocation: true
 ---
 
 # mini-sentry セットアップスキル

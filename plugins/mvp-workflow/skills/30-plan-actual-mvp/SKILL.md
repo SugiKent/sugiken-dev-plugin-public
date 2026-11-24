@@ -1,6 +1,7 @@
 ---
 name: 30-plan-actual-mvp
 description: "個人開発のプロジェクト全体の実装の前に、本当の意味でのMVPを実装し、技術的/体験的な手元での検証を行う計画をします"
+disable-model-invocation: true
 ---
 
 # 何を作るべきかを考える

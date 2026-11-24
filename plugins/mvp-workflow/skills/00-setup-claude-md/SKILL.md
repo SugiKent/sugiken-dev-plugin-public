@@ -1,6 +1,7 @@
 ---
 name: 00-setup-claude-md
 description: "プロジェクトの CLAUDE.md を、references/CLAUDE_SAMPLE.md（AI コーディングの動作ルール）を基に新規作成・更新するスキル。MVP や戦略がおおよそ決まった実装準備のタイミングで使う。「CLAUDE.md を整備して」「CLAUDE.md を書き換えて」「動作ルールを入れて」等の発話・タスク要求時に使用。"
+disable-model-invocation: true
 ---
 
 # このスキルの位置付け
