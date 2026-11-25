@@ -70,7 +70,9 @@ metadata:
    - **AskUserQuestion ツール**で続行の意思を確認する
    - 呼び出し元が archive の後にコミットすると決めている流れ（orchestration の `apply-commit` など）では、確認せずに続行し、要約に載せる
 
-5. **デルタ仕様の同期状態を評価する**
+5. **archive 先の重複を確認してからデルタ仕様の同期状態を評価する**
+
+   現在の日付と change 名から移動先 `<planningHome.changesDir>/archive/YYYY-MM-DD-<name>` を一度だけ決める。そこにファイル・ディレクトリ・シンボリックリンクがあれば、衝突したパスを報告し、仕様を同期する前に停止する。
 
    status JSON の `artifactPaths.specs.existingOutputPaths` を使ってデルタ仕様を確認する。存在しなければ、同期の確認なしで続行する。
 
@@ -91,14 +93,12 @@ metadata:
    mkdir -p "<planningHome.changesDir>/archive"
    ```
 
-   現在の日付でターゲット名を生成する: `YYYY-MM-DD-<change-name>`
-
-   **ターゲットが既に存在するか確認する:**
-   - 存在する場合: エラーで失敗し、既存 archive のリネームか別の日付の使用を提案する
+   **移動直前に、手順 5 で決めた同じパスの重複を再確認する:**
+   - 存在する場合: 移動せずに停止し、衝突したパスと仕様の同期状況を報告する。既存 archive のリネームか別の日付の使用を提案する
    - 存在しない場合: `changeRoot` を archive ディレクトリへ移動する
 
    ```bash
-   mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
+   mv "<changeRoot>" "<手順 5 で決めた移動先>"
    ```
 
 7. **要約を表示する**
@@ -131,5 +131,5 @@ Archiveへの移動完了。実装・成果物の完了状態は上記の確認�
 * 通常の警告は通知して確認する。ただし、全件完了を要求された task 判定の失敗と同期検証の失敗・未実行では archive を止める
 - archive へ移動するとき .openspec.yaml を保持する（ディレクトリと一緒に移動する）
 - 何が起きたかの明確な要約を表示する
-- デルタ仕様が存在する場合は、ユーザーに確認せず必ず `openspec-sync-specs` の手順で同期する
+- archive 先が空いていてデルタ仕様が存在する場合は、ユーザーに確認せず必ず `openspec-sync-specs` の手順で同期する
 - デルタ仕様が存在する場合は、必ず同期の評価を行い、まとめた要約を（プロンプトの前に）表示する
