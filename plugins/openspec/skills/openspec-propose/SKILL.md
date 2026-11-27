@@ -23,8 +23,8 @@ propose は提案を検証・コミットして終了する。apply へ進むか
 | 新しい認証・認可・token 発行の経路を足す change | design を書く前に `architect:35-architect-security` の「プロセス: まず脅威モデリング（Threat Model First）」を回す（必須） |
 | レビュー | `architect:35-architect-doubt-driven-development` ほか `35-architect-*`。指摘の検証は `architect:35-architect-interrogate` の「手順 4. 統合し、検証する」、仕分けは同じ skill の「手順 5. リードとして判定する」 |
 | UI を作る・直す change の UX の論点 | `design:design`（後述「UI・UX の扱い」） |
-| 要約 | `openspec-apply-change` の `references/report-writing.md` |
-| 無人実行・長い作業での判断の記録 | `openspec-apply-change` の `references/decision-trail.md` |
+| 要約 | `openspec:openspec-apply-change` の `references/report-writing.md` |
+| 無人実行・長い作業での判断の記録 | `openspec:openspec-apply-change` の `references/decision-trail.md` |
 
 apply は判断しない（UI の表現は後述「UI・UX の扱い」に従い apply が決める）。仕様・設計の判断、数値の根拠になる実測、AI の仮置きの確定は、後述の「apply に判断を残さない」に従い、すべてこの propose の中で済ませる。
 
@@ -95,7 +95,7 @@ apply は判断しない（UI の表現は後述「UI・UX の扱い」に従い
 
 **出力**
 
-完了・一時停止・回答待ち・retro 後に作業を止めて返す報告は、`openspec-apply-change` の `references/report-writing.md` の「最終報告の固定フォーマット」に従う。change 名に続けて「進捗報告」「検証内容」「AIが判断して進めたこと」「人間に確認してほしいこと」を固定列の表で出し、独自の要約を前後に足さない。
+完了・一時停止・回答待ち・retro 後に作業を止めて返す報告は、`openspec:openspec-apply-change` の `references/report-writing.md` の「最終報告の固定フォーマット」に従う。change 名に続けて「進捗報告」「検証内容」「AIが判断して進めたこと」「人間に確認してほしいこと」を固定列の表で出し、独自の要約を前後に足さない。
 
 成果物と共有理解の準備状況、未決事項チェック、試作・実測、適用した原則、レビューの結果と反映先、次の行動を対応する表へ入れる。完了時の次の行動は「提案コミット済み・このセッションは終了」とする。ワーカーは呼び出し元の指示に従って `worker_done` を送り、最終行を「作業完了」にする。未解決判断が残る場合は草案・回答待ちとし、「実装の準備ができた」と宣言しない。
 
@@ -138,7 +138,7 @@ apply が決めてよいのは、spec と design のどの文も書き換えな�
 
 # apply から戻ったとき
 
-`openspec-apply-change` が判断の要る場面で一時停止し、この skill へ戻してきたときの手順。既にある change を詰め直すだけなので、手順 1〜5 はやり直さない。
+`openspec:openspec-apply-change` が判断の要る場面で一時停止し、この skill へ戻してきたときの手順。既にある change を詰め直すだけなので、手順 1〜5 はやり直さない。
 
 1. **apply の一時停止報告を読む。** 決まっていない判断、それが止めている task、apply が集めた証拠（再現の出力、レビューの指摘）を入力にする。
 2. **同じ change を使う。** `openspec new change` は実行しない。続きだと分かっているので、ガードレールにある「継続するか新規作成するか」の確認もしない。
@@ -165,10 +165,10 @@ tasks は、それぞれ確かめられる状態で終わる小さな単位の�
 
 - 各 task に、それを確かめる証拠（実行するテスト・コマンド・E2E のシナリオ）を書く。証拠を書けない task は、分け方か中身が曖昧になっている。
 - 並べ方で作業を証明する。使われなくなるコードの削除を作り変えより先に、足場（共有の型、テスト基盤、migration）を機能より先に置く。バグ修正では、失敗するテストか再現を修正より先に置く。
-- ユニットテストが通っただけを、利用者に見える振る舞いの検証にしない。利用者が触る面を変える change では、その面を自動で動かす確認を task に入れる。変更の種類ごとの確かめ方は `openspec-apply-change` の「9. 実物で確かめる」に従う。
+- ユニットテストが通っただけを、利用者に見える振る舞いの検証にしない。利用者が触る面を変える change では、その面を自動で動かす確認を task に入れる。変更の種類ごとの確かめ方は `openspec:openspec-apply-change` の「9. 実物で確かめる」に従う。
 - design が利用者の回復の手段・解消の経路を複数挙げるなら、tasks にはそれぞれを利用者の面で通す確認を書く。change の目的が「X で失敗しなくなる」なら、X を返していた処理を実際に呼ぶ確認を書く。
 * 外部利用者への互換性が不要で、全呼び出し元を同時に移せる内部 API では、一時互換コードを置かず、呼び出し元の移行と古い API の削除を同じ change に入れる（Migrate Callers Then Delete Legacy APIs の適用条件に従う）。旧新版が共存するデータ移行は `35-architect-db-design` の段階移行に従う。
-* 新設・変更するイベントやデータの経路は、起点→保存する値→読み取り射影→起動条件・処理担当→期待する終点までたどる。受け手に値と実行契機が届く確認を tasks に含め、実証は `openspec-apply-change` の「9. 実物で確かめる」に接続する。
+* 新設・変更するイベントやデータの経路は、起点→保存する値→読み取り射影→起動条件・処理担当→期待する終点までたどる。受け手に値と実行契機が届く確認を tasks に含め、実証は `openspec:openspec-apply-change` の「9. 実物で確かめる」に接続する。
 
 ---
 
@@ -235,7 +235,7 @@ UI を作る・直す change では、`design:design` を UX の論点を仕様�
 
 動かせば分かる事実（挙動、タイミング、出力、性能）も、ユーザーの答えることではない。`basic:grill-me` の「質問する前に分ける」に従って試作で決め、判断と証拠を design.md の根拠に残す。抽象的な計画を議論で磨くより、試作で問いを閉じるほうが安く、ユーザーが思い付かなかった選択肢も見つかる。
 
-不具合を直す change では、再現と原因の特定も動かせば分かる事実として、この propose で済ませる。`openspec-apply-change` の `references/task-bug-fix.md` の手順 1・2 で再現して原因を突き止め、原因とその証拠、直す振る舞い、修正の形を design に書く。原因を知らないまま直し方を書くと、apply が直し方を決めることになるため。
+不具合を直す change では、再現と原因の特定も動かせば分かる事実として、この propose で済ませる。`openspec:openspec-apply-change` の `references/task-bug-fix.md` の手順 1・2 で再現して原因を突き止め、原因とその証拠、直す振る舞い、修正の形を design に書く。原因を知らないまま直し方を書くと、apply が直し方を決めることになるため。
 
 一方、資料だけでは決まらない選択は、一般論や推奨案で勝手に確定しない。要求同士、要求と既存実装が矛盾する場合は、その矛盾と影響を示してユーザーに判断を求める。
 

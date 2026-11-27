@@ -16,7 +16,7 @@ Orca の pane（`orca terminal split`）を1つ作り、各 pane で Claude エ�
 
 関連スキル: pane/terminal 操作の基礎は [[orca-cli]]、worker への dispatch と完了待ち（task-create /
 dispatch --inject / check --wait）は [[orchestration]]、アーカイブの中身はプロジェクトの
-`openspec-archive-change`（= `/opsx:archive`）。
+`openspec:openspec-archive-change`（= `/opsx:archive`）。
 
 **引数は不要。** 完了 change はコードベースから自動検出する。
 
@@ -72,13 +72,13 @@ worktree も repoId も不要。pane は現在アクティブな worktree（こ�
 `openspec/changes/<name>/`（`archive/` は除く）のうち、**次をすべて満たすもの**を完了済みとみなす:
 
 1. `tasks.md` が存在し、**未完了タスクが0件**かつ **完了タスクが1件以上**（＝タスクがあって全部終わっている）。
-   数え方は `openspec-archive-change` の「task の完了状態を確認する」に従う（`-` と `*`、字下げ、`[X]` を同じに扱い、
+   数え方は `openspec:openspec-archive-change` の「task の完了状態を確認する」に従う（`-` と `*`、字下げ、`[X]` を同じに扱い、
    コードフェンス内は数えず、読めない記法は未完了）。
 2. その change 用の **pane がまだ無い**（`orca terminal list` の title に change 名が現れない）。
    Claude はアーカイブ着手後にタブ title を change 名へ書き換えるため（§6）、title で重複アーカイブを
    検出できる。
 
-`openspec-archive-change` を開き、その SKILL.md と同じディレクトリの `scripts/task-status.py` の絶対パスを解決する。インストール先は固定しない。見つからない場合は判定不能として報告し、別の awk へ置き換えない。
+`openspec:openspec-archive-change` を開き、その SKILL.md と同じディレクトリの `scripts/task-status.py` の絶対パスを解決する。インストール先は固定しない。見つからない場合は判定不能として報告し、別の awk へ置き換えない。
 
 ```bash
 python3 "<解決した archive スキル>/scripts/task-status.py" "openspec/changes/<name>/tasks.md"
